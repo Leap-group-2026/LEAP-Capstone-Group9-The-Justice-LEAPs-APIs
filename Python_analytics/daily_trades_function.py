@@ -1,9 +1,11 @@
 from sqlalchemy import create_engine
 from datetime import datetime,timedelta
 import pandas as pd
+from dotenv import load_dotenv
+import os
 
-
-engine = create_engine('postgresql+psycopg2://postgres:neued4!@localhost:15432/leap_projectdb')
+load_dotenv()
+engine = create_engine(f"postgresql+psycopg2://{os.getenv('DB_USERNAME')}:{os.getenv('DB_PASSWORD')}@localhost:15432/leap_projectdb")
 
 
 def get_daily_completed_trades(start_date=None, end_date=None):

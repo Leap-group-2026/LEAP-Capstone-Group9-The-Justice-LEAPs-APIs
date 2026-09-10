@@ -2,9 +2,19 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
+from dotenv import load_dotenv
+
+
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Get database credentials from environment variables
+DB_USERNAME = os.getenv('DB_USERNAME')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
 
 # Database connection setup
-engine = create_engine(f'postgresql+psycopg2://postgres:neued4!@localhost:15432/leap_projectdb')
+engine = create_engine(f'postgresql+psycopg2://{DB_USERNAME}:{DB_PASSWORD}@localhost:15432/leap_projectdb')
 
 try:
     # Query the database to get top 5 most traded stocks

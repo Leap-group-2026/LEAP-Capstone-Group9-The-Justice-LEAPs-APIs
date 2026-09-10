@@ -1,12 +1,10 @@
-from urllib.parse import quote_plus
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
 
 # Database connection setup
-password = quote_plus('neued4!')
-engine = create_engine(f'postgresql+psycopg2://postgres:{password}@localhost:15432/leap_projectdb')
+engine = create_engine(f'postgresql+psycopg2://postgres:neued4!@localhost:15432/leap_projectdb')
 
 try:
     # Query the database to get top 5 most traded stocks

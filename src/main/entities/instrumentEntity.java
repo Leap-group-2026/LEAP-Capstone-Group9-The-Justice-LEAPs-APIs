@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "instrument")
+@Table(name = "instruments")
 public class instrumentEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -82,14 +82,3 @@ public class instrumentEntity {
         this.currency = currency;
     }
 }
-
-
-/*CREATE TABLE instruments (
-	instrument_id	SERIAL PRIMARY KEY,
-    ticker			TEXT NOT NULL,
-	asset_type		TEXT NOT NULL,
-	asset_name		TEXT NOT NULL,
-	price			NUMERIC(18, 4) NOT NULL DEFAULT 0,
-	currency 		TEXT NOT NULL DEFAULT 'USD'
-);
-*/

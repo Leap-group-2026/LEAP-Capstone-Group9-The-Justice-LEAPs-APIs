@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 public class adminEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "admin_id")
     private Integer adminId;
     @JsonProperty("username")
     @Column(name = "username")

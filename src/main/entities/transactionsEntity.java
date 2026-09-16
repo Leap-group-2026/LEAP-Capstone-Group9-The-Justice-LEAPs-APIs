@@ -34,6 +34,7 @@ public class transactionsEntity{
     @JsonProperty("transaction_type")
     @Column(name = "transaction_type")
     private String transactionType;
+    @CreationTimestamp 
     @JsonProperty("happened_at")
     @Column(name = "happened_at")
     private LocalDateTime happenedAt;

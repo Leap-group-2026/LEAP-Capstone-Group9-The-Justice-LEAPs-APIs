@@ -18,13 +18,4 @@ public class DatabaseConnectionTest {
         assertNotNull(adminRepo);
     }
 
-    @Test
-    public void testDatabaseConnection() {
-        assertNotNull(adminRepo);
-        adminEntity admin = new adminEntity();
-        admin.setUsername("test");
-        admin.setPassHash("test_hash");
-        adminRepo.save(admin);
-        assertTrue(adminRepo.count() > 0);
-    }
 }

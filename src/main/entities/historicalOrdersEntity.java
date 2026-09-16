@@ -10,6 +10,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 
@@ -20,14 +22,13 @@ public class historicalOrdersEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer historicalOrderId;
     @JsonProperty("order_id")
-    @ManyToOne 
-    @JoinColumn(name = "order_id", nullable = false) //References orders(order_id)
+    @Column(name = "order_id", nullable = false)
     private Integer orderId;
     @JsonProperty("account_id")
-    @ManyToOne 
-    @JoinColumn(name = "account_id", nullable = false) //References accounts(account_id)
+    @Column(name = "account_id", nullable = false)
     private Integer accountId;
     @JsonProperty("order_information_json")
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "order_information_json", nullable = false)
     private String orderInformationJson;
     @JsonProperty("created_at")

@@ -1,7 +1,7 @@
-package main.controllers;
+package controllers;
 
-import main.services.AdminService;
-import main.entities.adminEntity;
+import services.AdminService;
+import entities.adminEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

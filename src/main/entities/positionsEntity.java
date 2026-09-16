@@ -1,0 +1,120 @@
+package entities;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Column;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import entities.accountsEntity;
+import entities.instrumentEntity;
+import java.math.BigDecimal;
+
+
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "positions")
+public class positionsEntity {
+    @Id
+    @GeneratedValue (strategy = GenerationType.IDENTITY)
+    private Integer positionId;
+
+    @ManyToOne
+    @JoinColumn(name = "account_id", nullable = false)
+    private accountsEntity account;
+
+    @JsonProperty
+    @Column(name = "quantity")
+    private Integer quantity;
+
+    @ManyToOne
+    @JoinColumn(name = "instrument_id", nullable = false)
+    private instrumentEntity instrument;
+
+    @JsonProperty
+    @Column(name = "opened_at")
+    private LocalDateTime openedAt;
+
+    @JsonProperty
+    @Column(name = "closed_at")
+    private LocalDateTime closedAt;
+
+    @JsonProperty
+    @Column(name = "total_price")
+    private BigDecimal totalPrice;
+
+    @JsonProperty
+    @Column(name = "average_price")
+    private BigDecimal averagePrice;
+
+    public Integer getPositionId() {
+        return positionId;
+    }
+
+    public void setPositionId(Integer positionId) {
+        this.positionId = positionId;
+    }
+
+    public accountsEntity getAccountId() {
+        return account;
+    }
+
+    public void setAccountId(accountsEntity account) {
+        this.account = account;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    public instrumentEntity getInstrumentId() {
+        return instrument;
+    }
+
+    public void setInstrumentId(instrumentEntity instrument) {
+        this.instrument = instrument;
+    }
+
+    public LocalDateTime getOpenedAt() {
+        return openedAt;
+    }
+
+    public void setOpenedAt(LocalDateTime openedAt) {
+        this.openedAt = openedAt;
+    }
+
+    public LocalDateTime getClosedAt() {
+        return closedAt;
+    }
+
+    public void setClosedAt(LocalDateTime closedAt) {
+        this.closedAt = closedAt;
+    }
+
+    public BigDecimal getTotalPrice() {
+        return totalPrice;
+    }
+
+    public void setTotalPrice(BigDecimal totalPrice) {
+        this.totalPrice = totalPrice;
+    }
+
+    public BigDecimal getAveragePrice() {
+        return averagePrice;
+    }
+
+    public void setAveragePrice(BigDecimal averagePrice) {
+        this.averagePrice = averagePrice;
+    }
+}
+
+
+

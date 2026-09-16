@@ -1,4 +1,4 @@
-package main.entities;
+package entities;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -22,9 +22,6 @@ public class adminEntity {
     @JsonProperty("pass_hash")
     @Column(name = "pass_hash")
     private String passHash;
-    @JsonProperty("email")
-    @Column(name = "email")
-    private String email;
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -54,13 +51,6 @@ public class adminEntity {
         this.passHash = passHash;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;

@@ -1,8 +1,8 @@
-package main.services;
+package services;
 
 import org.springframework.stereotype.Service;
-import main.repos.AdminRepo;
-import main.entities.adminEntity;
+import repos.AdminRepo;
+import entities.adminEntity;
 
 @Service
 public class AdminService {

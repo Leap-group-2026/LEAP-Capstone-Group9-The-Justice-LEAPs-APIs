@@ -1,4 +1,4 @@
-package main.entities;
+package entities;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -9,8 +9,11 @@ import jakarta.persistence.Column;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
+
 import org.hibernate.annotations.CreationTimestamp;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.hibernate.type.SqlTypes;
+import org.hibernate.annotations.JdbcTypeCode;
 import java.time.LocalDateTime;
 
 @Entity
@@ -20,14 +23,14 @@ public class historicalOrdersEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer historicalOrderId;
     @JsonProperty("order_id")
-    @ManyToOne 
-    @JoinColumn(name = "order_id", nullable = false) //References orders(order_id)
+    @Column(name = "order_id", nullable = false)
     private Integer orderId;
     @JsonProperty("account_id")
     @ManyToOne 
     @JoinColumn(name = "account_id", nullable = false) //References accounts(account_id)
-    private Integer accountId;
+    private accountsEntity accountId;
     @JsonProperty("order_information_json")
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "order_information_json", nullable = false)
     private String orderInformationJson;
     @JsonProperty("created_at")
@@ -52,11 +55,11 @@ public class historicalOrdersEntity {
         this.orderId = orderId;
     }
 
-    public Integer getAccountId() {
+    public accountsEntity getAccountId() {
         return accountId;
     }
 
-    public void setAccountId(Integer accountId) {
+    public void setAccountId(accountsEntity accountId) {
         this.accountId = accountId;
     }
 

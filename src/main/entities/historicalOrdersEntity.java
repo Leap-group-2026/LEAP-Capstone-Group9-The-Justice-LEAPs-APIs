@@ -11,9 +11,9 @@ import jakarta.persistence.ManyToOne;
 
 
 import org.hibernate.annotations.CreationTimestamp;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.hibernate.type.SqlTypes;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 
 @Entity
@@ -25,10 +25,9 @@ public class historicalOrdersEntity {
     @JsonProperty("order_id")
     @Column(name = "order_id", nullable = false)
     private Integer orderId;
-    @JsonProperty("account_id")
-    @ManyToOne 
-    @JoinColumn(name = "account_id", nullable = false) //References accounts(account_id)
-    private accountsEntity accountId;
+    @ManyToOne
+    @JoinColumn(name = "account_id", nullable = false) 
+    private accountsEntity account;
     @JsonProperty("order_information_json")
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "order_information_json", nullable = false)
@@ -55,12 +54,12 @@ public class historicalOrdersEntity {
         this.orderId = orderId;
     }
 
-    public accountsEntity getAccountId() {
-        return accountId;
+    public accountsEntity getAccount() {
+        return account;
     }
 
-    public void setAccountId(accountsEntity accountId) {
-        this.accountId = accountId;
+    public void setAccount(accountsEntity account) {
+        this.account = account;
     }
 
 

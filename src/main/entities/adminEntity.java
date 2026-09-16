@@ -51,7 +51,6 @@ public class adminEntity {
         this.passHash = passHash;
     }
 
-
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }

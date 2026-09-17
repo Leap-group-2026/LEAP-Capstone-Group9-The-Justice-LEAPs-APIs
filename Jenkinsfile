@@ -8,12 +8,25 @@ pipeline{
         }
         stage('Build'){
             steps{
-                echo 'Build stage placeholder'
+                sh 'mvn clean install'
             }
         }
         stage('Test'){
             steps{
-                echo 'Test stage placeholder'
+                sh 'mvn test'
+            }
+        }
+        stage('Start Application'){
+            steps{
+                sh 'mvn spring-boot:run &'
+                sh 'sleep 15'
+                echo 'Spring Boot application started successfully'
+            }
+        }
+        stage('Stop Application'){
+            steps{
+                sh 'pkill -f "spring-boot" || true'
+                echo 'Spring Boot application stopped'
             }
         }
         stage('Archive'){

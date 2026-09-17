@@ -38,6 +38,7 @@ public class userEntity {
     private String passHash; 
 
     public userEntity() {
+        
     }
 
     public Integer getUserId() {

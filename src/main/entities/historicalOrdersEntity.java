@@ -9,6 +9,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
+import main.entities.OrderEntity;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -22,11 +23,12 @@ public class historicalOrdersEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer historicalOrderId;
     @JsonProperty("order_id")
-    @Column(name = "order_id", nullable = false)
-    private Integer orderId;
-    @JsonProperty("account_id")
-    @Column(name = "account_id", nullable = false)
-    private Integer accountId;
+    @ManyToOne
+    @JoinColumn(name = "order_id", nullable = false)
+    private OrderEntity orderId;
+    @ManyToOne
+    @JoinColumn(name = "account_id", nullable = false) 
+    private accountsEntity account;
     @JsonProperty("order_information_json")
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "order_information_json", nullable = false)
@@ -45,20 +47,20 @@ public class historicalOrdersEntity {
         this.historicalOrderId = historicalOrderId;
     }
 
-    public Integer getOrderId() {
+    public OrderEntity getOrderId() {
         return orderId;
     }
 
-    public void setOrderId(Integer orderId) {
+    public void setOrderId(OrderEntity orderId) {
         this.orderId = orderId;
     }
 
-    public Integer getAccountId() {
-        return accountId;
+    public accountsEntity getAccount() {
+        return account;
     }
 
-    public void setAccountId(Integer accountId) {
-        this.accountId = accountId;
+    public void setAccount(accountsEntity account) {
+        this.account = account;
     }
 
 

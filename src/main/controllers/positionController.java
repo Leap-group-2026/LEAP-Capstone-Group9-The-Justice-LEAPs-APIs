@@ -1,7 +1,7 @@
-package controllers;
+package main.controllers;
 
-import services.PositionService;
-import entities.positionsEntity;
+import main.services.PositionService;
+import main.entities.positionsEntity;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,8 +24,5 @@ public class positionController {
     public positionsEntity getPositionById(@PathVariable Integer id) {
         return positionService.findById(id);
     }
-    @GetMapping("/account/{accountId}")
-    public List<positionsEntity> getPositionsByAccount(@PathVariable Integer accountId) {
-        return positionService.findByAccountId(accountId);
-    }
+    
 }

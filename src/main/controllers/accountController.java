@@ -1,10 +1,12 @@
-package controllers;
+package main.controllers;
 
-import services.AccountService;
-import entities.accountsEntity;
+import main.services.AccountService;
+import main.entities.accountsEntity;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.transaction.Transactional;
 
 @RestController
 @RequestMapping("/accounts")

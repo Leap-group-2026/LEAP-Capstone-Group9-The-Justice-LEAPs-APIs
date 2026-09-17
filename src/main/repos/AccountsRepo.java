@@ -1,8 +1,8 @@
-package repos;
+package main.repos;
 
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.JpaRepository;
-import entities.*;
+import main.entities.*;
 import java.util.List;
 import java.util.Optional;
 

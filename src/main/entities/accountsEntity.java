@@ -1,4 +1,4 @@
-package entities;
+package main.entities;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -8,8 +8,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Column;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.EnumType;
+import jakarta.persistence.Convert;
 import org.hibernate.annotations.CreationTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -26,6 +25,7 @@ public class accountsEntity {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonProperty("user")
     private userEntity user;
 
     @JsonProperty("balance")
@@ -34,7 +34,7 @@ public class accountsEntity {
 
     @JsonProperty("portfolio_size")
     @Column(name = "portfolio_size", nullable = false)
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = PortfolioSizeConverter.class)
     private PortfolioSize portfolioSize;
 
     @JsonProperty("trade_type")

@@ -1,4 +1,4 @@
-package entities;
+package main.entities;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -38,6 +38,7 @@ public class userEntity {
     private String passHash; 
 
     public userEntity() {
+        
     }
 
     public Integer getUserId() {

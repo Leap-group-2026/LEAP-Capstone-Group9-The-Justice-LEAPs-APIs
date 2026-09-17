@@ -1,8 +1,8 @@
-package services;
+package main.services;
 
 import org.springframework.stereotype.Service;
-import repos.userRepo;
-import entities.userEntity; 
+import main.repos.userRepo;
+import main.entities.userEntity; 
 
 @Service
 public class userService {

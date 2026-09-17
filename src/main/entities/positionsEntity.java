@@ -1,4 +1,4 @@
-package entities;
+package main.entities;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -9,8 +9,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Column;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import entities.accountsEntity;
-import entities.instrumentEntity;
+import main.entities.accountsEntity;
+import main.entities.instrumentEntity;
 import java.math.BigDecimal;
 
 
@@ -25,29 +25,31 @@ public class positionsEntity {
 
     @ManyToOne
     @JoinColumn(name = "account_id", nullable = false)
+    @JsonProperty("account")
     private accountsEntity account;
 
-    @JsonProperty
+    @JsonProperty("quantity")
     @Column(name = "quantity")
     private Integer quantity;
 
     @ManyToOne
     @JoinColumn(name = "instrument_id", nullable = false)
+    @JsonProperty("instrument")
     private instrumentEntity instrument;
 
-    @JsonProperty
+    @JsonProperty("opened_at")
     @Column(name = "opened_at")
     private LocalDateTime openedAt;
 
-    @JsonProperty
+    @JsonProperty("closed_at")
     @Column(name = "closed_at")
     private LocalDateTime closedAt;
 
-    @JsonProperty
+    @JsonProperty("total_price")
     @Column(name = "total_price")
     private BigDecimal totalPrice;
 
-    @JsonProperty
+    @JsonProperty("average_price")
     @Column(name = "average_price")
     private BigDecimal averagePrice;
 

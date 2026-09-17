@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import main.entities.instrumentEntity;
 
 @Entity
 @Table(name = "orders")
@@ -30,7 +32,8 @@ public class OrderEntity {
     @Setter
     @JsonProperty("account_id")
 //    @ManyToOne
-    @JoinColumn(name = "account_id", nullable = false)
+    //@JoinColumn(name = "account_id", nullable = false)
+    @Column(name = "account_id")
     private Integer accountId;
     
     @NotNull
@@ -57,8 +60,8 @@ public class OrderEntity {
     @Positive
     @Setter
     @JsonProperty("total_price")
-    @Column(name = "total_price", nullable = false)
-    private Double totalPrice;
+    @Column(name = "total_price", nullable = false, columnDefinition = "NUMERIC")
+    private BigDecimal totalPrice;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -70,7 +73,7 @@ public class OrderEntity {
     
     // Custom constructor for order creation (5 params)
     public OrderEntity(String side, Integer accountId, instrumentEntity instrumentId,
-                       Integer quantity, Double totalPrice) {
+                       Integer quantity, BigDecimal totalPrice) {
         this.side = side;
         this.accountId = accountId;
         this.instrumentId = instrumentId;

@@ -29,17 +29,17 @@ public class OrderEntity {
     @NotNull
     @Setter
     @JsonProperty("account_id")
-    @ManyToOne
+//    @ManyToOne
     @JoinColumn(name = "account_id", nullable = false)
-    private AccountEntity accountId;
+    private Integer accountId;
     
     @NotNull
     @Setter
     @JsonProperty("instrument_id")
     @ManyToOne
     @JoinColumn(name = "instrument_id", nullable = false)
-    private InstrumentEntity instrumentId;
-    
+    private instrumentEntity instrumentId;
+
     @NotNull
     @Setter
     @JsonProperty("status")
@@ -69,7 +69,7 @@ public class OrderEntity {
     private LocalDateTime updatedAt;
     
     // Custom constructor for order creation (5 params)
-    public OrderEntity(String side, AccountEntity accountId, InstrumentEntity instrumentId, 
+    public OrderEntity(String side, Integer accountId, instrumentEntity instrumentId,
                        Integer quantity, Double totalPrice) {
         this.side = side;
         this.accountId = accountId;

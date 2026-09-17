@@ -3,13 +3,13 @@ package main.entities;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import org.hibernate.annotations.CreationTimestamp;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.math.BigDecimal;
 import lombok.NoArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import java.time.LocalDateTime;
-import main.entities.accountsEntity;
+import java.math.BigDecimal;
 import main.entities.instrumentEntity;
 
 @Entity
@@ -31,9 +31,10 @@ public class OrderEntity {
     @NotNull
     @Setter
     @JsonProperty("account_id")
-    @ManyToOne
-    @JoinColumn(name = "account_id", nullable = false)
-    private accountsEntity accountId;
+//    @ManyToOne
+    //@JoinColumn(name = "account_id", nullable = false)
+    @Column(name = "account_id")
+    private Integer accountId;
     
     @NotNull
     @Setter
@@ -41,7 +42,7 @@ public class OrderEntity {
     @ManyToOne
     @JoinColumn(name = "instrument_id", nullable = false)
     private instrumentEntity instrumentId;
-    
+
     @NotNull
     @Setter
     @JsonProperty("status")
@@ -59,17 +60,19 @@ public class OrderEntity {
     @Positive
     @Setter
     @JsonProperty("total_price")
-    @Column(name = "total_price", nullable = false)
+    @Column(name = "total_price", nullable = false, columnDefinition = "NUMERIC")
     private BigDecimal totalPrice;
-    
+
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-    
+
+    @CreationTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
     
     // Custom constructor for order creation (5 params)
-    public OrderEntity(String side, accountsEntity accountId, instrumentEntity instrumentId, 
+    public OrderEntity(String side, Integer accountId, instrumentEntity instrumentId,
                        Integer quantity, BigDecimal totalPrice) {
         this.side = side;
         this.accountId = accountId;

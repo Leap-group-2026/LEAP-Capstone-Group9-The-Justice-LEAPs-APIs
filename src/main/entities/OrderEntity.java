@@ -11,6 +11,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
 import main.entities.instrumentEntity;
+import main.entities.accountsEntity;
 
 @Entity
 @Table(name = "orders")
@@ -31,10 +32,9 @@ public class OrderEntity {
     @NotNull
     @Setter
     @JsonProperty("account_id")
-//    @ManyToOne
-    //@JoinColumn(name = "account_id", nullable = false)
-    @Column(name = "account_id")
-    private Integer accountId;
+    @ManyToOne
+    @JoinColumn(name = "account_id", nullable = false)
+    private accountsEntity accountId;
     
     @NotNull
     @Setter
@@ -72,7 +72,7 @@ public class OrderEntity {
     private LocalDateTime updatedAt;
     
     // Custom constructor for order creation (5 params)
-    public OrderEntity(String side, Integer accountId, instrumentEntity instrumentId,
+    public OrderEntity(String side, accountsEntity accountId, instrumentEntity instrumentId,
                        Integer quantity, BigDecimal totalPrice) {
         this.side = side;
         this.accountId = accountId;

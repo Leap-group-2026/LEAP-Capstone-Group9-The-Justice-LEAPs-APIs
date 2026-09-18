@@ -34,7 +34,6 @@ public class OrderEntity {
     @JsonProperty("account_id")
     @ManyToOne
     @JoinColumn(name = "account_id", nullable = false)
-    @Column(name = "account_id")
     private accountsEntity accountId;
     
     @NotNull

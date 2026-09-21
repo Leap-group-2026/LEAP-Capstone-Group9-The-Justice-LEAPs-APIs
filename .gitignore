@@ -1,3 +1,4 @@
 /target
 /src/main/resources
 docker-compose.yml
+/src/test/resources

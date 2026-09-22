@@ -1,8 +1,8 @@
 package main.controllers;
 
 import main.services.userService;
-import main.dto.userRegistrationRequest;
-import main.dto.userResponse;
+import main.dto.request.userRegistrationRequest;
+import main.dto.response.userResponse;
 import main.entities.userEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

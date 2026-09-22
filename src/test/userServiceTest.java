@@ -8,8 +8,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import main.services.userService;
 import main.repos.userRepo;
 import main.entities.userEntity;
-import main.dto.userRegistrationRequest;
-import main.dto.userResponse;
+import main.dto.request.userRegistrationRequest;
+import main.dto.response.userResponse;
 
 import java.time.LocalDate;
 import java.security.MessageDigest;

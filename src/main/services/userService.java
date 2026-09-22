@@ -4,8 +4,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import main.repos.userRepo;
 import main.entities.userEntity; 
-import main.dto.userRegistrationRequest;
-import main.dto.userResponse;
+import main.dto.request.userRegistrationRequest;
+import main.dto.response.userResponse;
 
 import java.security.MessageDigest;
 import java.util.Base64;

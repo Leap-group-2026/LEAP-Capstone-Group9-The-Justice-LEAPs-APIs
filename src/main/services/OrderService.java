@@ -10,7 +10,7 @@ import main.repos.OrdersRepo;
 import main.repos.AccountsRepo;
 import main.repos.instrumentRepo;
 
-// Imports to delete later
+// TODO: delete import after implementing order total calculation
 import java.math.BigDecimal;
 
 @Service
@@ -26,13 +26,14 @@ public class OrderService {
     }
 
     public OrderEntity createOrder(CreateOrderRequest request) {
-        // Will separate this out to different methods and create custom exceptions
+        // TODO: separate this out to different methods and create custom exceptions
         accountsEntity account = accountsRepo.findById(request.accountId())
             .orElseThrow(() -> new IllegalArgumentException("Account not found"));
 
         instrumentEntity instrument = instrumentRepo.findById(request.instrumentId())
             .orElseThrow(() -> new IllegalArgumentException("Instrument not found"));
 
+        // TODO: add validation later on before creating entities
         OrderEntity order = new OrderEntity(
             request.side(),
             account,

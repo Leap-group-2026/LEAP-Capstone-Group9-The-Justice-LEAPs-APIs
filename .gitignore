@@ -1,4 +1,4 @@
 /target
-/src/main/resources
+/src/main/resources/application.properties
 docker-compose.yml
-/src/test/resources
+/src/test/resources/application.properties

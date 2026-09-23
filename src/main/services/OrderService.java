@@ -56,6 +56,8 @@ public class OrderService {
             totalPrice
         );
 
-        return ordersRepo.save(order);
+        ordersRepo.insert(orderSide, account.getAccountId(), instrument.getInstrumentId(), 
+                         "PENDING", request.quantity(), totalPrice, order.getCreatedAt(), order.getUpdatedAt());
+        return order;
     }
 }

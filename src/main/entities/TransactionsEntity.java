@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 
 @Entity 
 @Table(name = "transactions")
-public class transactionsEntity{
+public class TransactionsEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer transactionId;
@@ -29,8 +29,9 @@ public class transactionsEntity{
     @JsonProperty("side")
     @Column(name = "side")
     private String side;
-    @Column(name = "account_id")
-    private Integer accountId;
+    @ManyToOne
+    @JoinColumn(name = "account_id")
+    private AccountsEntity accountId;
     @JsonProperty("transaction_type")
     @Column(name = "transaction_type")
     private String transactionType;
@@ -58,10 +59,10 @@ public class transactionsEntity{
     public void setSide(String side) {
         this.side = side;
     }
-    public Integer getAccountId() {
+    public AccountsEntity getAccountId() {
         return accountId;
     }
-    public void setAccountId(Integer accountId) {
+    public void setAccountId(AccountsEntity accountId) {
         this.accountId = accountId;
     }
     public String getTransactionType() {

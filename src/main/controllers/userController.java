@@ -1,7 +1,11 @@
 package main.controllers;
 
-import main.services.userService; 
-import main.entities.userEntity; 
+import main.services.userService;
+import main.dto.request.userRegistrationRequest;
+import main.dto.response.userResponse;
+import main.entities.userEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController 
@@ -11,8 +15,17 @@ public class userController {
     public userController(userService service){
         this.service = service; 
     }
+
     @PostMapping("/create")
-    public userEntity createUser(@RequestBody userEntity user){
-        return service.saveUser(user);
+    public ResponseEntity<userResponse> createUser(@RequestBody userRegistrationRequest request){
+        //return service.saveUser(user);
+        userResponse response = service.registerUser(request);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/resetpassword")
+    public ResponseEntity<String> resetPassword(@RequestBody userResponse user){
+        return service.resetPassword(user);
     }
 }

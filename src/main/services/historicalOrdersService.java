@@ -1,23 +1,27 @@
 package main.services;
 
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import main.entities.OrderEntity;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import main.repos.historicalOrdersRepo;
 import main.repos.OrdersRepo;
 import main.entities.historicalOrdersEntity;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class historicalOrdersService {
+    private static final Logger log = LoggerFactory.getLogger(historicalOrdersService.class);
     private final historicalOrdersRepo repo;
     private final ObjectMapper objectMapper;
     private final OrdersRepo ordersRepo;
+
+    public historicalOrdersService(historicalOrdersRepo repo, ObjectMapper objectMapper, OrdersRepo ordersRepo) {
+        this.repo = repo;
+        this.objectMapper = objectMapper;
+        this.ordersRepo = ordersRepo;
+    }
 
     public String serializeOrderToJson(OrderEntity entity) {
         try {

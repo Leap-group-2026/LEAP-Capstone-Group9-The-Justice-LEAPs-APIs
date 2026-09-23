@@ -1,28 +1,43 @@
 package main.services;
 
 import org.springframework.stereotype.Service;
-
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.util.List;
 
+import main.dto.request.CreateOrderRequest;
 import main.entities.OrderEntity;
 import main.entities.accountsEntity;
-import main.repos.OrdersRepo;
-import main.repos.historicalOrdersRepo;
+import main.entities.instrumentEntity;
 import main.entities.historicalOrdersEntity;
+import main.repos.OrdersRepo;
+import main.repos.AccountsRepo;
+import main.repos.instrumentRepo;
+import main.repos.historicalOrdersRepo;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class OrderService {
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
+    
     private final OrdersRepo ordersRepo;
+    private final AccountsRepo accountsRepo;
+    private final instrumentRepo instrumentRepo;
     private final historicalOrdersRepo historicalOrdersRepo;
     private final ObjectMapper objectMapper;
+
+    public OrderService(OrdersRepo ordersRepo, AccountsRepo accountsRepo, instrumentRepo instrumentRepo,
+                       historicalOrdersRepo historicalOrdersRepo, ObjectMapper objectMapper) {
+        this.ordersRepo = ordersRepo;
+        this.accountsRepo = accountsRepo;
+        this.instrumentRepo = instrumentRepo;
+        this.historicalOrdersRepo = historicalOrdersRepo;
+        this.objectMapper = objectMapper;
+    }
 
     /**
      * Helper method: Serialize an order entity to JSON string.
@@ -55,27 +70,27 @@ public class OrderService {
     }
 
     /**
-     * Update an order's status and record an immutable snapshot.
-     * Both the status update and snapshot insert happen atomically:
-     * if one fails, both roll back.
+     * Create a new order from a CreateOrderRequest.
+     * Validates that the account and instrument exist.
+     * Captures an initial snapshot of the new order.
      */
     @Transactional
-    public OrderEntity updateOrderStatus(Integer orderId, String newStatus) {
-        OrderEntity order = ordersRepo.findById(orderId)
-            .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
-        
-        // Capture the OLD state (before change)
-        captureOrderSnapshot(order);
-        
-        // Mutate the order
-        order.setStatus(newStatus);
-        OrderEntity updated = ordersRepo.save(order);
-        
-        // Capture the NEW state (after change)
-        captureOrderSnapshot(updated);
-        
-        log.info("Order {} status changed from PENDING to {}", orderId, newStatus);
-        return updated;
+    public OrderEntity createOrder(CreateOrderRequest request) {
+        accountsEntity account = accountsRepo.findById(request.accountId())
+            .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+
+        instrumentEntity instrument = instrumentRepo.findById(request.instrumentId())
+            .orElseThrow(() -> new IllegalArgumentException("Instrument not found"));
+
+        OrderEntity order = new OrderEntity(
+            request.side(),
+            account,
+            instrument,
+            request.quantity(),
+            BigDecimal.valueOf(420.69)
+        );
+
+        return createOrderWithSnapshot(order);
     }
 
     /**
@@ -95,17 +110,32 @@ public class OrderService {
     }
 
     /**
-     * Capture an initial snapshot when an order is first created.
-     * Call this from the controller after ordersRepo.save().
+     * Update an order's status and record an immutable snapshot.
+     * Both the status update and snapshot insert happen atomically:
+     * if one fails, both roll back.
      */
     @Transactional
-    public void captureInitialOrderSnapshot(Integer orderId) {
+    public OrderEntity updateOrderStatus(Integer orderId, String newStatus) {
         OrderEntity order = ordersRepo.findById(orderId)
             .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+        
+        // Capture the OLD state (before change)
         captureOrderSnapshot(order);
-        log.info("Initial snapshot captured for order {}", orderId);
+        
+        // Mutate the order
+        order.setStatus(newStatus);
+        OrderEntity updated = ordersRepo.save(order);
+        
+        // Capture the NEW state (after change)
+        captureOrderSnapshot(updated);
+        
+        log.info("Order {} status changed to {}", orderId, newStatus);
+        return updated;
     }
 
+    /**
+     * Retrieve all historical snapshots for an order in chronological order.
+     */
     public List<historicalOrdersEntity> getHistoricalOrders(Integer orderId) {
         return historicalOrdersRepo.findByOrderId_OrderIdOrderByCreatedAtAsc(orderId);
     }

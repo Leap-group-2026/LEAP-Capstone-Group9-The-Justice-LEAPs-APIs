@@ -1,22 +1,36 @@
 package main.services;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import main.repos.userRepo;
 import main.entities.userEntity; 
 import main.dto.request.userRegistrationRequest;
 import main.dto.response.userResponse;
+import main.services.EmailService;
 
 import java.security.MessageDigest;
 import java.util.Base64;
+import java.util.Random;
 
 @Service
 public class userService {
     private userRepo repo; 
-    private PasswordEncoder passwordEncoder; 
-
+    private EmailService emailService;
+    private PasswordEncoder passwordEncoder;
+    private static final Random random = new Random();
+    
     public userService(userRepo repo, PasswordEncoder passwordEncoder){
         this.repo = repo; 
+        this.passwordEncoder = passwordEncoder;
+        this.emailService = null;
+    }
+    
+    @Autowired
+    public userService(userRepo repo, EmailService emailService, PasswordEncoder passwordEncoder){
+        this.repo = repo; 
+        this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -117,5 +131,32 @@ public class userService {
         } catch (Exception e) {
             throw new RuntimeException("Error hashing SSN", e);
         }
+    }
+
+    public ResponseEntity<String> resetPassword(userResponse entity){
+        String email = entity.getEmail();
+        int rand = 100000 + random.nextInt(900000);
+        String code = Integer.toString(rand);
+        
+        userEntity user = repo.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        user.setCode(code);
+        repo.save(user);
+        
+        if (emailService != null) {
+            String emailBody = "Hello " + user.getName() + ",\n\n" +
+                "We received a request to reset your password. Please use the code below to proceed with resetting your password.\n\n" +
+                "Reset Code: " + code + "\n\n" +
+                "This code will expire in 15 minutes. If you did not request a password reset, please ignore this email.\n\n" +
+                "For security reasons, never share this code with anyone.\n\n" +
+                "Best regards,\n" +
+                "The Ribbit Trading Team";
+            
+            emailService.sendEmail(
+                email,
+                "Password Reset Request - Ribbit Trading",
+                emailBody
+            );
+        }
+        return ResponseEntity.ok("Email sent successfully");
     }
 }

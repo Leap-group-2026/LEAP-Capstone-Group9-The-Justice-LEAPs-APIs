@@ -23,4 +23,9 @@ public class userController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
+    @PostMapping("/resetpassword")
+    public ResponseEntity<String> resetPassword(@RequestBody userResponse user){
+        return service.resetPassword(user);
+    }
 }

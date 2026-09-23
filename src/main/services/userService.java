@@ -133,7 +133,7 @@ public class userService {
         }
     }
 
-    public ResponseEntity<String> resetPassword(userEntity entity){
+    public ResponseEntity<String> resetPassword(userResponse entity){
         String email = entity.getEmail();
         int rand = 100000 + random.nextInt(900000);
         String code = Integer.toString(rand);
@@ -143,10 +143,18 @@ public class userService {
         repo.save(user);
         
         if (emailService != null) {
+            String emailBody = "Hello " + user.getName() + ",\n\n" +
+                "We received a request to reset your password. Please use the code below to proceed with resetting your password.\n\n" +
+                "Reset Code: " + code + "\n\n" +
+                "This code will expire in 15 minutes. If you did not request a password reset, please ignore this email.\n\n" +
+                "For security reasons, never share this code with anyone.\n\n" +
+                "Best regards,\n" +
+                "The Ribbit Trading Team";
+            
             emailService.sendEmail(
                 email,
-                "Jello",
-                "Your reset code: " + code
+                "Password Reset Request - Ribbit Trading",
+                emailBody
             );
         }
         return ResponseEntity.ok("Email sent successfully");

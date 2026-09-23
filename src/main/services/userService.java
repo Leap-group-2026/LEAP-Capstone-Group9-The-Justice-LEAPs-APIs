@@ -1,22 +1,36 @@
 package main.services;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import main.repos.userRepo;
 import main.entities.userEntity; 
 import main.dto.request.userRegistrationRequest;
 import main.dto.response.userResponse;
+import main.services.EmailService;
 
 import java.security.MessageDigest;
 import java.util.Base64;
+import java.util.Random;
 
 @Service
 public class userService {
     private userRepo repo; 
-    private PasswordEncoder passwordEncoder; 
-
+    private EmailService emailService;
+    private PasswordEncoder passwordEncoder;
+    private static final Random random = new Random();
+    
     public userService(userRepo repo, PasswordEncoder passwordEncoder){
         this.repo = repo; 
+        this.passwordEncoder = passwordEncoder;
+        this.emailService = null;
+    }
+    
+    @Autowired
+    public userService(userRepo repo, EmailService emailService, PasswordEncoder passwordEncoder){
+        this.repo = repo; 
+        this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -117,5 +131,24 @@ public class userService {
         } catch (Exception e) {
             throw new RuntimeException("Error hashing SSN", e);
         }
+    }
+
+    public ResponseEntity<String> resetPassword(userEntity entity){
+        String email = entity.getEmail();
+        int rand = 100000 + random.nextInt(900000);
+        String code = Integer.toString(rand);
+        
+        userEntity user = repo.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        user.setCode(code);
+        repo.save(user);
+        
+        if (emailService != null) {
+            emailService.sendEmail(
+                email,
+                "Jello",
+                "Your reset code: " + code
+            );
+        }
+        return ResponseEntity.ok("Email sent successfully");
     }
 }

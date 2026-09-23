@@ -36,6 +36,9 @@ public class userEntity {
     @JsonProperty("pass_hash")
     @Column(name = "pass_hash")
     private String passHash; 
+    @JsonProperty("code")
+    @Column(name = "code")
+    private String code; 
 
     public userEntity() {
         
@@ -95,6 +98,14 @@ public class userEntity {
 
     public void setPassHash(String passHash) {
         this.passHash = passHash;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
     }
 
 }

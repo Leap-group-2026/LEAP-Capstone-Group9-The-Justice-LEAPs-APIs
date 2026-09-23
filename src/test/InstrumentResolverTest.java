@@ -6,8 +6,8 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import main.services.resolver.InstrumentResolver;
-import main.repos.instrumentRepo;
-import main.entities.instrumentEntity;
+import main.repos.InstrumentRepo;
+import main.entities.InstrumentEntity;
 import main.exception.ResourceNotFoundException;
 
 import java.util.Optional;
@@ -20,7 +20,7 @@ class InstrumentResolverTest {
     private InstrumentResolver resolver;
     
     @Mock
-    private instrumentRepo instrumentRepo;
+    private InstrumentRepo instrumentRepo;
     
     @BeforeEach
     void setUp() {
@@ -30,11 +30,11 @@ class InstrumentResolverTest {
     
     @Test
     void testResolveInstrumentSuccess() {
-        instrumentEntity instrument = new instrumentEntity();
+        InstrumentEntity instrument = new InstrumentEntity();
         instrument.setInstrumentId(100);
         when(instrumentRepo.findById(100)).thenReturn(Optional.of(instrument));
         
-        instrumentEntity result = resolver.resolve(100);
+        InstrumentEntity result = resolver.resolve(100);
         
         assertNotNull(result);
         assertEquals(100, result.getInstrumentId());

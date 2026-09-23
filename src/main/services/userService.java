@@ -4,9 +4,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import main.entities.adminEntity;
 import main.repos.userRepo;
 import main.entities.userEntity; 
 import main.dto.request.userRegistrationRequest;
+import main.dto.request.LoginRequest;
 import main.dto.response.userResponse;
 import main.services.EmailService;
 
@@ -158,5 +161,17 @@ public class userService {
             );
         }
         return ResponseEntity.ok("Email sent successfully");
+    public ResponseEntity<String> login(LoginRequest request){
+        if (!repo.existsByEmail(request.getEmail())){
+            throw new IllegalArgumentException("Email doesn't exist");
+        }
+        userEntity user = repo.findByEmail(request.getEmail()).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        boolean match = passwordEncoder.matches(request.getPassword(), user.getPassHash());
+        if(!match){
+            return ResponseEntity.badRequest().body("Wrong password");
+        }
+        else{
+            return ResponseEntity.ok("Login successful");
+        }
     }
 }

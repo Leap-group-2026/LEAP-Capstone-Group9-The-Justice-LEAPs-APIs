@@ -2,6 +2,7 @@ package main.controllers;
 
 import main.services.userService;
 import main.dto.request.userRegistrationRequest;
+import main.dto.request.LoginRequest;
 import main.dto.response.userResponse;
 import main.entities.userEntity;
 import org.springframework.http.HttpStatus;
@@ -18,7 +19,6 @@ public class userController {
 
     @PostMapping("/create")
     public ResponseEntity<userResponse> createUser(@RequestBody userRegistrationRequest request){
-        //return service.saveUser(user);
         userResponse response = service.registerUser(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -27,5 +27,11 @@ public class userController {
     @PostMapping("/resetpassword")
     public ResponseEntity<String> resetPassword(@RequestBody userResponse user){
         return service.resetPassword(user);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody LoginRequest request){
+
+        return service.login(request);
     }
 }

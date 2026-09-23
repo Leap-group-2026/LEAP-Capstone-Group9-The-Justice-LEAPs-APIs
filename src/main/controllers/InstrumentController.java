@@ -1,14 +1,14 @@
 package main.controllers;
 
 import main.services.InstrumentService;
-import main.entities.instrumentEntity;
+import main.entities.InstrumentEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/admin")
-public class instrumentController {
+public class InstrumentController {
     private InstrumentService service;
-    public instrumentController(InstrumentService service){
+    public InstrumentController(InstrumentService service){
         this.service = service;
     }
 }

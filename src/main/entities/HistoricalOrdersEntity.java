@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "historical_orders")
-public class historicalOrdersEntity {
+public class HistoricalOrdersEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer historicalOrderId;
@@ -28,7 +28,7 @@ public class historicalOrdersEntity {
     private OrderEntity orderId;
     @ManyToOne
     @JoinColumn(name = "account_id", nullable = false) 
-    private accountsEntity account;
+    private AccountsEntity account;
     @JsonProperty("order_information_json")
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "order_information_json", nullable = false)
@@ -55,11 +55,11 @@ public class historicalOrdersEntity {
         this.orderId = orderId;
     }
 
-    public accountsEntity getAccount() {
+    public AccountsEntity getAccount() {
         return account;
     }
 
-    public void setAccount(accountsEntity account) {
+    public void setAccount(AccountsEntity account) {
         this.account = account;
     }
 

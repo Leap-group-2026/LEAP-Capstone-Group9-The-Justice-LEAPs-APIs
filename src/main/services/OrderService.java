@@ -4,8 +4,8 @@ import org.springframework.stereotype.Service;
 
 import main.dto.request.CreateOrderRequest;
 import main.entities.OrderEntity;
-import main.entities.accountsEntity;
-import main.entities.instrumentEntity;
+import main.entities.AccountsEntity;
+import main.entities.InstrumentEntity;
 import main.repos.OrdersRepo;
 import main.services.validation.BuyOrderValidator;
 import main.services.calculation.OrderPriceCalculator;
@@ -32,8 +32,8 @@ public class OrderService {
     }
 
     public OrderEntity createOrder(CreateOrderRequest request) {
-        accountsEntity account = accountResolver.resolve(request.accountId());
-        instrumentEntity instrument = instrumentResolver.resolve(request.instrumentId());
+        AccountsEntity account = accountResolver.resolve(request.accountId());
+        InstrumentEntity instrument = instrumentResolver.resolve(request.instrumentId());
 
         String orderSide = request.side();
         BigDecimal totalPrice = BigDecimal.ZERO;

@@ -1,17 +1,17 @@
 package main.services;
 
 import org.springframework.stereotype.Service;
-import main.repos.instrumentRepo;
-import main.entities.instrumentEntity;
+import main.repos.InstrumentRepo;
+import main.entities.InstrumentEntity;
 
 @Service
 public class InstrumentService {
-    private instrumentRepo repo;
-    public InstrumentService(instrumentRepo repo){
+    private InstrumentRepo repo;
+    public InstrumentService(InstrumentRepo repo){
         this.repo = repo;
     }
 
-    public instrumentEntity saveInstrument(instrumentEntity entity){
+    public InstrumentEntity saveInstrument(InstrumentEntity entity) {
         return repo.save(entity);
     }
 }

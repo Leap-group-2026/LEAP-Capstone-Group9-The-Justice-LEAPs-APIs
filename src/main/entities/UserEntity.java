@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name="user_info")
-public class userEntity {
+public class UserEntity {
     @Id 
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer userId;
@@ -40,7 +40,7 @@ public class userEntity {
     @Column(name = "code")
     private String code; 
 
-    public userEntity() {
+    public UserEntity() {
         
     }
 

@@ -9,10 +9,10 @@ import main.services.OrderService;
 
 @RestController
 @RequestMapping("/orders")
-public class orderController {
+public class OrderController {
     private final OrderService orderService;
 
-    public orderController(OrderService orderService) {
+    public OrderController(OrderService orderService) {
         this.orderService = orderService;
     }
 

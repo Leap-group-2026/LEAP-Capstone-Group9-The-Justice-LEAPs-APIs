@@ -2,7 +2,7 @@ package main.repos;
 
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.JpaRepository;
-import main.entities.instrumentEntity;
+import main.entities.InstrumentEntity;
 
 @Repository
-public interface instrumentRepo extends JpaRepository<instrumentEntity, Integer>{}
+public interface InstrumentRepo extends JpaRepository<InstrumentEntity, Integer> {}

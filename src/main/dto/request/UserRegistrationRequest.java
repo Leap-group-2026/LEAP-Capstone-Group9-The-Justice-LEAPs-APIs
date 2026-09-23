@@ -1,32 +1,15 @@
-package main.dto.response;
+package main.dto.request;
 
 import java.time.LocalDate;
 
-public class userResponse {
-    private Integer userId; 
+
+public class UserRegistrationRequest {
     private String name; 
     private String email; 
     private LocalDate dateOfBirth;
     private String address; 
-
-    public userResponse() {
-    }
-    
-    public userResponse(Integer userId, String name, String email, LocalDate dateOfBirth, String address){
-        this.userId = userId;
-        this.name = name; 
-        this.email = email;
-        this.dateOfBirth = dateOfBirth; 
-        this.address = address;
-    }
-
-    public Integer getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Integer userId) {
-        this.userId = userId;
-    }
+    private String ssn; 
+    private String password; 
 
     public String getName() {
         return name;
@@ -58,5 +41,21 @@ public class userResponse {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public String getSsn() {
+        return ssn;
+    }
+
+    public void setSsn(String ssn) {
+        this.ssn = ssn;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }

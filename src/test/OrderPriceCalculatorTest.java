@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 
 import main.services.calculation.OrderPriceCalculator;
-import main.entities.instrumentEntity;
+import main.entities.InstrumentEntity;
 
 import java.math.BigDecimal;
 
@@ -21,7 +21,7 @@ class OrderPriceCalculatorTest {
 
     @Test
     void testCalculateTotalPrice() {
-        instrumentEntity instrument = new instrumentEntity();
+        InstrumentEntity instrument = new InstrumentEntity();
         instrument.setPrice(BigDecimal.valueOf(0.50));
         
         BigDecimal result = calculator.calculateOrderPrice(instrument, 100);

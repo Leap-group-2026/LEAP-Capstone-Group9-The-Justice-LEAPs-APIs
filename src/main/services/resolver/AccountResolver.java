@@ -1,7 +1,7 @@
 package main.services.resolver;
 
 import org.springframework.stereotype.Component;
-import main.entities.accountsEntity;
+import main.entities.AccountsEntity;
 import main.exception.ResourceNotFoundException;
 import main.repos.AccountsRepo;
 
@@ -14,7 +14,7 @@ public class AccountResolver {
         this.accountsRepo = accountsRepo;
     }
 
-    public accountsEntity resolve(Integer accountId) {
+    public AccountsEntity resolve(Integer accountId) {
         return accountsRepo.findById(accountId)
             .orElseThrow(() -> new ResourceNotFoundException("Account", accountId.toString()));
     }

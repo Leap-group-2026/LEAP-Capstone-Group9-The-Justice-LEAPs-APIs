@@ -7,7 +7,7 @@ import org.mockito.MockitoAnnotations;
 
 import main.services.resolver.AccountResolver;
 import main.repos.AccountsRepo;
-import main.entities.accountsEntity;
+import main.entities.AccountsEntity;
 import main.exception.ResourceNotFoundException;
 
 import java.util.Optional;
@@ -30,11 +30,11 @@ class AccountResolverTest {
     
     @Test
     void testResolveAccountSuccess() {
-        accountsEntity account = new accountsEntity();
+        AccountsEntity account = new AccountsEntity();
         account.setAccountId(1);
         when(accountsRepo.findById(1)).thenReturn(Optional.of(account));
 
-        accountsEntity result = resolver.resolve(1);
+        AccountsEntity result = resolver.resolve(1);
 
         assertNotNull(result);
         assertEquals(1, result.getAccountId());

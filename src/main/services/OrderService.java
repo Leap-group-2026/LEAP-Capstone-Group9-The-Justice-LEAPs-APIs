@@ -32,8 +32,8 @@ public class OrderService {
     }
 
     public OrderEntity createOrder(CreateOrderRequest request) {
-        accountsEntity account = accountResolver.resolve(request.accountId());
-        instrumentEntity instrument = instrumentResolver.resolve(request.instrumentId());
+        AccountsEntity account = accountResolver.resolve(request.accountId());
+        InstrumentEntity instrument = instrumentResolver.resolve(request.instrumentId());
 
         String orderSide = request.side();
         BigDecimal totalPrice = BigDecimal.ZERO;

@@ -3,13 +3,13 @@ package main.repos;
 import org.springframework.stereotype.Repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import main.entities.userEntity;
+import main.entities.UserEntity;
 import java.util.Optional;
 
 @Repository
-public interface userRepo extends JpaRepository<userEntity, Integer>{
+public interface UserRepo extends JpaRepository<UserEntity, Integer>{
     boolean existsByEmail(String email);
     boolean existsBySsnHash(String ssnHash);
 
-    Optional<userEntity> findByEmail(String email);
+    Optional<UserEntity> findByEmail(String email);
 }

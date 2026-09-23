@@ -4,10 +4,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
-import main.repos.userRepo;
-import main.entities.userEntity; 
-import main.dto.request.userRegistrationRequest;
-import main.dto.response.userResponse;
+import main.repos.UserRepo;
+import main.entities.UserEntity; 
+import main.dto.request.UserRegistrationRequest;
+import main.dto.response.UserResponse;
 import main.services.EmailService;
 
 import java.security.MessageDigest;
@@ -15,31 +15,31 @@ import java.util.Base64;
 import java.util.Random;
 
 @Service
-public class userService {
-    private userRepo repo; 
+public class UserService {
+    private UserRepo repo; 
     private EmailService emailService;
     private PasswordEncoder passwordEncoder;
     private static final Random random = new Random();
     
-    public userService(userRepo repo, PasswordEncoder passwordEncoder){
+    public UserService(UserRepo repo, PasswordEncoder passwordEncoder){
         this.repo = repo; 
         this.passwordEncoder = passwordEncoder;
         this.emailService = null;
     }
     
     @Autowired
-    public userService(userRepo repo, EmailService emailService, PasswordEncoder passwordEncoder){
+    public UserService(UserRepo repo, EmailService emailService, PasswordEncoder passwordEncoder){
         this.repo = repo; 
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
     }
 
     /* 
-    public userEntity saveUser(userEntity entity){
+    public UserEntity saveUser(UserEntity entity){
         return repo.save(entity);
     }*/
 
-    public userResponse registerUser(userRegistrationRequest request){
+    public UserResponse registerUser(UserRegistrationRequest request){
         validateRequired(request);
         
         String email = request.getEmail().trim().toLowerCase();
@@ -56,7 +56,7 @@ public class userService {
             throw new IllegalArgumentException("SSN already exists.");
         }
 
-        userEntity user = new userEntity(); 
+        UserEntity user = new UserEntity(); 
 
         user.setName(request.getName().trim());
         user.setEmail(request.getEmail().trim());
@@ -65,9 +65,9 @@ public class userService {
         user.setSsnHash(ssnHash);
         user.setPassHash(passwordEncoder.encode(request.getPassword()));
 
-        userEntity savedUser = repo.save(user);
+        UserEntity savedUser = repo.save(user);
 
-        return new userResponse(
+        return new UserResponse(
             savedUser.getUserId(),
             savedUser.getName(),
             savedUser.getEmail(),
@@ -78,7 +78,7 @@ public class userService {
 
 
     // Ensures all fields are filled. 
-    public void validateRequired(userRegistrationRequest request){
+    public void validateRequired(UserRegistrationRequest request){
         if (request.getName() == null || request.getName().isBlank()){
             throw new IllegalArgumentException("Name is Required");
         }
@@ -133,12 +133,12 @@ public class userService {
         }
     }
 
-    public ResponseEntity<String> resetPassword(userResponse entity){
+    public ResponseEntity<String> resetPassword(UserResponse entity){
         String email = entity.getEmail();
         int rand = 100000 + random.nextInt(900000);
         String code = Integer.toString(rand);
         
-        userEntity user = repo.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        UserEntity user = repo.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
         user.setCode(code);
         repo.save(user);
         

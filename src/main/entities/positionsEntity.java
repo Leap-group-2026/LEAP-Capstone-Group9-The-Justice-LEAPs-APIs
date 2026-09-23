@@ -9,8 +9,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Column;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import main.entities.accountsEntity;
-import main.entities.instrumentEntity;
+import main.entities.AccountsEntity;
+import main.entities.InstrumentEntity;
 import java.math.BigDecimal;
 
 
@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "positions")
-public class positionsEntity {
+public class PositionsEntity {
     @Id
     @GeneratedValue (strategy = GenerationType.IDENTITY)
     private Integer positionId;
@@ -26,7 +26,7 @@ public class positionsEntity {
     @ManyToOne
     @JoinColumn(name = "account_id", nullable = false)
     @JsonProperty("account")
-    private accountsEntity account;
+    private AccountsEntity account;
 
     @JsonProperty("quantity")
     @Column(name = "quantity")
@@ -35,7 +35,7 @@ public class positionsEntity {
     @ManyToOne
     @JoinColumn(name = "instrument_id", nullable = false)
     @JsonProperty("instrument")
-    private instrumentEntity instrument;
+    private InstrumentEntity instrument;
 
     @JsonProperty("opened_at")
     @Column(name = "opened_at")
@@ -61,11 +61,11 @@ public class positionsEntity {
         this.positionId = positionId;
     }
 
-    public accountsEntity getAccountId() {
+    public AccountsEntity getAccountId() {
         return account;
     }
 
-    public void setAccountId(accountsEntity account) {
+    public void setAccountId(AccountsEntity account) {
         this.account = account;
     }
 
@@ -77,11 +77,11 @@ public class positionsEntity {
         this.quantity = quantity;
     }
 
-    public instrumentEntity getInstrumentId() {
+    public InstrumentEntity getInstrumentId() {
         return instrument;
     }
 
-    public void setInstrumentId(instrumentEntity instrument) {
+    public void setInstrumentId(InstrumentEntity instrument) {
         this.instrument = instrument;
     }
 

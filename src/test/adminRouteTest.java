@@ -10,15 +10,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import main.controllers.adminController;
+import main.controllers.AdminController;
 import main.Application;
-import main.entities.adminEntity;
+import main.entities.AdminEntity;
 import main.repos.AdminRepo;
 
 @SpringBootTest(classes = Application.class)
 @AutoConfigureMockMvc
 @Transactional
-public class adminRouteTest {
+public class AdminRouteTest {
     @Autowired 
     MockMvc mockMvc;
     @Autowired
@@ -28,7 +28,7 @@ public class adminRouteTest {
 
     @Test 
     public void loginSuccess() throws Exception {
-        adminEntity testAdmin = new adminEntity();
+        AdminEntity testAdmin = new AdminEntity();
         testAdmin.setUsername("aryann");
         testAdmin.setPassHash(passwordEncoder.encode("secret"));
         adminRepo.save(testAdmin);

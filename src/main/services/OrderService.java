@@ -4,8 +4,8 @@ import org.springframework.stereotype.Service;
 
 import main.dto.request.CreateOrderRequest;
 import main.entities.OrderEntity;
-import main.entities.accountsEntity;
-import main.entities.instrumentEntity;
+import main.entities.AccountsEntity;
+import main.entities.InstrumentEntity;
 import main.repos.OrdersRepo;
 import main.services.validation.BuyOrderValidator;
 import main.services.calculation.OrderPriceCalculator;

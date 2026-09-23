@@ -2,7 +2,7 @@ package main.repos;
 
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.JpaRepository;
-import main.entities.transactionsEntity;
+import main.entities.TransactionsEntity;
 
 @Repository
-public interface transactionsRepo extends JpaRepository<transactionsEntity, Integer>{}
+public interface TransactionsRepo extends JpaRepository<TransactionsEntity, Integer>{}

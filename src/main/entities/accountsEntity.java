@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "accounts")
-public class accountsEntity {
+public class AccountsEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,7 +26,7 @@ public class accountsEntity {
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     @JsonProperty("user")
-    private userEntity user;
+    private UserEntity user;
 
     @JsonProperty("balance")
     @Column(name = "balance")
@@ -54,11 +54,11 @@ public class accountsEntity {
         this.accountId = accountId;
     }
 
-    public userEntity getUserId() {
+    public UserEntity getUserId() {
         return user;
     }
 
-    public void setUserId(userEntity user) {
+    public void setUserId(UserEntity user) {
         this.user = user;
     }
 

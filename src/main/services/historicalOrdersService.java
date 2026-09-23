@@ -1,17 +1,17 @@
 package main.services;
 
 import org.springframework.stereotype.Service;
-import main.repos.historicalOrdersRepo;
-import main.entities.historicalOrdersEntity;
+import main.repos.HistoricalOrdersRepo;
+import main.entities.HistoricalOrdersEntity;
 
 @Service
-public class historicalOrdersService {
-    private historicalOrdersRepo repo;
-    public historicalOrdersService(historicalOrdersRepo repo){
+public class HistoricalOrdersService {
+    private HistoricalOrdersRepo repo;
+    public HistoricalOrdersService(HistoricalOrdersRepo repo){
         this.repo = repo;
     }
 
-    public historicalOrdersEntity saveHistoricalOrder(historicalOrdersEntity entity){
+    public HistoricalOrdersEntity saveHistoricalOrder(HistoricalOrdersEntity entity){
         return repo.save(entity);
     }
 }

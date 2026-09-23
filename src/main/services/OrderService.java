@@ -4,11 +4,11 @@ import org.springframework.stereotype.Service;
 
 import main.dto.request.CreateOrderRequest;
 import main.entities.OrderEntity;
-import main.entities.accountsEntity;
-import main.entities.instrumentEntity;
+import main.entities.AccountsEntity;
+import main.entities.InstrumentEntity;
 import main.repos.OrdersRepo;
 import main.repos.AccountsRepo;
-import main.repos.instrumentRepo;
+import main.repos.InstrumentRepo;
 
 // TODO: delete import after implementing order total calculation
 import java.math.BigDecimal;
@@ -17,9 +17,9 @@ import java.math.BigDecimal;
 public class OrderService {
     private final OrdersRepo ordersRepo;
     private final AccountsRepo accountsRepo;
-    private final instrumentRepo instrumentRepo;
+    private final InstrumentRepo instrumentRepo;
 
-    public OrderService(OrdersRepo ordersRepo, AccountsRepo accountsRepo, instrumentRepo instrumentRepo) {
+    public OrderService(OrdersRepo ordersRepo, AccountsRepo accountsRepo, InstrumentRepo instrumentRepo) {
         this.ordersRepo = ordersRepo;
         this.accountsRepo = accountsRepo;
         this.instrumentRepo = instrumentRepo;
@@ -27,10 +27,10 @@ public class OrderService {
 
     public OrderEntity createOrder(CreateOrderRequest request) {
         // TODO: separate this out to different methods and create custom exceptions
-        accountsEntity account = accountsRepo.findById(request.accountId())
+        AccountsEntity account = accountsRepo.findById(request.accountId())
             .orElseThrow(() -> new IllegalArgumentException("Account not found"));
 
-        instrumentEntity instrument = instrumentRepo.findById(request.instrumentId())
+        InstrumentEntity instrument = instrumentRepo.findById(request.instrumentId())
             .orElseThrow(() -> new IllegalArgumentException("Instrument not found"));
 
         // TODO: add validation later on before creating entities

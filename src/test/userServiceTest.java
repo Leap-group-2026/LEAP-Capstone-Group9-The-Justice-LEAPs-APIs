@@ -5,11 +5,11 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import main.services.userService;
-import main.repos.userRepo;
-import main.entities.userEntity;
-import main.dto.request.userRegistrationRequest;
-import main.dto.response.userResponse;
+import main.services.UserService;
+import main.repos.UserRepo;
+import main.entities.UserEntity;
+import main.dto.request.UserRegistrationRequest;
+import main.dto.response.UserResponse;
 
 import java.time.LocalDate;
 import java.security.MessageDigest;
@@ -19,12 +19,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @DisplayName("User Service Tests")
-public class userServiceTest {
+public class UserServiceTest {
 
-    private userService service;
+    private UserService service;
 
     @Mock
-    private userRepo mockUserRepo;
+    private UserRepo mockUserRepo;
 
     @Mock
     private PasswordEncoder mockPasswordEncoder;
@@ -32,7 +32,7 @@ public class userServiceTest {
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new userService(mockUserRepo, mockPasswordEncoder);
+        service = new UserService(mockUserRepo, mockPasswordEncoder);
     }
 
     // Helper method to generate SHA-256 hash (matches service implementation)
@@ -51,7 +51,7 @@ public class userServiceTest {
     @DisplayName("Valid registration creates user successfully")
     public void testValidRegistration() {
         // Arrange
-        userRegistrationRequest request = new userRegistrationRequest();
+        UserRegistrationRequest request = new UserRegistrationRequest();
         request.setName("John Doe");
         request.setEmail("john@example.com");
         request.setDateOfBirth(LocalDate.of(1990, 1, 1));
@@ -64,7 +64,7 @@ public class userServiceTest {
         when(mockUserRepo.existsBySsnHash(ssnHash)).thenReturn(false);
         when(mockPasswordEncoder.encode("SecurePass@123#")).thenReturn("hashed_password");
 
-        userEntity savedUser = new userEntity();
+        UserEntity savedUser = new UserEntity();
         savedUser.setUserId(1);
         savedUser.setName("John Doe");
         savedUser.setEmail("john@example.com");
@@ -73,17 +73,17 @@ public class userServiceTest {
         savedUser.setSsnHash(ssnHash);
         savedUser.setPassHash("hashed_password");
 
-        when(mockUserRepo.save(any(userEntity.class))).thenReturn(savedUser);
+        when(mockUserRepo.save(any(UserEntity.class))).thenReturn(savedUser);
 
         // Act
-        userResponse response = service.registerUser(request);
+        UserResponse response = service.registerUser(request);
 
         // Assert
         assertNotNull(response);
         assertEquals(1, response.getUserId());
         assertEquals("John Doe", response.getName());
         assertEquals("john@example.com", response.getEmail());
-        verify(mockUserRepo, times(1)).save(any(userEntity.class));
+        verify(mockUserRepo, times(1)).save(any(UserEntity.class));
     }
 
     // checks response
@@ -91,7 +91,7 @@ public class userServiceTest {
     @DisplayName("Successful registration returns safe response without password/SSN")
     public void testSuccessfulRegistrationReturnsSafeResponse() {
         // Arrange
-        userRegistrationRequest request = new userRegistrationRequest();
+        UserRegistrationRequest request = new UserRegistrationRequest();
         request.setName("Jane Smith");
         request.setEmail("jane@example.com");
         request.setDateOfBirth(LocalDate.of(1985, 5, 15));
@@ -104,7 +104,7 @@ public class userServiceTest {
         when(mockUserRepo.existsBySsnHash(ssnHash2)).thenReturn(false);
         when(mockPasswordEncoder.encode("AnotherSecure@Pass1!")).thenReturn("hashed_password_2");
 
-        userEntity savedUser = new userEntity();
+        UserEntity savedUser = new UserEntity();
         savedUser.setUserId(2);
         savedUser.setName("Jane Smith");
         savedUser.setEmail("jane@example.com");
@@ -113,10 +113,10 @@ public class userServiceTest {
         savedUser.setSsnHash(ssnHash2);
         savedUser.setPassHash("hashed_password_2");
 
-        when(mockUserRepo.save(any(userEntity.class))).thenReturn(savedUser);
+        when(mockUserRepo.save(any(UserEntity.class))).thenReturn(savedUser);
 
         // Act
-        userResponse response = service.registerUser(request);
+        UserResponse response = service.registerUser(request);
 
         // Assert
         assertNotNull(response);
@@ -136,7 +136,7 @@ public class userServiceTest {
     @DisplayName("Registration fails when name is missing")
     public void testMissingName() {
         // Arrange
-        userRegistrationRequest request = new userRegistrationRequest();
+        UserRegistrationRequest request = new UserRegistrationRequest();
         request.setName(null);
         request.setEmail("test@example.com");
         request.setDateOfBirth(LocalDate.of(1990, 1, 1));
@@ -155,7 +155,7 @@ public class userServiceTest {
     @DisplayName("Registration fails when name is empty")
     public void testEmptyName() {
         // Arrange
-        userRegistrationRequest request = new userRegistrationRequest();
+        UserRegistrationRequest request = new UserRegistrationRequest();
         request.setName("   ");
         request.setEmail("test@example.com");
         request.setDateOfBirth(LocalDate.of(1990, 1, 1));
@@ -174,7 +174,7 @@ public class userServiceTest {
     @DisplayName("Registration fails when email is missing")
     public void testMissingEmail() {
         // Arrange
-        userRegistrationRequest request = new userRegistrationRequest();
+        UserRegistrationRequest request = new UserRegistrationRequest();
         request.setName("John Doe");
         request.setEmail(null);
         request.setDateOfBirth(LocalDate.of(1990, 1, 1));
@@ -193,7 +193,7 @@ public class userServiceTest {
     @DisplayName("Registration fails when address is missing")
     public void testMissingAddress() {
         // Arrange
-        userRegistrationRequest request = new userRegistrationRequest();
+        UserRegistrationRequest request = new UserRegistrationRequest();
         request.setName("John Doe");
         request.setEmail("john@example.com");
         request.setDateOfBirth(LocalDate.of(1990, 1, 1));
@@ -212,7 +212,7 @@ public class userServiceTest {
     @DisplayName("Registration fails when SSN is missing")
     public void testMissingSSN() {
         // Arrange
-        userRegistrationRequest request = new userRegistrationRequest();
+        UserRegistrationRequest request = new UserRegistrationRequest();
         request.setName("John Doe");
         request.setEmail("john@example.com");
         request.setDateOfBirth(LocalDate.of(1990, 1, 1));
@@ -231,7 +231,7 @@ public class userServiceTest {
     @DisplayName("Registration fails when password is missing")
     public void testMissingPassword() {
         // Arrange
-        userRegistrationRequest request = new userRegistrationRequest();
+        UserRegistrationRequest request = new UserRegistrationRequest();
         request.setName("John Doe");
         request.setEmail("john@example.com");
         request.setDateOfBirth(LocalDate.of(1990, 1, 1));
@@ -250,7 +250,7 @@ public class userServiceTest {
     @DisplayName("Registration fails when date of birth is missing")
     public void testMissingDateOfBirth() {
         // Arrange
-        userRegistrationRequest request = new userRegistrationRequest();
+        UserRegistrationRequest request = new UserRegistrationRequest();
         request.setName("John Doe");
         request.setEmail("john@example.com");
         request.setDateOfBirth(null);
@@ -270,7 +270,7 @@ public class userServiceTest {
     @DisplayName("Password rejected when less than 12 characters")
     public void testPasswordTooShort() {
         // Arrange
-        userRegistrationRequest request = new userRegistrationRequest();
+        UserRegistrationRequest request = new UserRegistrationRequest();
         request.setName("John Doe");
         request.setEmail("john@example.com");
         request.setDateOfBirth(LocalDate.of(1990, 1, 1));
@@ -291,7 +291,7 @@ public class userServiceTest {
     @DisplayName("Password rejected when less than 2 uppercase characters")
     public void testPasswordInsufficientUppercase() {
         // Arrange
-        userRegistrationRequest request = new userRegistrationRequest();
+        UserRegistrationRequest request = new UserRegistrationRequest();
         request.setName("John Doe");
         request.setEmail("john@example.com");
         request.setDateOfBirth(LocalDate.of(1990, 1, 1));
@@ -312,7 +312,7 @@ public class userServiceTest {
     @DisplayName("Password rejected when less than 2 special characters")
     public void testPasswordInsufficientSpecial() {
         // Arrange
-        userRegistrationRequest request = new userRegistrationRequest();
+        UserRegistrationRequest request = new UserRegistrationRequest();
         request.setName("John Doe");
         request.setEmail("john@example.com");
         request.setDateOfBirth(LocalDate.of(1990, 1, 1));
@@ -333,7 +333,7 @@ public class userServiceTest {
     @DisplayName("Password rejected when contains underscore")
     public void testPasswordContainsUnderscore() {
         // Arrange
-        userRegistrationRequest request = new userRegistrationRequest();
+        UserRegistrationRequest request = new UserRegistrationRequest();
         request.setName("John Doe");
         request.setEmail("john@example.com");
         request.setDateOfBirth(LocalDate.of(1990, 1, 1));
@@ -354,7 +354,7 @@ public class userServiceTest {
     @DisplayName("Password accepted with exactly 2 uppercase and 2 special characters")
     public void testPasswordMeetsRequirements() {
         // Arrange
-        userRegistrationRequest request = new userRegistrationRequest();
+        UserRegistrationRequest request = new UserRegistrationRequest();
         request.setName("John Doe");
         request.setEmail("john@example.com");
         request.setDateOfBirth(LocalDate.of(1990, 1, 1));
@@ -367,7 +367,7 @@ public class userServiceTest {
         when(mockUserRepo.existsBySsnHash(ssnHashPass)).thenReturn(false);
         when(mockPasswordEncoder.encode("GoodPass@123!")).thenReturn("hashed_password");
 
-        userEntity savedUser = new userEntity();
+        UserEntity savedUser = new UserEntity();
         savedUser.setUserId(1);
         savedUser.setName("John Doe");
         savedUser.setEmail("john@example.com");
@@ -376,14 +376,14 @@ public class userServiceTest {
         savedUser.setSsnHash(ssnHashPass);
         savedUser.setPassHash("hashed_password");
 
-        when(mockUserRepo.save(any(userEntity.class))).thenReturn(savedUser);
+        when(mockUserRepo.save(any(UserEntity.class))).thenReturn(savedUser);
 
         // Act
-        userResponse response = service.registerUser(request);
+        UserResponse response = service.registerUser(request);
 
         // Assert
         assertNotNull(response);
-        verify(mockUserRepo, times(1)).save(any(userEntity.class));
+        verify(mockUserRepo, times(1)).save(any(UserEntity.class));
     }
 
     // checks when email or ssn already exists
@@ -391,7 +391,7 @@ public class userServiceTest {
     @DisplayName("Registration fails when email already exists")
     public void testEmailAlreadyExists() {
         // Arrange
-        userRegistrationRequest request = new userRegistrationRequest();
+        UserRegistrationRequest request = new UserRegistrationRequest();
         request.setName("John Doe");
         request.setEmail("existing@example.com");
         request.setDateOfBirth(LocalDate.of(1990, 1, 1));
@@ -412,7 +412,7 @@ public class userServiceTest {
     @DisplayName("Registration fails when SSN already exists")
     public void testSSNAlreadyExists() {
         // Arrange
-        userRegistrationRequest request = new userRegistrationRequest();
+        UserRegistrationRequest request = new UserRegistrationRequest();
         request.setName("John Doe");
         request.setEmail("john@example.com");
         request.setDateOfBirth(LocalDate.of(1990, 1, 1));
@@ -436,7 +436,7 @@ public class userServiceTest {
     @DisplayName("SSN is hashed before storage")
     public void testSSNHashedBeforeStorage() {
         // Arrange
-        userRegistrationRequest request = new userRegistrationRequest();
+        UserRegistrationRequest request = new UserRegistrationRequest();
         request.setName("John Doe");
         request.setEmail("john@example.com");
         request.setDateOfBirth(LocalDate.of(1990, 1, 1));
@@ -449,7 +449,7 @@ public class userServiceTest {
         when(mockUserRepo.existsBySsnHash(ssnHashTest)).thenReturn(false);
         when(mockPasswordEncoder.encode("SecurePass@123#")).thenReturn("hashed_password");
 
-        userEntity savedUser = new userEntity();
+        UserEntity savedUser = new UserEntity();
         savedUser.setUserId(1);
         savedUser.setName("John Doe");
         savedUser.setEmail("john@example.com");
@@ -458,7 +458,7 @@ public class userServiceTest {
         savedUser.setSsnHash(ssnHashTest);
         savedUser.setPassHash("hashed_password");
 
-        when(mockUserRepo.save(any(userEntity.class))).thenReturn(savedUser);
+        when(mockUserRepo.save(any(UserEntity.class))).thenReturn(savedUser);
 
         // Act
         service.registerUser(request);
@@ -471,7 +471,7 @@ public class userServiceTest {
     @DisplayName("Password is hashed before storage")
     public void testPasswordHashedBeforeStorage() {
         // Arrange
-        userRegistrationRequest request = new userRegistrationRequest();
+        UserRegistrationRequest request = new UserRegistrationRequest();
         request.setName("John Doe");
         request.setEmail("john@example.com");
         request.setDateOfBirth(LocalDate.of(1990, 1, 1));
@@ -484,7 +484,7 @@ public class userServiceTest {
         when(mockUserRepo.existsBySsnHash(ssnHashPwd)).thenReturn(false);
         when(mockPasswordEncoder.encode("SecurePass@123#")).thenReturn("hashed_password");
 
-        userEntity savedUser = new userEntity();
+        UserEntity savedUser = new UserEntity();
         savedUser.setUserId(1);
         savedUser.setName("John Doe");
         savedUser.setEmail("john@example.com");
@@ -493,7 +493,7 @@ public class userServiceTest {
         savedUser.setSsnHash(ssnHashPwd);
         savedUser.setPassHash("hashed_password");
 
-        when(mockUserRepo.save(any(userEntity.class))).thenReturn(savedUser);
+        when(mockUserRepo.save(any(UserEntity.class))).thenReturn(savedUser);
 
         // Act
         service.registerUser(request);
@@ -506,7 +506,7 @@ public class userServiceTest {
     @DisplayName("Verify email is case-insensitive and trimmed")
     public void testEmailNormalizedBeforeCheck() {
         // Arrange
-        userRegistrationRequest request = new userRegistrationRequest();
+        UserRegistrationRequest request = new UserRegistrationRequest();
         request.setName("John Doe");
         request.setEmail("  JOHN@EXAMPLE.COM  ");
         request.setDateOfBirth(LocalDate.of(1990, 1, 1));
@@ -519,7 +519,7 @@ public class userServiceTest {
         when(mockUserRepo.existsBySsnHash(ssnHashEmail)).thenReturn(false);
         when(mockPasswordEncoder.encode("SecurePass@123#")).thenReturn("hashed_password");
 
-        userEntity savedUser = new userEntity();
+        UserEntity savedUser = new UserEntity();
         savedUser.setUserId(1);
         savedUser.setName("John Doe");
         savedUser.setEmail("john@example.com");
@@ -528,10 +528,10 @@ public class userServiceTest {
         savedUser.setSsnHash(ssnHashEmail);
         savedUser.setPassHash("hashed_password");
 
-        when(mockUserRepo.save(any(userEntity.class))).thenReturn(savedUser);
+        when(mockUserRepo.save(any(UserEntity.class))).thenReturn(savedUser);
 
         // Act
-        userResponse response = service.registerUser(request);
+        UserResponse response = service.registerUser(request);
 
         // Assert
         assertNotNull(response);

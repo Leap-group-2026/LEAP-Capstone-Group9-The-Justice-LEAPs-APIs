@@ -3,7 +3,7 @@ package main.dto.request;
 import java.time.LocalDate;
 
 
-public class userRegistrationRequest {
+public class UserRegistrationRequest {
     private String name; 
     private String email; 
     private LocalDate dateOfBirth;

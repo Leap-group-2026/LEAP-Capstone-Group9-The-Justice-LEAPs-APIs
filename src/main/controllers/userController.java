@@ -1,31 +1,31 @@
 package main.controllers;
 
-import main.services.userService;
-import main.dto.request.userRegistrationRequest;
-import main.dto.response.userResponse;
-import main.entities.userEntity;
+import main.services.UserService;
+import main.dto.request.UserRegistrationRequest;
+import main.dto.response.UserResponse;
+import main.entities.UserEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController 
 @RequestMapping("/user")
-public class userController {
-    private userService service; 
-    public userController(userService service){
+public class UserController {
+    private UserService service; 
+    public UserController(UserService service){
         this.service = service; 
     }
 
     @PostMapping("/create")
-    public ResponseEntity<userResponse> createUser(@RequestBody userRegistrationRequest request){
+    public ResponseEntity<UserResponse> createUser(@RequestBody UserRegistrationRequest request){
         //return service.saveUser(user);
-        userResponse response = service.registerUser(request);
+        UserResponse response = service.registerUser(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/resetpassword")
-    public ResponseEntity<String> resetPassword(@RequestBody userResponse user){
+    public ResponseEntity<String> resetPassword(@RequestBody UserResponse user){
         return service.resetPassword(user);
     }
 }

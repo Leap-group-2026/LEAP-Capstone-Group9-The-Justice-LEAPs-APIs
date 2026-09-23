@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "instruments")
-public class instrumentEntity {
+public class InstrumentEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer instrumentId;

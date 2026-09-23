@@ -2,17 +2,17 @@ package main.dto.response;
 
 import java.time.LocalDate;
 
-public class userResponse {
+public class UserResponse {
     private Integer userId; 
     private String name; 
     private String email; 
     private LocalDate dateOfBirth;
     private String address; 
 
-    public userResponse() {
+    public UserResponse() {
     }
     
-    public userResponse(Integer userId, String name, String email, LocalDate dateOfBirth, String address){
+    public UserResponse(Integer userId, String name, String email, LocalDate dateOfBirth, String address){
         this.userId = userId;
         this.name = name; 
         this.email = email;

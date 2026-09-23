@@ -1,16 +1,16 @@
 package main.services;
 
 import org.springframework.stereotype.Service;
-import main.repos.transactionsRepo;
-import main.entities.transactionsEntity;
+import main.repos.TransactionsRepo;
+import main.entities.TransactionsEntity;
 
 @Service 
-public class transactionsService {
-    private transactionsRepo repo;
-    public transactionsService(transactionsRepo repo) {
+public class TransactionsService {
+    private TransactionsRepo repo;
+    public TransactionsService(TransactionsRepo repo) {
         this.repo = repo;
     }
-    public transactionsEntity saveTransaction(transactionsEntity entity) {
+    public TransactionsEntity saveTransaction(TransactionsEntity entity) {
         return repo.save(entity);
     }
 }

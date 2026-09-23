@@ -12,13 +12,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import main.Application;
-import main.entities.accountsEntity;
-import main.entities.instrumentEntity;
-import main.entities.userEntity;
+import main.entities.AccountsEntity;
+import main.entities.InstrumentEntity;
+import main.entities.UserEntity;
 import main.entities.PortfolioSize;
 import main.repos.AccountsRepo;
-import main.repos.instrumentRepo;
-import main.repos.userRepo;
+import main.repos.InstrumentRepo;
+import main.repos.UserRepo;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -35,17 +35,17 @@ public class OrderControllerTest {
     private AccountsRepo accountsRepo;
 
     @Autowired
-    private instrumentRepo instrumentRepo;
+    private InstrumentRepo instrumentRepo;
 
     @Autowired
-    private userRepo userRepo;
+    private UserRepo userRepo;
 
-    private accountsEntity testAccount;
-    private instrumentEntity testInstrument;
+    private AccountsEntity testAccount;
+    private InstrumentEntity testInstrument;
 
     @BeforeEach
     void setUp() {
-        userEntity testUser = new userEntity();
+        UserEntity testUser = new UserEntity();
         testUser.setName("testuser");
         testUser.setEmail("test@example.com");
         testUser.setDateOfBirth(LocalDate.of(1990, 1, 15));
@@ -54,14 +54,14 @@ public class OrderControllerTest {
         testUser.setPassHash("pass_hash_value");
         testUser = userRepo.save(testUser);
 
-        testAccount = new accountsEntity();
+        testAccount = new AccountsEntity();
         testAccount.setUserId(testUser);
         testAccount.setBalance(BigDecimal.valueOf(10000.00));
         testAccount.setPortfolioSize(PortfolioSize.BALANCED);
         testAccount.setTradeType("ACTIVE");
         testAccount = accountsRepo.save(testAccount);
 
-        testInstrument = new instrumentEntity();
+        testInstrument = new InstrumentEntity();
         testInstrument.setTicker("AAPL");
         testInstrument.setAssetType("STOCK");
         testInstrument.setAssetName("Apple Inc.");

@@ -12,6 +12,9 @@ public class HistoricalOrdersService {
     }
 
     public HistoricalOrdersEntity saveHistoricalOrder(HistoricalOrdersEntity entity){
-        return repo.save(entity);
+        Integer orderId = entity.getOrderId() != null ? entity.getOrderId().getOrderId() : null;
+        Integer accountId = entity.getAccount() != null ? entity.getAccount().getAccountId() : null;
+        repo.insert(orderId, accountId, entity.getOrderInformationJson(), entity.getCreatedAt());
+        return entity;
     }
 }

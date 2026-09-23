@@ -6,8 +6,6 @@ import main.entities.AccountsEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.transaction.Transactional;
-
 @RestController
 @RequestMapping("/accounts")
 public class AccountController {

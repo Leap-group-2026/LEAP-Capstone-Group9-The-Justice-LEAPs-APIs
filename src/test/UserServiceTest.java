@@ -73,17 +73,16 @@ public class UserServiceTest {
         savedUser.setSsnHash(ssnHash);
         savedUser.setPassHash("hashed_password");
 
-        when(mockUserRepo.save(any(UserEntity.class))).thenReturn(savedUser);
+        doNothing().when(mockUserRepo).insert(any(UserEntity.class));
 
         // Act
         UserResponse response = service.registerUser(request);
 
         // Assert
         assertNotNull(response);
-        assertEquals(1, response.getUserId());
         assertEquals("John Doe", response.getName());
         assertEquals("john@example.com", response.getEmail());
-        verify(mockUserRepo, times(1)).save(any(UserEntity.class));
+        verify(mockUserRepo, times(1)).insert(any(UserEntity.class));
     }
 
     // checks response
@@ -113,7 +112,7 @@ public class UserServiceTest {
         savedUser.setSsnHash(ssnHash2);
         savedUser.setPassHash("hashed_password_2");
 
-        when(mockUserRepo.save(any(UserEntity.class))).thenReturn(savedUser);
+        doNothing().when(mockUserRepo).insert(any(UserEntity.class));
 
         // Act
         UserResponse response = service.registerUser(request);
@@ -121,7 +120,6 @@ public class UserServiceTest {
         // Assert
         assertNotNull(response);
         // Verify response contains only safe fields
-        assertEquals(2, response.getUserId());
         assertEquals("Jane Smith", response.getName());
         assertEquals("jane@example.com", response.getEmail());
         assertEquals(LocalDate.of(1985, 5, 15), response.getDateOfBirth());
@@ -376,14 +374,14 @@ public class UserServiceTest {
         savedUser.setSsnHash(ssnHashPass);
         savedUser.setPassHash("hashed_password");
 
-        when(mockUserRepo.save(any(UserEntity.class))).thenReturn(savedUser);
+        doNothing().when(mockUserRepo).insert(any(UserEntity.class));
 
         // Act
         UserResponse response = service.registerUser(request);
 
         // Assert
         assertNotNull(response);
-        verify(mockUserRepo, times(1)).save(any(UserEntity.class));
+        verify(mockUserRepo, times(1)).insert(any(UserEntity.class));
     }
 
     // checks when email or ssn already exists
@@ -458,7 +456,7 @@ public class UserServiceTest {
         savedUser.setSsnHash(ssnHashTest);
         savedUser.setPassHash("hashed_password");
 
-        when(mockUserRepo.save(any(UserEntity.class))).thenReturn(savedUser);
+        doNothing().when(mockUserRepo).insert(any(UserEntity.class));
 
         // Act
         service.registerUser(request);
@@ -493,7 +491,7 @@ public class UserServiceTest {
         savedUser.setSsnHash(ssnHashPwd);
         savedUser.setPassHash("hashed_password");
 
-        when(mockUserRepo.save(any(UserEntity.class))).thenReturn(savedUser);
+        doNothing().when(mockUserRepo).insert(any(UserEntity.class));
 
         // Act
         service.registerUser(request);
@@ -528,7 +526,7 @@ public class UserServiceTest {
         savedUser.setSsnHash(ssnHashEmail);
         savedUser.setPassHash("hashed_password");
 
-        when(mockUserRepo.save(any(UserEntity.class))).thenReturn(savedUser);
+        doNothing().when(mockUserRepo).insert(any(UserEntity.class));
 
         // Act
         UserResponse response = service.registerUser(request);

@@ -3,9 +3,9 @@ package main.entities;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum PortfolioSize {
-    LOW("Low"),
-    BALANCED("Balanced"),
-    HIGH("High");
+    LOW("LOW"),
+    BALANCED("BALANCED"),
+    HIGH("HIGH");
 
     @JsonValue
     private final String value;
@@ -20,7 +20,7 @@ public enum PortfolioSize {
 
     public static PortfolioSize fromValue(String value) {
         for (PortfolioSize ps : PortfolioSize.values()) {
-            if (ps.value.equals(value)) {
+            if (ps.value.equalsIgnoreCase(value)) {
                 return ps;
             }
         }

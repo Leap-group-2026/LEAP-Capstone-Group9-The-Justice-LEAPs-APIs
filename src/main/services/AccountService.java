@@ -21,14 +21,12 @@ public class AccountService {
     }
 
     public AccountsEntity saveAccount(AccountsEntity entity) {
-        // Fetch the user from database to ensure it's a managed entity
-        if (entity.getUserId() != null && entity.getUserId().getUserId() != null) {
-            UserEntity managedUser = userRepository.findById(entity.getUserId().getUserId()).orElse(null);
-            if (managedUser != null) {
-                entity.setUserId(managedUser);
-            }
-        }
-        return repo.save(entity);
+        // Extract user ID
+        Integer userId = entity.getUserId() != null ? entity.getUserId().getUserId() : null;
+        String portfolioSize = entity.getPortfolioSize() != null ? entity.getPortfolioSize().getValue() : null;
+        
+        repo.insert(userId, entity.getBalance(), portfolioSize, entity.getTradeType(), entity.getCreatedAt());
+        return entity;
     }
     
 }

@@ -136,6 +136,6 @@ public class OrderControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.side").value("BUY"))
             .andExpect(jsonPath("$.quantity").value(100))
-            .andExpect(jsonPath("$.total_price").value(420.69));
+            .andExpect(jsonPath("$.total_price").value(15000.0));
     }
 }

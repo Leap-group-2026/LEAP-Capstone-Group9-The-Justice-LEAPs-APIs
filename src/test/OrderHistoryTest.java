@@ -92,10 +92,10 @@ public class OrderHistoryTest {
         testInstrument.setCurrency("USD");
         instrumentRepo.save(testInstrument);
         
-        // Create a test order
+        // Create a test order (and capture initial snapshot)
         testOrder = new OrderEntity("BUY", testAccount, testInstrument, 100, new BigDecimal("15000.00"));
         testOrder.setStatus("PENDING");
-        ordersRepo.save(testOrder);
+        testOrder = orderService.createOrderWithSnapshot(testOrder);  // ← Now captures initial snapshot
     }
     
     @Test

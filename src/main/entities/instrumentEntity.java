@@ -8,11 +8,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Column;
 import org.hibernate.annotations.CreationTimestamp;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "instruments")
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class instrumentEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

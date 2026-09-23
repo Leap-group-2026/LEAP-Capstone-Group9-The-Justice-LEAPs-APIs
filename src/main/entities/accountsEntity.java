@@ -12,11 +12,14 @@ import jakarta.persistence.Convert;
 import org.hibernate.annotations.CreationTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "accounts")
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class accountsEntity {
 
     @Id

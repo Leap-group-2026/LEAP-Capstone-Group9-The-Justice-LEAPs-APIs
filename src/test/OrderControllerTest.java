@@ -57,7 +57,7 @@ public class OrderControllerTest {
 
         testAccount = new AccountsEntity();
         testAccount.setUserId(testUser);
-        testAccount.setBalance(BigDecimal.valueOf(10000.00));
+        testAccount.setBalance(BigDecimal.valueOf(20000.00));
         testAccount.setPortfolioSize(PortfolioSize.BALANCED);
         testAccount.setTradeType("ACTIVE");
         accountsRepo.insert(testUser.getUserId(), testAccount.getBalance(), 

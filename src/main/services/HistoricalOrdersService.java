@@ -31,6 +31,9 @@ public class HistoricalOrdersService {
      * Stores ONLY scalar values and IDs, not entity references.
      */
     public void captureOrderSnapshot(OrderEntity order) {
+        log.info("captureOrderSnapshot called: orderId={} status={} updatedAt={}", 
+            order.getOrderId(), order.getStatus(), order.getUpdatedAt());
+            
         // Use scalar ID values (always populated by MyBatis from FK columns)
         Integer instrumentId = order.getInstrumentIdValue();
         Integer accountId = order.getAccountIdValue();
@@ -47,14 +50,18 @@ public class HistoricalOrdersService {
         );
         
         String jsonSnapshot = serializeSnapshotToJson(snapshot);
+        log.info("Snapshot JSON: {}", jsonSnapshot);
         
         // Insert using MyBatis (use safely extracted IDs)
+        log.info("Inserting snapshot: orderId={} accountId={} createdAt={}", 
+            order.getOrderId(), accountId, order.getCreatedAt());
         repo.insert(
             order.getOrderId(),
             accountId,
             jsonSnapshot,
             order.getCreatedAt()
         );
+        log.info("Snapshot inserted successfully");
     }
 
     /**

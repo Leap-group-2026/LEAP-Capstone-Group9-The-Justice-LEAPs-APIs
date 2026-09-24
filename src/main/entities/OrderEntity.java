@@ -16,13 +16,13 @@ public class OrderEntity {
     @JsonProperty("account_id")
     private AccountsEntity accountId;
     
-    // Scalar ID mapped directly to account_id column in database
+    // Scalar ID mapped directly to account_id column in database (for MyBatis)
     private Integer accountIdValue;
 
     @JsonProperty("instrument_id")
     private InstrumentEntity instrumentId;
     
-    // Scalar ID mapped directly to instrument_id column in database
+    // Scalar ID mapped directly to instrument_id column in database (for MyBatis)
     private Integer instrumentIdValue;
 
     @JsonProperty("status")

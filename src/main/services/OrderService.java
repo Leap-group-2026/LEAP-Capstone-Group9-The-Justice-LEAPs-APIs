@@ -15,6 +15,7 @@ import main.services.calculation.OrderPriceCalculator;
 import main.services.resolver.AccountResolver;
 import main.services.resolver.InstrumentResolver;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,11 +103,16 @@ public class OrderService {
         OrderEntity order = ordersRepo.findById(orderId)
             .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
         
-        // Capture the OLD state (before change)
+        log.info("=== updateOrderStatus START === orderId={} currentStatus={}", orderId, order.getStatus());
+        
+        // Capture the OLD state (before change) — BEFORE mutating
+        log.info("Capturing BEFORE snapshot: status={}", order.getStatus());
         historicalOrdersService.captureOrderSnapshot(order);
         
-        // Mutate the order
+        // Mutate the order in memory
+        String oldStatus = order.getStatus();
         order.setStatus(newStatus);
+        order.setUpdatedAt(LocalDateTime.now());  // IMPORTANT: Update the timestamp
         
         // Update using MyBatis (set scalar IDs for update)
         if (order.getAccountId() != null) {
@@ -115,12 +121,17 @@ public class OrderService {
         if (order.getInstrumentId() != null) {
             order.setInstrumentIdValue(order.getInstrumentId().getInstrumentId());
         }
-        ordersRepo.update(order);
         
-        // Capture the NEW state (after change)
+        log.info("Calling ordersRepo.update() with status={} updatedAt={}", order.getStatus(), order.getUpdatedAt());
+        ordersRepo.update(order);
+        log.info("ordersRepo.update() completed");
+        
+        // Now capture the NEW state — use the mutated in-memory object with the new status
+        // This is the fresh state we just persisted
+        log.info("Capturing AFTER snapshot: status={} (from just-persisted state)", order.getStatus());
         historicalOrdersService.captureOrderSnapshot(order);
         
-        log.info("Order {} status changed to {}", orderId, newStatus);
+        log.info("=== updateOrderStatus END === Order {} status changed from {} to {}", orderId, oldStatus, newStatus);
         return order;
     }
 

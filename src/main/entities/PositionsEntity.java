@@ -1,6 +1,7 @@
 package main.entities;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -17,15 +18,19 @@ public class PositionsEntity {
     private InstrumentEntity instrument;
 
     @JsonProperty("opened_at")
+    @JsonAlias("openedAt")
     private LocalDateTime openedAt;
 
     @JsonProperty("closed_at")
+    @JsonAlias("closedAt")
     private LocalDateTime closedAt;
 
     @JsonProperty("total_price")
+    @JsonAlias("totalPrice")
     private BigDecimal totalPrice;
 
     @JsonProperty("average_price")
+    @JsonAlias("averagePrice")
     private BigDecimal averagePrice;
 
     public Integer getPositionId() {

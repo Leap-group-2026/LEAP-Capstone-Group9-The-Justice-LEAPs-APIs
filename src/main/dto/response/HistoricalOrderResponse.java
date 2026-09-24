@@ -20,7 +20,6 @@ public class HistoricalOrderResponse {
     @JsonProperty("occurred_at")
     private LocalDateTime occurredAt;
     
-    // Snapshot fields deserialized from stored JSON (status at time of event, not current)
     @JsonProperty("status")
     private String status;
     
@@ -39,7 +38,6 @@ public class HistoricalOrderResponse {
     @JsonProperty("snapshot_updated_at")
     private LocalDateTime snapshotUpdatedAt;
     
-    // No-args constructor for Jackson
     public HistoricalOrderResponse() {
     }
     
@@ -51,7 +49,6 @@ public class HistoricalOrderResponse {
         this.occurredAt = occurredAt;
     }
 
-    // Getters and setters
     public Integer getEventId() {
         return eventId;
     }

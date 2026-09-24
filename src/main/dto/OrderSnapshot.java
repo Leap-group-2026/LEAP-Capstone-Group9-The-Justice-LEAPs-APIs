@@ -4,14 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * Immutable snapshot of order state at a point in time.
- * Stored as JSON in historical_orders.order_information_json.
- * 
- * Contains only scalar values and plain IDs — no entity references.
- * This ensures that when the live order's status changes, the history
- * still reflects what the status *was* at that event.
- */
+
 public class OrderSnapshot {
     @JsonProperty("status")
     private String status;

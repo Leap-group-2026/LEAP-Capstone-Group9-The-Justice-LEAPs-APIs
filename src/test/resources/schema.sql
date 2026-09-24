@@ -37,7 +37,8 @@ CREATE TABLE IF NOT EXISTS accounts (
     balance DECIMAL(15, 2) DEFAULT 0.00,
     portfolio_size VARCHAR(50),
     trade_type VARCHAR(50),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    account_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- Orders Table

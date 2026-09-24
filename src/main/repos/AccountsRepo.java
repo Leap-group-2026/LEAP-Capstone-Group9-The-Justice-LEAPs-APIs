@@ -7,6 +7,9 @@ import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Results;
+import org.apache.ibatis.annotations.Result;
+import org.apache.ibatis.annotations.One;
 import main.entities.AccountsEntity;
 import main.entities.UserEntity;
 import java.util.Optional;
@@ -15,13 +18,66 @@ import java.math.BigDecimal;
 
 @Mapper
 public interface AccountsRepo {
-    @Select("SELECT * FROM accounts WHERE account_id = #{accountId}")
+    @Select("SELECT a.account_id, a.user_id, a.balance, a.portfolio_size, a.trade_type, a.created_at, a.account_active, " +
+            "u.user_id, u.name, u.email, u.date_of_birth, u.address, u.ssn_hash, u.pass_hash " +
+            "FROM accounts a LEFT JOIN user_info u ON a.user_id = u.user_id " +
+            "WHERE a.account_id = #{accountId}")
+    @Results({
+        @Result(column = "account_id", property = "accountId", id = true),
+        @Result(column = "balance", property = "balance"),
+        @Result(column = "portfolio_size", property = "portfolioSize"),
+        @Result(column = "trade_type", property = "trade_type"),
+        @Result(column = "created_at", property = "createdAt"),
+        @Result(column = "account_active", property = "accountActive"),
+        @Result(column = "user_id", property = "user.userId"),
+        @Result(column = "name", property = "user.name"),
+        @Result(column = "email", property = "user.email"),
+        @Result(column = "date_of_birth", property = "user.dateOfBirth"),
+        @Result(column = "address", property = "user.address"),
+        @Result(column = "ssn_hash", property = "user.ssnHash"),
+        @Result(column = "pass_hash", property = "user.passHash")
+    })
     Optional<AccountsEntity> findById(Integer accountId);
 
-    @Select("SELECT * FROM accounts")
+    @Select("SELECT a.account_id, a.user_id, a.balance, a.portfolio_size, a.trade_type, a.created_at, a.account_active, " +
+            "u.user_id, u.name, u.email, u.date_of_birth, u.address, u.ssn_hash, u.pass_hash " +
+            "FROM accounts a LEFT JOIN user_info u ON a.user_id = u.user_id")
+    @Results({
+        @Result(column = "account_id", property = "accountId", id = true),
+        @Result(column = "balance", property = "balance"),
+        @Result(column = "portfolio_size", property = "portfolioSize"),
+        @Result(column = "trade_type", property = "trade_type"),
+        @Result(column = "created_at", property = "createdAt"),
+        @Result(column = "account_active", property = "accountActive"),
+        @Result(column = "user_id", property = "user.userId"),
+        @Result(column = "name", property = "user.name"),
+        @Result(column = "email", property = "user.email"),
+        @Result(column = "date_of_birth", property = "user.dateOfBirth"),
+        @Result(column = "address", property = "user.address"),
+        @Result(column = "ssn_hash", property = "user.ssnHash"),
+        @Result(column = "pass_hash", property = "user.passHash")
+    })
     List<AccountsEntity> findAll();
 
-    @Select("SELECT * FROM accounts WHERE user_id = #{userId}")
+    @Select("SELECT a.account_id, a.user_id, a.balance, a.portfolio_size, a.trade_type, a.created_at, a.account_active, " +
+            "u.user_id, u.name, u.email, u.date_of_birth, u.address, u.ssn_hash, u.pass_hash " +
+            "FROM accounts a LEFT JOIN user_info u ON a.user_id = u.user_id " +
+            "WHERE a.user_id = #{userId}")
+    @Results({
+        @Result(column = "account_id", property = "accountId", id = true),
+        @Result(column = "balance", property = "balance"),
+        @Result(column = "portfolio_size", property = "portfolioSize"),
+        @Result(column = "trade_type", property = "trade_type"),
+        @Result(column = "created_at", property = "createdAt"),
+        @Result(column = "account_active", property = "accountActive"),
+        @Result(column = "user_id", property = "user.userId"),
+        @Result(column = "name", property = "user.name"),
+        @Result(column = "email", property = "user.email"),
+        @Result(column = "date_of_birth", property = "user.dateOfBirth"),
+        @Result(column = "address", property = "user.address"),
+        @Result(column = "ssn_hash", property = "user.ssnHash"),
+        @Result(column = "pass_hash", property = "user.passHash")
+    })
     List<AccountsEntity> findByUser(@Param("userId") Integer userId);
 
     @Insert("INSERT INTO accounts (user_id, balance, portfolio_size, trade_type, created_at, account_active) " +

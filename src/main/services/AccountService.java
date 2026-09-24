@@ -5,6 +5,7 @@ import main.repos.AccountsRepo;
 import main.repos.UserRepo;
 import main.entities.AccountsEntity;
 import main.entities.UserEntity;
+import java.time.LocalDateTime;
 
 @Service
 public class AccountService {
@@ -26,13 +27,20 @@ public class AccountService {
         String portfolioSize = entity.getPortfolioSize() != null ? entity.getPortfolioSize().getValue() : null;
         Boolean accountActive = entity.getAccountActive() != null ? entity.getAccountActive() : true;
         
-        repo.insert(userId, entity.getBalance(), portfolioSize, entity.getTradeType(), entity.getCreatedAt(), accountActive);
+        // Set created_at to now if not provided
+        LocalDateTime createdAt = entity.getCreatedAt() != null ? entity.getCreatedAt() : LocalDateTime.now();
+        
+        repo.insert(userId, entity.getBalance(), portfolioSize, entity.getTradeType(), createdAt, accountActive);
         return entity;
     }
     public String closeAccount(Integer accountId, Integer currentUserId) {
         // Checks for an existing acocuntId
         AccountsEntity existingAccount = repo.findById(accountId)
         .orElseThrow(() -> new IllegalStateException("Not a valid user"));
+        
+        if(existingAccount.getUserId() == null || existingAccount.getUserId().getUserId() == null) {
+        throw new IllegalStateException("Account user information is missing");
+        }
         // Checking to see if the user is who they say they are and if not they will not be able to close the account
         if(!existingAccount.getUserId().getUserId().equals(currentUserId)) {
             throw new IllegalStateException("You are unauthorized to close this account, it does not belong to you");

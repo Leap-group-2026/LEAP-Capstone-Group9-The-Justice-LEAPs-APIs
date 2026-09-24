@@ -183,4 +183,47 @@ public class CloseAccountTest {
         // Verify update was called with account_active=false
         verify(accountsRepo, times(1)).update(1, 1, BigDecimal.ZERO, "BALANCED", "Stock", false);
     }
+    
+    @Test
+    public void testCloseAccountWithNullUserObject() {
+        // Arrange - account has no user associated
+        testAccount.setUserId(null);
+        when(accountsRepo.findById(1)).thenReturn(Optional.of(testAccount));
+        
+        // Act & Assert
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            accountService.closeAccount(1, 1);
+        });
+        
+        assertEquals("Account user information is missing", exception.getMessage());
+    }
+    
+    @Test
+    public void testCloseAccountWithNullUserId() {
+        // Arrange - user object exists but userId is null
+        testUser.setUserId(null);
+        testAccount.setUserId(testUser);
+        when(accountsRepo.findById(1)).thenReturn(Optional.of(testAccount));
+        
+        // Act & Assert
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            accountService.closeAccount(1, 1);
+        });
+        
+        assertEquals("Account user information is missing", exception.getMessage());
+    }
+    
+    @Test
+    public void testCloseAccountWithNullCurrentUserId() {
+        // Arrange
+        when(accountsRepo.findById(1)).thenReturn(Optional.of(testAccount));
+        
+        // Act & Assert - When currentUserId is null, should fail authorization check
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            accountService.closeAccount(1, null);
+        });
+        
+        assertEquals("You are unauthorized to close this account, it does not belong to you", 
+                     exception.getMessage());
+    }
 }

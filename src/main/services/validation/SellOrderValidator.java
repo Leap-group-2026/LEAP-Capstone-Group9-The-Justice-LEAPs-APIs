@@ -65,27 +65,25 @@ public class SellOrderValidator {
         }
     }
 
-    private void validateSufficientHoldings(Integer accountId, Integer instrumentId, Integer quantityToSell) {
-        List<PositionsEntity> positions = positionsRepo.findByAccount(accountId);
-        
-        // Find the position for this specific instrument
-        PositionsEntity position = positions.stream()
-            .filter(p -> p.getInstrumentId() != null && 
-                        p.getInstrumentId().getInstrumentId() != null &&
-                        p.getInstrumentId().getInstrumentId().equals(instrumentId) &&
-                        p.getClosedAt() == null) // Only consider open positions
-            .findFirst()
-            .orElse(null);
-        
-        if (position == null || position.getQuantity() == null) {
-            throw new InvalidOrderException("holdings", 
-                "Account does not have any open positions for this instrument");
-        }
-        
-        if (position.getQuantity() < quantityToSell) {
-            throw new InvalidOrderException("holdings", 
-                String.format("Insufficient holdings. Current: %d, Attempting to sell: %d", 
-                    position.getQuantity(), quantityToSell));
+   private void validateSufficientHoldings(Integer accountId, Integer instrumentId, Integer quantityToSell) {
+    List<PositionsEntity> positions = positionsRepo.findByAccount(accountId);
+    
+    PositionsEntity position = positions.stream()
+        .filter(p -> p.getInstrumentId() != null && 
+                    p.getInstrumentId().getInstrumentId().equals(instrumentId) &&
+                    p.getClosedAt() == null)
+        .findFirst()
+        .orElse(null);
+    
+    if (position == null || position.getQuantity() == null) {
+        throw new InvalidOrderException("holdings", 
+            "Account does not have any open positions for this instrument");
+    }
+    
+    if (position.getQuantity() < quantityToSell) {
+        throw new InvalidOrderException("holdings", 
+            String.format("Insufficient holdings. Current: %d, Attempting to sell: %d", 
+                position.getQuantity(), quantityToSell));
         }
     }
 }

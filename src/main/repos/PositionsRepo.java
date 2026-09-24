@@ -2,12 +2,16 @@ package main.repos;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Results;
+import org.apache.ibatis.annotations.Result;
+import org.apache.ibatis.annotations.One;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Param;
 import main.entities.AccountsEntity;
 import main.entities.PositionsEntity;
+import main.entities.InstrumentEntity;
 import java.util.Optional;
 import java.util.List;
 import java.math.BigDecimal;
@@ -20,7 +24,17 @@ public interface PositionsRepo {
     @Select("SELECT * FROM positions")
     List<PositionsEntity> findAll();
 
-    @Select("SELECT * FROM positions WHERE account_id = #{accountId}")
+    @Select("SELECT p.* FROM positions p WHERE p.account_id = #{accountId}")
+    @Results({
+        @Result(column = "position_id", property = "positionId"),
+        @Result(column = "quantity", property = "quantity"),
+        @Result(column = "instrument_id", property = "instrument", 
+                one = @One(select = "main.repos.InstrumentRepo.findById")),
+        @Result(column = "opened_at", property = "openedAt"),
+        @Result(column = "closed_at", property = "closedAt"),
+        @Result(column = "total_price", property = "totalPrice"),
+        @Result(column = "average_price", property = "averagePrice")
+    })
     List<PositionsEntity> findByAccount(@Param("accountId") Integer accountId);
 
     @Insert("INSERT INTO positions (account_id, instrument_id, quantity, average_cost, created_at) " +

@@ -60,8 +60,9 @@ public class OrderControllerTest {
         testAccount.setBalance(BigDecimal.valueOf(20000.00));
         testAccount.setPortfolioSize(PortfolioSize.BALANCED);
         testAccount.setTradeType("ACTIVE");
+        testAccount.setAccountActive(true);
         accountsRepo.insert(testUser.getUserId(), testAccount.getBalance(), 
-                           testAccount.getPortfolioSize().getValue(), testAccount.getTradeType(), null);
+                           testAccount.getPortfolioSize().getValue(), testAccount.getTradeType(), null, true);
         
         // Retrieve the created account to get its ID
         java.util.List<AccountsEntity> accounts = accountsRepo.findByUser(testUser.getUserId());

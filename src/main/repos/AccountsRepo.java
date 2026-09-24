@@ -24,21 +24,23 @@ public interface AccountsRepo {
     @Select("SELECT * FROM accounts WHERE user_id = #{userId}")
     List<AccountsEntity> findByUser(@Param("userId") Integer userId);
 
-    @Insert("INSERT INTO accounts (user_id, balance, portfolio_size, trade_type, created_at) " +
-            "VALUES (#{userId}, #{balance}, #{portfolioSize}, #{trade_type}, #{createdAt})")
+    @Insert("INSERT INTO accounts (user_id, balance, portfolio_size, trade_type, created_at, account_active) " +
+            "VALUES (#{userId}, #{balance}, #{portfolioSize}, #{trade_type}, #{createdAt}, #{accountActive})")
     void insert(@Param("userId") Integer userId,
                 @Param("balance") BigDecimal balance,
                 @Param("portfolioSize") String portfolioSize,
                 @Param("trade_type") String trade_type,
-                @Param("createdAt") Object createdAt);
+                @Param("createdAt") Object createdAt,
+                @Param("accountActive") Boolean accountActive);                       
 
     @Update("UPDATE accounts SET user_id=#{userId}, balance=#{balance}, portfolio_size=#{portfolioSize}, " +
-            "trade_type=#{trade_type} WHERE account_id=#{accountId}")
+            "trade_type=#{trade_type}, account_active=#{accountActive} WHERE account_id=#{accountId}")
     void update(@Param("accountId") Integer accountId,
                 @Param("userId") Integer userId,
                 @Param("balance") BigDecimal balance,
                 @Param("portfolioSize") String portfolioSize,
-                @Param("trade_type") String trade_type);
+                @Param("trade_type") String trade_type,
+                @Param("accountActive") Boolean accountActive);
 
     @Delete("DELETE FROM accounts WHERE account_id = #{accountId}")
     void delete(Integer accountId);

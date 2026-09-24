@@ -2,6 +2,7 @@ package main.controllers;
 
 import main.services.UserService;
 import main.dto.request.UserRegistrationRequest;
+import main.dto.request.LoginRequest;
 import main.dto.response.UserResponse;
 import main.entities.UserEntity;
 import org.springframework.http.HttpStatus;
@@ -27,5 +28,10 @@ public class UserController {
     @PostMapping("/resetpassword")
     public ResponseEntity<String> resetPassword(@RequestBody UserResponse user){
         return service.resetPassword(user);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody LoginRequest request){
+        return service.login(request);
     }
 }

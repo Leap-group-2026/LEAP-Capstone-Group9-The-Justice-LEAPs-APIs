@@ -9,6 +9,7 @@ import main.services.UserService;
 import main.repos.UserRepo;
 import main.entities.UserEntity;
 import main.dto.request.UserRegistrationRequest;
+import main.dto.request.LoginRequest;
 import main.dto.response.UserResponse;
 
 import java.time.LocalDate;
@@ -534,5 +535,98 @@ public class UserServiceTest {
         // Assert
         assertNotNull(response);
         verify(mockUserRepo, times(1)).existsByEmail("john@example.com");
+    }
+
+    // ===== LOGIN TESTS =====
+
+    @Test
+    @DisplayName("Successful login with correct email and password")
+    public void testLoginSuccessful() {
+        // Arrange
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail("john@example.com");
+        loginRequest.setPassword("SecurePass@123#");
+
+        UserEntity existingUser = new UserEntity();
+        existingUser.setUserId(1);
+        existingUser.setEmail("john@example.com");
+        existingUser.setPassHash("hashed_password");
+
+        when(mockUserRepo.existsByEmail("john@example.com")).thenReturn(true);
+        when(mockUserRepo.findByEmail("john@example.com")).thenReturn(java.util.Optional.of(existingUser));
+        when(mockPasswordEncoder.matches("SecurePass@123#", "hashed_password")).thenReturn(true);
+
+        // Act
+        org.springframework.http.ResponseEntity<String> response = service.login(loginRequest);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals("Login successful", response.getBody());
+        verify(mockUserRepo, times(1)).existsByEmail("john@example.com");
+        verify(mockUserRepo, times(1)).findByEmail("john@example.com");
+    }
+
+    @Test
+    @DisplayName("Login fails when email doesn't exist")
+    public void testLoginEmailNotFound() {
+        // Arrange
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail("nonexistent@example.com");
+        loginRequest.setPassword("SecurePass@123#");
+
+        when(mockUserRepo.existsByEmail("nonexistent@example.com")).thenReturn(false);
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            service.login(loginRequest);
+        });
+        assertEquals("Email doesn't exist", exception.getMessage());
+        verify(mockUserRepo, times(1)).existsByEmail("nonexistent@example.com");
+    }
+
+    @Test
+    @DisplayName("Login fails with incorrect password")
+    public void testLoginWrongPassword() {
+        // Arrange
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail("john@example.com");
+        loginRequest.setPassword("WrongPassword@123#");
+
+        UserEntity existingUser = new UserEntity();
+        existingUser.setUserId(1);
+        existingUser.setEmail("john@example.com");
+        existingUser.setPassHash("hashed_correct_password");
+
+        when(mockUserRepo.existsByEmail("john@example.com")).thenReturn(true);
+        when(mockUserRepo.findByEmail("john@example.com")).thenReturn(java.util.Optional.of(existingUser));
+        when(mockPasswordEncoder.matches("WrongPassword@123#", "hashed_correct_password")).thenReturn(false);
+
+        // Act
+        org.springframework.http.ResponseEntity<String> response = service.login(loginRequest);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(400, response.getStatusCodeValue());
+        assertEquals("Wrong password", response.getBody());
+        verify(mockPasswordEncoder, times(1)).matches("WrongPassword@123#", "hashed_correct_password");
+    }
+
+    @Test
+    @DisplayName("Login fails when user not found in database")
+    public void testLoginUserNotFoundInDB() {
+        // Arrange
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail("john@example.com");
+        loginRequest.setPassword("SecurePass@123#");
+
+        when(mockUserRepo.existsByEmail("john@example.com")).thenReturn(true);
+        when(mockUserRepo.findByEmail("john@example.com")).thenReturn(java.util.Optional.empty());
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            service.login(loginRequest);
+        });
+        assertEquals("User not found", exception.getMessage());
     }
 }

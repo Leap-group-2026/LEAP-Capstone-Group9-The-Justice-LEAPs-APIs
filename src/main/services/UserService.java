@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import main.repos.UserRepo;
 import main.entities.UserEntity; 
 import main.dto.request.UserRegistrationRequest;
+import main.dto.request.LoginRequest;
 import main.dto.response.UserResponse;
 import main.services.EmailService;
 
@@ -158,5 +159,19 @@ public class UserService {
             );
         }
         return ResponseEntity.ok("Email sent successfully");
+    }
+
+    public ResponseEntity<String> login(LoginRequest request){
+        if (!repo.existsByEmail(request.getEmail())){
+            throw new IllegalArgumentException("Email doesn't exist");
+        }
+        UserEntity user = repo.findByEmail(request.getEmail()).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        boolean match = passwordEncoder.matches(request.getPassword(), user.getPassHash());
+        if(!match){
+            return ResponseEntity.badRequest().body("Wrong password");
+        }
+        else{
+            return ResponseEntity.ok("Login successful");
+        }
     }
 }

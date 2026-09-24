@@ -12,6 +12,7 @@ public class InstrumentService {
     }
 
     public InstrumentEntity saveInstrument(InstrumentEntity entity) {
-        return repo.save(entity);
+        repo.insert(entity);
+        return entity;
     }
 }

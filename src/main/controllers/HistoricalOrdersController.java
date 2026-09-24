@@ -58,8 +58,8 @@ public class HistoricalOrdersController {
     private HistoricalOrderResponse mapToHistoricalOrderResponse(HistoricalOrdersEntity entity) {
         HistoricalOrderResponse response = new HistoricalOrderResponse(
             entity.getHistoricalOrderId(),      // eventId
-            entity.getOrderId().getOrderId(),   // orderId
-            entity.getAccount().getAccountId(), // accountId
+            entity.getOrderId(),                // orderId
+            entity.getAccountId(),              // accountId
             entity.getOrderInformationJson(),   // snapshot (raw JSON string)
             entity.getCreatedAt()               // occurredAt
         );

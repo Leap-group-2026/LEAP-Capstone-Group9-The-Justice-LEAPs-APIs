@@ -26,22 +26,13 @@ public class PositionService {
     }
 
     public PositionsEntity savePosition(PositionsEntity entity) {
-        // Fetch the account from database to ensure it's a managed entity
-        if (entity.getAccountId() != null && entity.getAccountId().getAccountId() != null) {
-            AccountsEntity managedAccount = accountsRepository.findById(entity.getAccountId().getAccountId()).orElse(null);
-            if (managedAccount != null) {
-                entity.setAccountId(managedAccount);
-            }
-        }
+        // Extract IDs from nested objects
+        Integer accountId = entity.getAccountId() != null ? entity.getAccountId().getAccountId() : null;
+        Integer instrumentId = entity.getInstrumentId() != null ? entity.getInstrumentId().getInstrumentId() : null;
         
-        // Fetch the instrument from database to ensure it's a managed entity
-        if (entity.getInstrumentId() != null && entity.getInstrumentId().getInstrumentId() != null) {
-            InstrumentEntity managedInstrument = instrumentRepository.findById(entity.getInstrumentId().getInstrumentId()).orElse(null);
-            if (managedInstrument != null) {
-                entity.setInstrumentId(managedInstrument);
-            }
+        if (accountId != null) {
+            repo.insert(accountId, instrumentId, entity.getQuantity(), entity.getAveragePrice(), entity.getOpenedAt());
         }
-        
-        return repo.save(entity);
+        return entity;
     }
 }

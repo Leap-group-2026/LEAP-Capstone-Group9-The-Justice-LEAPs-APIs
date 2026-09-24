@@ -52,14 +52,17 @@ public class OrderControllerTest {
         testUser.setAddress("123 Test Street");
         testUser.setSsnHash("ssn_hash_value");
         testUser.setPassHash("pass_hash_value");
-        testUser = userRepo.save(testUser);
+        userRepo.insert(testUser);
+        // testUser.userId is now set by MyBatis via @Options
 
         testAccount = new AccountsEntity();
         testAccount.setUserId(testUser);
         testAccount.setBalance(BigDecimal.valueOf(10000.00));
         testAccount.setPortfolioSize(PortfolioSize.BALANCED);
         testAccount.setTradeType("ACTIVE");
-        testAccount = accountsRepo.save(testAccount);
+        testAccount.setCreatedAt(java.time.LocalDateTime.now());
+        accountsRepo.insert(testAccount);
+        // testAccount.accountId is now set by MyBatis via @Options
 
         testInstrument = new InstrumentEntity();
         testInstrument.setTicker("AAPL");
@@ -67,7 +70,8 @@ public class OrderControllerTest {
         testInstrument.setAssetName("Apple Inc.");
         testInstrument.setPrice(BigDecimal.valueOf(150.00));
         testInstrument.setCurrency("USD");
-        testInstrument = instrumentRepo.save(testInstrument);
+        instrumentRepo.insert(testInstrument);
+        // testInstrument.instrumentId is now set by MyBatis via @Options
     }
 
     @Test

@@ -5,10 +5,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import main.entities.OrderEntity;
 import main.repos.HistoricalOrdersRepo;
 import main.repos.OrdersRepo;
 import main.entities.HistoricalOrdersEntity;
+import main.dto.OrderSnapshot;
+import java.util.List;
 
 @Service
 public class HistoricalOrdersService {
@@ -23,6 +26,57 @@ public class HistoricalOrdersService {
         this.ordersRepo = ordersRepo;
     }
 
+    /**
+     * Capture an immutable snapshot of the order's current state.
+     * Stores ONLY scalar values and IDs, not entity references.
+     */
+    public void captureOrderSnapshot(OrderEntity order) {
+        // Use scalar ID values (always populated by MyBatis from FK columns)
+        Integer instrumentId = order.getInstrumentIdValue();
+        Integer accountId = order.getAccountIdValue();
+        
+        // Build a snapshot containing only scalars and IDs, not entity objects
+        OrderSnapshot snapshot = new OrderSnapshot(
+            order.getStatus(),                              // status at this moment
+            order.getSide(),
+            order.getQuantity(),
+            order.getTotalPrice(),
+            instrumentId,                                   // ID from scalar field
+            accountId,                                      // ID from scalar field
+            order.getUpdatedAt()
+        );
+        
+        String jsonSnapshot = serializeSnapshotToJson(snapshot);
+        
+        // Insert using MyBatis (use safely extracted IDs)
+        repo.insert(
+            order.getOrderId(),
+            accountId,
+            jsonSnapshot,
+            order.getCreatedAt()
+        );
+    }
+
+    /**
+     * Retrieve all historical snapshots for an order in chronological order.
+     */
+    public List<HistoricalOrdersEntity> getHistoricalOrders(Integer orderId) {
+        return repo.findByOrderId_OrderIdOrderByCreatedAtAsc(orderId);
+    }
+
+    /**
+     * Serialize an OrderSnapshot (not the full entity) to JSON string for storage.
+     * Throws RuntimeException if serialization fails.
+     */
+    private String serializeSnapshotToJson(OrderSnapshot snapshot) {
+        try {
+            return objectMapper.writeValueAsString(snapshot);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize order snapshot to JSON: {}", e.getMessage());
+            throw new RuntimeException("Order snapshot serialization failed", e);
+        }
+    }
+
     public String serializeOrderToJson(OrderEntity entity) {
         try {
             return objectMapper.writeValueAsString(entity);
@@ -33,6 +87,7 @@ public class HistoricalOrdersService {
     }
 
     public HistoricalOrdersEntity saveHistoricalOrder(HistoricalOrdersEntity entity){
-        return repo.save(entity);
+        repo.insert(entity.getOrderId(), entity.getAccountId(), entity.getOrderInformationJson(), entity.getCreatedAt());
+        return entity;
     }
 }

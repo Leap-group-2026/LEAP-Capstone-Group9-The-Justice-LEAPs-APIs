@@ -19,7 +19,8 @@ public class AdminService {
         if (repo.existsByUsername(entity.getUsername())){
             throw new IllegalArgumentException("Username already exists");
         }
-        return repo.save(entity);
+        repo.insert(entity);
+        return entity;
     }
 
     public ResponseEntity<String> login(AdminEntity entity){

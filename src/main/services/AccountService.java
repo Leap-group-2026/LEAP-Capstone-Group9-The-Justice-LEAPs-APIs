@@ -21,14 +21,13 @@ public class AccountService {
     }
 
     public AccountsEntity saveAccount(AccountsEntity entity) {
-        // Fetch the user from database to ensure it's a managed entity
-        if (entity.getUserId() != null && entity.getUserId().getUserId() != null) {
-            UserEntity managedUser = userRepository.findById(entity.getUserId().getUserId()).orElse(null);
-            if (managedUser != null) {
-                entity.setUserId(managedUser);
-            }
+
+        if (entity.getCreatedAt() == null) {
+            entity.setCreatedAt(java.time.LocalDateTime.now());
         }
-        return repo.save(entity);
+        
+        repo.insert(entity);
+        return entity;
     }
     
 }

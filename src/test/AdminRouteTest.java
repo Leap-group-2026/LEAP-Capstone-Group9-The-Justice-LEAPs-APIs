@@ -31,7 +31,8 @@ public class AdminRouteTest {
         AdminEntity testAdmin = new AdminEntity();
         testAdmin.setUsername("aryann");
         testAdmin.setPassHash(passwordEncoder.encode("secret"));
-        adminRepo.save(testAdmin);
+        testAdmin.setAdminId(1);
+        adminRepo.insert(testAdmin);
         
         mockMvc.perform(post("/admin/login")
             .contentType(MediaType.APPLICATION_JSON)

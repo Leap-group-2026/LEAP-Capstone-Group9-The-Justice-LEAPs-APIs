@@ -65,10 +65,10 @@ public class OrderHistoryTest {
     
     @BeforeEach
     public void setUp() {
-        // Clear old snapshots from previous test runs (old format may have nested objects)
+        // Clear old snapshots from previous test runs
         historicalOrdersRepo.deleteAll();
         
-        // Create a test user
+        // Create a test user using MyBatis insert
         testUser = new UserEntity();
         testUser.setName("John Doe");
         testUser.setEmail("john@example.com");
@@ -76,24 +76,24 @@ public class OrderHistoryTest {
         testUser.setAddress("123 Main St");
         testUser.setSsnHash("hashed_ssn_123");
         testUser.setPassHash("hashed_password_123");
-        userRepo.save(testUser);
+        userRepo.insert(testUser);
         
-        // Create a test account
+        // Create a test account using MyBatis insert
         testAccount = new AccountsEntity();
         testAccount.setUserId(testUser);
         testAccount.setBalance(new BigDecimal("10000.00"));
         testAccount.setPortfolioSize(PortfolioSize.BALANCED);
         testAccount.setTradeType("stocks");
-        accountsRepo.save(testAccount);
+        accountsRepo.insert(testAccount);
         
-        // Create a test instrument
+        // Create a test instrument using MyBatis insert
         testInstrument = new InstrumentEntity();
         testInstrument.setTicker("AAPL");
         testInstrument.setAssetType("stock");
         testInstrument.setAssetName("Apple Inc.");
         testInstrument.setPrice(new BigDecimal("150.00"));
         testInstrument.setCurrency("USD");
-        instrumentRepo.save(testInstrument);
+        instrumentRepo.insert(testInstrument);
         
         // Create a test order (and capture initial snapshot)
         testOrder = new OrderEntity("BUY", testAccount, testInstrument, 100, new BigDecimal("15000.00"));

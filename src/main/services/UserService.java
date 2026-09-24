@@ -66,14 +66,14 @@ public class UserService {
         user.setSsnHash(ssnHash);
         user.setPassHash(passwordEncoder.encode(request.getPassword()));
 
-        UserEntity savedUser = repo.save(user);
+        repo.insert(user);
 
         return new UserResponse(
-            savedUser.getUserId(),
-            savedUser.getName(),
-            savedUser.getEmail(),
-            savedUser.getDateOfBirth(),
-            savedUser.getAddress()
+            user.getUserId(),
+            user.getName(),
+            user.getEmail(),
+            user.getDateOfBirth(),
+            user.getAddress()
         );
     }
 
@@ -141,7 +141,7 @@ public class UserService {
         
         UserEntity user = repo.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
         user.setCode(code);
-        repo.save(user);
+        repo.update(user);
         
         if (emailService != null) {
             String emailBody = "Hello " + user.getName() + ",\n\n" +

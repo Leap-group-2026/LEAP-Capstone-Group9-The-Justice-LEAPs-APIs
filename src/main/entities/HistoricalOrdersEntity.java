@@ -1,41 +1,16 @@
 package main.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.Id;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Column;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-
-import main.entities.OrderEntity;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "historical_orders")
 public class HistoricalOrdersEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer historicalOrderId;
     @JsonProperty("order_id")
-    @ManyToOne
-    @JoinColumn(name = "order_id", nullable = false)
     private OrderEntity orderId;
-    @ManyToOne
-    @JoinColumn(name = "account_id", nullable = false) 
     private AccountsEntity account;
     @JsonProperty("order_information_json")
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "order_information_json", nullable = false)
     private String orderInformationJson;
     @JsonProperty("created_at")
-    @Column(name = "created_at")
-    @CreationTimestamp
     private LocalDateTime createdAt;
 
     // Getters and Setters

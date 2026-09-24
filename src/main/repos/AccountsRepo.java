@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository 
-public interface AccountsRepo extends JpaRepository<accountsEntity, Integer> {
-    List<accountsEntity> findByUser(userEntity user);
+public interface AccountsRepo extends JpaRepository<AccountsEntity, Integer> {
+    List<AccountsEntity> findByUser(UserEntity user);
 
 }
 

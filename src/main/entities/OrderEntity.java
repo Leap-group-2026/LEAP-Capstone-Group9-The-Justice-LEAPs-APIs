@@ -7,8 +7,8 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
-import main.entities.instrumentEntity;
-import main.entities.accountsEntity;
+import main.entities.InstrumentEntity;
+import main.entities.AccountsEntity;
 
 @Entity
 @Table(name = "orders")
@@ -27,12 +27,12 @@ public class OrderEntity {
     @JsonProperty("account_id")
     @ManyToOne
     @JoinColumn(name = "account_id", nullable = false)
-    private accountsEntity accountId;
+    private AccountsEntity accountId;
 
     @JsonProperty("instrument_id")
     @ManyToOne
     @JoinColumn(name = "instrument_id", nullable = false)
-    private instrumentEntity instrumentId;
+    private InstrumentEntity instrumentId;
 
     @JsonProperty("status")
     @Column(name = "status", nullable = false)
@@ -59,7 +59,7 @@ public class OrderEntity {
     public OrderEntity() {
     }
 
-    public OrderEntity(String side, accountsEntity accountId, instrumentEntity instrumentId,
+    public OrderEntity(String side, AccountsEntity accountId, InstrumentEntity instrumentId,
                        Integer quantity, BigDecimal totalPrice) {
         this.side = side;
         this.accountId = accountId;
@@ -76,13 +76,13 @@ public class OrderEntity {
 
     public void setSide(String side) { this.side = side; }
 
-    public accountsEntity getAccountId() { return accountId; }
+    public AccountsEntity getAccountId() { return accountId; }
 
-    public void setAccountId(accountsEntity accountId) { this.accountId = accountId; }
+    public void setAccountId(AccountsEntity accountId) { this.accountId = accountId; }
 
-    public instrumentEntity getInstrumentId() { return instrumentId; }
+    public InstrumentEntity getInstrumentId() { return instrumentId; }
 
-    public void setInstrumentId(instrumentEntity instrumentId) { this.instrumentId = instrumentId; }
+    public void setInstrumentId(InstrumentEntity instrumentId) { this.instrumentId = instrumentId; }
 
     public String getStatus() { return status; }
 

@@ -1,93 +1,76 @@
 package main.services;
 
 import org.springframework.stereotype.Service;
+
+import main.dto.request.CreateOrderRequest;
+import main.entities.OrderEntity;
+import main.entities.AccountsEntity;
+import main.entities.InstrumentEntity;
+import main.repos.OrdersRepo;
+import main.repos.AccountsRepo;
+import main.repos.InstrumentRepo;
+import main.repos.HistoricalOrdersRepo;
+import main.entities.HistoricalOrdersEntity;
+import main.services.validation.BuyOrderValidator;
+import main.services.calculation.OrderPriceCalculator;
+import main.services.resolver.AccountResolver;
+import main.services.resolver.InstrumentResolver;
+import java.math.BigDecimal;
 import jakarta.transaction.Transactional;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
+import main.dto.OrderSnapshot;
 import java.util.List;
 
-import main.dto.request.CreateOrderRequest;
-import main.entities.OrderEntity;
-import main.entities.accountsEntity;
-import main.entities.instrumentEntity;
-import main.entities.historicalOrdersEntity;
-import main.repos.OrdersRepo;
-import main.repos.AccountsRepo;
-import main.repos.instrumentRepo;
-import main.repos.historicalOrdersRepo;
 
 @Service
 public class OrderService {
     private static final Logger log = LoggerFactory.getLogger(OrderService.class);
     
     private final OrdersRepo ordersRepo;
-    private final AccountsRepo accountsRepo;
-    private final instrumentRepo instrumentRepo;
-    private final historicalOrdersRepo historicalOrdersRepo;
+    private final HistoricalOrdersRepo historicalOrdersRepo;
+    private final BuyOrderValidator buyOrderValidator;
+    private final OrderPriceCalculator priceCalculator;
+    private final AccountResolver accountResolver;
+    private final InstrumentResolver instrumentResolver;
     private final ObjectMapper objectMapper;
 
-    public OrderService(OrdersRepo ordersRepo, AccountsRepo accountsRepo, instrumentRepo instrumentRepo,
-                       historicalOrdersRepo historicalOrdersRepo, ObjectMapper objectMapper) {
+    public OrderService(OrdersRepo ordersRepo, HistoricalOrdersRepo historicalOrdersRepo, BuyOrderValidator buyOrderValidator, OrderPriceCalculator priceCalculator, AccountResolver accountResolver, InstrumentResolver instrumentResolver, ObjectMapper objectMapper) {
         this.ordersRepo = ordersRepo;
-        this.accountsRepo = accountsRepo;
-        this.instrumentRepo = instrumentRepo;
         this.historicalOrdersRepo = historicalOrdersRepo;
+        this.buyOrderValidator = buyOrderValidator;
+        this.priceCalculator = priceCalculator;
+        this.accountResolver = accountResolver;
+        this.instrumentResolver = instrumentResolver;
         this.objectMapper = objectMapper;
     }
 
-    /**
-     * Helper method: Serialize an order entity to JSON string.
-     * Contains: orderId, side, status, quantity, totalPrice, createdAt, updatedAt, account_id, instrument_id
-     * Throws RuntimeException if serialization fails (transaction will rollback).
-     */
-    private String serializeOrderToJson(OrderEntity order) {
-        try {
-            return objectMapper.writeValueAsString(order);
-        } catch (JsonProcessingException e) {
-            log.error("Failed to serialize order {} to JSON", order.getOrderId(), e);
-            throw new RuntimeException("Order serialization failed; transaction rolled back", e);
-        }
-    }
-
-    /**
-     * Helper method: Insert an immutable snapshot into historical_orders.
-     * This is append-only—the record is never updated or deleted.
-     */
-    private void captureOrderSnapshot(OrderEntity order) {
-        String snapshot = serializeOrderToJson(order);
-        
-        historicalOrdersEntity history = new historicalOrdersEntity();
-        history.setOrderId(order);
-        history.setAccount(order.getAccountId());
-        history.setOrderInformationJson(snapshot);
-        
-        historicalOrdersRepo.save(history);
-        log.debug("Captured historical snapshot for order {}", order.getOrderId());
-    }
-
-    /**
-     * Create a new order from a CreateOrderRequest.
-     * Validates that the account and instrument exist.
-     * Captures an initial snapshot of the new order.
-     */
-    @Transactional
     public OrderEntity createOrder(CreateOrderRequest request) {
-        accountsEntity account = accountsRepo.findById(request.accountId())
-            .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+        AccountsEntity account = accountResolver.resolve(request.accountId());
+        InstrumentEntity instrument = instrumentResolver.resolve(request.instrumentId());
 
-        instrumentEntity instrument = instrumentRepo.findById(request.instrumentId())
-            .orElseThrow(() -> new IllegalArgumentException("Instrument not found"));
-
+        String orderSide = request.side();
+        BigDecimal totalPrice = BigDecimal.ZERO;
+        
+        if ("BUY".equals(orderSide)) {
+            buyOrderValidator.validate(request, account, instrument);
+            totalPrice = priceCalculator.calculateOrderPrice(instrument, request.quantity());
+        }
+        else if ("SELL".equals(orderSide)) {
+            // TODO: SellOrderValidator will be used here when available
+        } else {
+            // TODO: return an error response, invalid side
+        }
+        
         OrderEntity order = new OrderEntity(
-            request.side(),
+            orderSide,
             account,
             instrument,
             request.quantity(),
-            BigDecimal.valueOf(420.69)
+            totalPrice
         );
 
         return createOrderWithSnapshot(order);
@@ -136,7 +119,49 @@ public class OrderService {
     /**
      * Retrieve all historical snapshots for an order in chronological order.
      */
-    public List<historicalOrdersEntity> getHistoricalOrders(Integer orderId) {
+    public List<HistoricalOrdersEntity> getHistoricalOrders(Integer orderId) {
         return historicalOrdersRepo.findByOrderId_OrderIdOrderByCreatedAtAsc(orderId);
+    }
+
+    /**
+     * Capture an immutable snapshot of the order's current state in the historical_orders table.
+     * 
+     * The snapshot contains ONLY scalar values and plain IDs — no entity references.
+     * This ensures that if the live order's status changes later, the historical record
+     * still reflects what the status was at the time of this event.
+     */
+    private void captureOrderSnapshot(OrderEntity order) {
+        // Build a snapshot containing only scalars and IDs, not entity objects
+        OrderSnapshot snapshot = new OrderSnapshot(
+            order.getStatus(),                              // status at this moment
+            order.getSide(),
+            order.getQuantity(),
+            order.getTotalPrice(),
+            order.getInstrumentId().getInstrumentId(),    // extract scalar ID from entity
+            order.getAccountId().getAccountId(),          // extract scalar ID from entity
+            order.getUpdatedAt()
+        );
+        
+        String jsonSnapshot = serializeSnapshotToJson(snapshot);
+        
+        HistoricalOrdersEntity history = new HistoricalOrdersEntity();
+        history.setOrderId(order);
+        history.setAccount(order.getAccountId());
+        history.setOrderInformationJson(jsonSnapshot);
+        
+        historicalOrdersRepo.save(history);
+    }
+
+    /**
+     * Serialize an OrderSnapshot (not the full entity) to JSON string for storage.
+     * Throws RuntimeException if serialization fails to trigger transaction rollback.
+     */
+    private String serializeSnapshotToJson(OrderSnapshot snapshot) {
+        try {
+            return objectMapper.writeValueAsString(snapshot);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize order snapshot to JSON: {}", e.getMessage());
+            throw new RuntimeException("Order snapshot serialization failed", e);
+        }
     }
 }

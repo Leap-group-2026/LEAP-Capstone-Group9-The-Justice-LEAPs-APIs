@@ -4,7 +4,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import main.repos.AdminRepo;
-import main.entities.adminEntity;
+import main.entities.AdminEntity;
 
 @Service
 public class AdminService {
@@ -15,18 +15,18 @@ public class AdminService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public adminEntity saveAdmin(adminEntity entity){
+    public AdminEntity saveAdmin(AdminEntity entity){
         if (repo.existsByUsername(entity.getUsername())){
             throw new IllegalArgumentException("Username already exists");
         }
         return repo.save(entity);
     }
 
-    public ResponseEntity<String> login(adminEntity entity){
+    public ResponseEntity<String> login(AdminEntity entity){
         if (!repo.existsByUsername(entity.getUsername())){
             throw new IllegalArgumentException("Username doesn't exist");
         }
-        adminEntity user = repo.findByUsername(entity.getUsername()).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        AdminEntity user = repo.findByUsername(entity.getUsername()).orElseThrow(() -> new IllegalArgumentException("User not found"));
         boolean match = passwordEncoder.matches(entity.getPassHash(), user.getPassHash());
         if(!match){
             return ResponseEntity.badRequest().body("Wrong password");

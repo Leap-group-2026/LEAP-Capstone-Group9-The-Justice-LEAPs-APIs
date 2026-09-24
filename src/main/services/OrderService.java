@@ -12,6 +12,7 @@ import main.services.calculation.OrderPriceCalculator;
 import main.services.resolver.AccountResolver;
 import main.services.resolver.InstrumentResolver;
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 
 @Service
 public class OrderService {
@@ -39,7 +40,8 @@ public class OrderService {
         BigDecimal totalPrice = BigDecimal.ZERO;
         
         if ("BUY".equals(orderSide)) {
-            buyOrderValidator.validate(request, account, instrument);
+            ZonedDateTime submittedAt = ZonedDateTime.now();
+            buyOrderValidator.validate(request, account, instrument, submittedAt);
             totalPrice = priceCalculator.calculateOrderPrice(instrument, request.quantity());
         }
         else if ("SELL".equals(orderSide)) {

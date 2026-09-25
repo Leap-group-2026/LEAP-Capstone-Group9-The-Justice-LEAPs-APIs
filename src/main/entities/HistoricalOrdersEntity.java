@@ -18,10 +18,6 @@ public class HistoricalOrdersEntity {
         return historicalOrderId;
     }
 
-    public void setHistoricalOrderId(Integer historicalOrderId) {
-        this.historicalOrderId = historicalOrderId;
-    }
-
     public OrderEntity getOrderId() {
         return orderId;
     }

@@ -3,6 +3,7 @@ package main.controllers;
 import main.services.AdminService;
 import main.services.EmailService;
 import main.entities.AdminEntity;
+import main.dto.request.AdminCreation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,23 +21,19 @@ public class AdminController {
         this.emailService = emailService;
     }
     @PostMapping("/create")
-    public AdminEntity createAdmin(@RequestBody AdminEntity admin){
-        String pass = passwordEncoder.encode(admin.getPassHash());
-        admin.setPassHash(pass);
-        return service.saveAdmin(admin);
+    public AdminEntity createAdmin(@RequestBody AdminCreation admin){
+        AdminEntity adminEntity = new AdminEntity();
+        adminEntity.setUsername(admin.getUsername());
+        String pass = passwordEncoder.encode(admin.getPassword());
+        adminEntity.setPassHash(pass);
+        return service.saveAdmin(adminEntity);
     }
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody AdminEntity admin){
-        return service.login(admin);
+    public ResponseEntity<String> login(@RequestBody AdminCreation admin){
+        AdminEntity adminEntity = new AdminEntity();
+        adminEntity.setUsername(admin.getUsername());
+        adminEntity.setPassHash(admin.getPassword());
+        return service.login(adminEntity);
     }
 
-    @GetMapping("/email")
-    public ResponseEntity<String> sendEmail(){
-        emailService.sendEmail(
-            "electrowiz67@gmail.com",
-            "Jello",
-            "Test email"
-        );
-        return ResponseEntity.ok("Email sent successfully");
-    }
 }

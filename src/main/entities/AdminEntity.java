@@ -17,10 +17,6 @@ public class AdminEntity {
         return adminId;
     }
 
-    public void setAdminId(Integer adminId) {
-        this.adminId = adminId;
-    }
-
     public String getUsername() {
         return username;
     }

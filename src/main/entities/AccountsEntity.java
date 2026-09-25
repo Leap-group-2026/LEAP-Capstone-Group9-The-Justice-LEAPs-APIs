@@ -29,6 +29,10 @@ public class AccountsEntity {
         return accountId;
     }
 
+    public void setAccountId(Integer accountId) {
+        this.accountId = accountId;
+    }
+
     public UserEntity getUserId() {
         return user;
     }

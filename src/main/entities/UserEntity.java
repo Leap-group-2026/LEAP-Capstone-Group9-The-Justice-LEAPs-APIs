@@ -30,6 +30,10 @@ public class UserEntity {
         return userId;
     }
 
+    public void setUserId(Integer userId) {
+        this.userId = userId;
+    }
+
     public String getName() {
         return name;
     }

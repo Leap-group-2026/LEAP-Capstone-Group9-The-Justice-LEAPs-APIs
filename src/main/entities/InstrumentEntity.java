@@ -22,6 +22,10 @@ public class InstrumentEntity {
         return instrumentId;
     }
 
+    public void setInstrumentId(Integer instrumentId) {
+        this.instrumentId = instrumentId;
+    }
+
     public String getTicker() {
         return ticker;
     }

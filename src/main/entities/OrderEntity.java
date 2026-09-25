@@ -49,6 +49,10 @@ public class OrderEntity {
 
     public Integer getOrderId() { return orderId; }
 
+    public void setOrderId(Integer orderId) { this.orderId = orderId; }
+    
+    private void removeThisSetter() {}
+
     public String getSide() { return side; }
 
     public void setSide(String side) { this.side = side; }

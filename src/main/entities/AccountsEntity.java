@@ -25,6 +25,8 @@ public class AccountsEntity {
     @JsonProperty("created_at")
     private LocalDateTime createdAt;
 
+    @JsonProperty("account_active")
+    private Boolean accountActive;
     public Integer getAccountId() {
         return accountId;
     }
@@ -72,9 +74,13 @@ public class AccountsEntity {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+    public Boolean getAccountActive() {
+        return accountActive;
+    }
 
-
-
+    public void setAccountActive(Boolean accountActive) {
+        this.accountActive = accountActive;
+    }
     }
 
     

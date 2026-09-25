@@ -37,10 +37,6 @@ public class PositionsEntity {
         return positionId;
     }
 
-    public void setPositionId(Integer positionId) {
-        this.positionId = positionId;
-    }
-
     public AccountsEntity getAccountId() {
         return account;
     }

@@ -1,28 +1,39 @@
+package test;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.hamcrest.Matchers;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import main.Application;
+import main.dto.response.OrderSubmissionResponse;
 import main.entities.AccountsEntity;
 import main.entities.InstrumentEntity;
 import main.entities.UserEntity;
 import main.entities.PortfolioSize;
 import main.repos.AccountsRepo;
 import main.repos.InstrumentRepo;
+import main.repos.OrdersRepo;
 import main.repos.UserRepo;
+import test.config.TestClockConfig;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @SpringBootTest(classes = Application.class)
+@Import(TestClockConfig.class)
 @AutoConfigureMockMvc
 @Transactional
 @DisplayName("OrderController.createOrder() Tests")
@@ -39,6 +50,12 @@ public class OrderControllerTest {
 
     @Autowired
     private UserRepo userRepo;
+
+    @Autowired
+    private OrdersRepo ordersRepo;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private AccountsEntity testAccount;
     private InstrumentEntity testInstrument;
@@ -57,12 +74,18 @@ public class OrderControllerTest {
 
         testAccount = new AccountsEntity();
         testAccount.setUserId(testUser);
-        testAccount.setBalance(BigDecimal.valueOf(10000.00));
+        testAccount.setBalance(BigDecimal.valueOf(20000.00));
         testAccount.setPortfolioSize(PortfolioSize.BALANCED);
         testAccount.setTradeType("ACTIVE");
-        testAccount.setCreatedAt(java.time.LocalDateTime.now());
-        accountsRepo.insert(testAccount);
-        // testAccount.accountId is now set by MyBatis via @Options
+        testAccount.setAccountActive(true);
+        accountsRepo.insert(testUser.getUserId(), testAccount.getBalance(), 
+                           testAccount.getPortfolioSize().getValue(), testAccount.getTradeType(), null, true);
+        
+        // Retrieve the created account to get its ID
+        java.util.List<AccountsEntity> accounts = accountsRepo.findByUser(testUser.getUserId());
+        if (!accounts.isEmpty()) {
+            testAccount.setAccountId(accounts.get(0).getAccountId());
+        }
 
         testInstrument = new InstrumentEntity();
         testInstrument.setTicker("AAPL");
@@ -132,14 +155,22 @@ public class OrderControllerTest {
     @DisplayName("Should successfully create order with valid payload")
     void testCreateOrder_Success() throws Exception {
         String jsonPayload = "{\"side\": \"BUY\", \"accountId\": " + testAccount.getAccountId()
-            + ", \"instrumentId\": " + testInstrument.getInstrumentId() + ", \"quantity\": 100}";
+            + ", \"instrumentId\": " + testInstrument.getInstrumentId() + ", \"quantity\": 50}";
 
-        mockMvc.perform(post("/orders")
+        MvcResult result = mockMvc.perform(post("/orders")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonPayload))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.side").value("BUY"))
-            .andExpect(jsonPath("$.quantity").value(100))
-            .andExpect(jsonPath("$.total_price").value(15000.0));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.order_id").value(Matchers.greaterThan(0)))
+            .andExpect(jsonPath("$.created_at").value(Matchers.not(Matchers.blankOrNullString())))
+            .andReturn();
+
+        OrderSubmissionResponse response = objectMapper.readValue(
+            result.getResponse().getContentAsString(),
+            OrderSubmissionResponse.class
+        );
+
+        assertThat(response.createdAt())
+            .isEqualTo(ordersRepo.findById(response.orderId()).orElseThrow().getCreatedAt());
     }
 }

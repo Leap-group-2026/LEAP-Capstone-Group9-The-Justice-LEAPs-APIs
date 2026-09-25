@@ -40,12 +40,12 @@ public class HistoricalOrdersService {
         
         // Build a snapshot containing only scalars and IDs, not entity objects
         OrderSnapshot snapshot = new OrderSnapshot(
-            order.getStatus(),                              // status at this moment
+            order.getStatus(),                             
             order.getSide(),
             order.getQuantity(),
             order.getTotalPrice(),
-            instrumentId,                                   // ID from scalar field
-            accountId,                                      // ID from scalar field
+            instrumentId,                                  
+            accountId,                                     
             order.getUpdatedAt()
         );
         

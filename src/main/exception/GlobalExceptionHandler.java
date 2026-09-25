@@ -45,4 +45,17 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
+
+    @ExceptionHandler(InvalidOrderException.class)
+    public ResponseEntity<ValidationError> handleInvalidOrder(InvalidOrderException ex) {
+        ValidationError error = new ValidationError(
+            HttpStatus.BAD_REQUEST.value(),
+            "Invalid order",
+            LocalDateTime.now(),
+            ex.getField(),
+            null,
+            ex.getReason()
+        );
+        return ResponseEntity.badRequest().body(error);
+    }
 }

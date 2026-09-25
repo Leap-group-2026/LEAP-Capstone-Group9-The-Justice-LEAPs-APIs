@@ -4,10 +4,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
+
 import main.repos.UserRepo;
 import main.entities.UserEntity; 
 import main.dto.request.UserRegistrationRequest;
 import main.dto.request.LoginRequest;
+import main.dto.request.VerifyPasswordReset;
 import main.dto.response.UserResponse;
 import main.services.EmailService;
 
@@ -34,11 +36,6 @@ public class UserService {
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
     }
-
-    /* 
-    public UserEntity saveUser(UserEntity entity){
-        return repo.save(entity);
-    }*/
 
     public UserResponse registerUser(UserRegistrationRequest request){
         validateRequired(request);
@@ -68,6 +65,21 @@ public class UserService {
 
         repo.insert(user);
 
+        if (emailService != null) {
+            try {
+                String subject = "Welcome to Ribbit!";
+                String body = "Hello " + user.getName() + ",\n\n" +
+                        "Welcome to Ribbit! Your account has been successfully created.\n\n" +
+                        "You can now log in to your account and start trading.\n\n" +
+                        "If you have any questions or need assistance, please don't hesitate to reach out.\n\n" +
+                        "Best regards,\n" +
+                        "The Ribbit Trading Team";
+                emailService.sendEmail(user.getEmail(), subject, body);
+            } catch (Exception e) {
+                System.err.println("Warning: Failed to send welcome email for user " + user.getEmail() + ": " + e.getMessage());
+            }
+        }
+
         return new UserResponse(
             user.getUserId(),
             user.getName(),
@@ -75,6 +87,20 @@ public class UserService {
             user.getDateOfBirth(),
             user.getAddress()
         );
+    }
+
+    public ResponseEntity<String> login(LoginRequest request){
+        if (!repo.existsByEmail(request.getEmail())){
+            throw new IllegalArgumentException("Email doesn't exist");
+        }
+        UserEntity user = repo.findByEmail(request.getEmail()).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        boolean match = passwordEncoder.matches(request.getPassword(), user.getPassHash());
+        if(!match){
+            return ResponseEntity.badRequest().body("Wrong password");
+        }
+        else{
+            return ResponseEntity.ok("Login successful");
+        }
     }
 
 
@@ -123,7 +149,7 @@ public class UserService {
         }
     }
 
-    // Generates deterministic SHA-256 hash for SSN (for duplicate checking)
+    // Uses SHA-256 to hash
     private String generateSHA256Hash(String input) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -134,12 +160,13 @@ public class UserService {
         }
     }
 
-    public ResponseEntity<String> resetPassword(UserResponse entity){
+    public ResponseEntity<String> emailResetPassword(UserResponse entity){
         String email = entity.getEmail();
         int rand = 100000 + random.nextInt(900000);
         String code = Integer.toString(rand);
         
         UserEntity user = repo.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        entity.setEmail(user.getEmail());
         user.setCode(code);
         repo.update(user);
         
@@ -153,7 +180,7 @@ public class UserService {
                 "The Ribbit Trading Team";
             
             emailService.sendEmail(
-                email,
+                "electrowiz67@gmail.com",
                 "Password Reset Request - Ribbit Trading",
                 emailBody
             );
@@ -161,17 +188,17 @@ public class UserService {
         return ResponseEntity.ok("Email sent successfully");
     }
 
-    public ResponseEntity<String> login(LoginRequest request){
-        if (!repo.existsByEmail(request.getEmail())){
-            throw new IllegalArgumentException("Email doesn't exist");
-        }
-        UserEntity user = repo.findByEmail(request.getEmail()).orElseThrow(() -> new IllegalArgumentException("User not found"));
-        boolean match = passwordEncoder.matches(request.getPassword(), user.getPassHash());
-        if(!match){
-            return ResponseEntity.badRequest().body("Wrong password");
+    public ResponseEntity<String> resetPassword(VerifyPasswordReset user){
+        String email = user.getEmail();
+        UserEntity userInDb = repo.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        if(!userInDb.getCode().equals(user.getCode())){
+            return ResponseEntity.badRequest().body("Incorrect reset code");
         }
         else{
-            return ResponseEntity.ok("Login successful");
+            validatePass(user.getPassword());
+            String encodedPassword = passwordEncoder.encode(user.getPassword());
+            repo.updatePassword(userInDb.getUserId(), encodedPassword);
+            return ResponseEntity.ok("Password reset successfully");
         }
     }
 }

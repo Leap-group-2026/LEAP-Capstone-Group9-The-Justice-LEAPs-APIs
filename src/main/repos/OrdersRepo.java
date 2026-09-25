@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Results;
@@ -44,9 +45,9 @@ public interface OrdersRepo {
     })
     List<OrderEntity> findAll();
 
-    @Insert("INSERT INTO orders (side, account_id, instrument_id, status, quantity, total_price, created_at, updated_at) " +
-            "VALUES (#{side}, #{accountIdValue}, #{instrumentIdValue}, #{status}, #{quantity}, #{totalPrice}, #{createdAt}, #{updatedAt})")
-    @Options(useGeneratedKeys = true, keyProperty = "orderId")
+    @Insert("INSERT INTO orders (side, account_id, instrument_id, status, quantity, total_price) " +
+            "VALUES (#{side}, #{accountId.accountId}, #{instrumentId.instrumentId}, #{status}, #{quantity}, #{totalPrice})")
+    @Options(useGeneratedKeys = true, keyProperty = "orderId,createdAt,updatedAt", keyColumn = "order_id,created_at,updated_at")
     void insert(OrderEntity order);
 
     @Update("UPDATE orders SET side=#{side}, account_id=#{accountIdValue}, instrument_id=#{instrumentIdValue}, " +

@@ -36,7 +36,7 @@ public class AdminRouteTest {
         
         mockMvc.perform(post("/admin/login")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"username\":\"aryann\",\"pass_hash\":\"secret\"}"))
+            .content("{\"username\":\"aryann\",\"password\":\"secret\"}"))
             .andExpect(status().isOk());
     }
     
@@ -44,7 +44,7 @@ public class AdminRouteTest {
     public void wrongUsername() throws Exception{
         mockMvc.perform(post("/admin/login")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"username\":\"arya\",\"pass_hash\":\"gg\"}"))
+            .content("{\"username\":\"arya\",\"password\":\"gg\"}"))
             .andExpect(status().isBadRequest());
     }
 
@@ -52,7 +52,7 @@ public class AdminRouteTest {
     public void wrongPassword() throws Exception{
         mockMvc.perform(post("/admin/login")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"username\":\"aryan\",\"pass_hash\":\"gg\"}"))
+            .content("{\"username\":\"aryan\",\"password\":\"gg\"}"))
             .andExpect(status().isBadRequest());
     }
 }

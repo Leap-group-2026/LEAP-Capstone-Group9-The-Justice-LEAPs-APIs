@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Param;
 import main.entities.UserEntity;
 import java.util.Optional;
 import java.util.List;
@@ -38,4 +39,7 @@ public interface UserRepo {
 
     @Select("SELECT * FROM user_info WHERE email = #{email}")
     Optional<UserEntity> findByEmail(String email);
+
+    @Update("UPDATE user_info SET pass_hash=#{passHash} WHERE user_id=#{userId}")
+    void updatePassword(@Param("userId") Integer userId, @Param("passHash") String passHash);
 }

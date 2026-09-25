@@ -43,11 +43,12 @@ public class OrderEntity {
         this.quantity = quantity;
         this.totalPrice = totalPrice;
         this.status = "PENDING";
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
     }
 
     public Integer getOrderId() { return orderId; }
+    
+    // DO NOT REMOVE: Setter is required for MyBatis to attach db-generated id to entities
+    public void setOrderId(Integer orderId) { this.orderId = orderId; }
 
     public void setOrderId(Integer orderId) { this.orderId = orderId; }
     

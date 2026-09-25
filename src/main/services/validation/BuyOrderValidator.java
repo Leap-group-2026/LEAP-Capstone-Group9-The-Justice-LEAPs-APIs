@@ -13,14 +13,9 @@ import java.time.ZoneId;
 
 @Component
 public class BuyOrderValidator {
-    private final OrderPriceCalculator priceCalculator;
     private static final ZoneId EASTERN_ZONE = ZoneId.of("America/New_York");
     private static final LocalTime MARKET_OPEN = LocalTime.of(9, 30);
     private static final LocalTime MARKET_CLOSE = LocalTime.of(16, 0);
-
-    public BuyOrderValidator(OrderPriceCalculator priceCalculator) {
-        this.priceCalculator = priceCalculator;
-    }
 
     public void validate(CreateOrderRequest request, AccountsEntity account, InstrumentEntity instrument, ZonedDateTime submittedAt) {
         validateBalance(request, account, instrument);
@@ -28,7 +23,7 @@ public class BuyOrderValidator {
     }
 
     private void validateBalance(CreateOrderRequest request, AccountsEntity account, InstrumentEntity instrument) {
-        BigDecimal orderPrice = priceCalculator.calculateOrderPrice(instrument, request.quantity());
+        BigDecimal orderPrice = OrderPriceCalculator.calculateOrderPrice(instrument, request.quantity());
         BigDecimal accountBalance = account.getBalance();
 
         if (accountBalance.compareTo(orderPrice) < 0) {

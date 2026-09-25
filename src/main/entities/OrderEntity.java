@@ -50,6 +50,10 @@ public class OrderEntity {
     // DO NOT REMOVE: Setter is required for MyBatis to attach db-generated id to entities
     public void setOrderId(Integer orderId) { this.orderId = orderId; }
 
+    public void setOrderId(Integer orderId) { this.orderId = orderId; }
+    
+    private void removeThisSetter() {}
+
     public String getSide() { return side; }
 
     public void setSide(String side) { this.side = side; }

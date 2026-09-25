@@ -4,7 +4,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import main.dto.request.CreateOrderRequest;
-import main.entities.OrderEntity;
+import main.dto.response.OrderSubmissionResponse;
 import main.services.OrderService;
 
 @RestController
@@ -17,7 +17,7 @@ public class OrderController {
     }
 
     @PostMapping
-    public OrderEntity createOrder(@RequestBody @Valid CreateOrderRequest request) {
+    public OrderSubmissionResponse createOrder(@RequestBody @Valid CreateOrderRequest request) {
         return orderService.createOrder(request);
     }
 }

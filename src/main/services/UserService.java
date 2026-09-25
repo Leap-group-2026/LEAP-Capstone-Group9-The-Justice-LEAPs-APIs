@@ -37,11 +37,6 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    /* 
-    public UserEntity saveUser(UserEntity entity){
-        return repo.save(entity);
-    }*/
-
     public UserResponse registerUser(UserRegistrationRequest request){
         validateRequired(request);
         
@@ -69,6 +64,21 @@ public class UserService {
         user.setPassHash(passwordEncoder.encode(request.getPassword()));
 
         repo.insert(user);
+
+        if (emailService != null) {
+            try {
+                String subject = "Welcome to Ribbit!";
+                String body = "Hello " + user.getName() + ",\n\n" +
+                        "Welcome to Ribbit! Your account has been successfully created.\n\n" +
+                        "You can now log in to your account and start trading.\n\n" +
+                        "If you have any questions or need assistance, please don't hesitate to reach out.\n\n" +
+                        "Best regards,\n" +
+                        "The Ribbit Trading Team";
+                emailService.sendEmail(user.getEmail(), subject, body);
+            } catch (Exception e) {
+                System.err.println("Warning: Failed to send welcome email for user " + user.getEmail() + ": " + e.getMessage());
+            }
+        }
 
         return new UserResponse(
             user.getUserId(),
@@ -139,7 +149,7 @@ public class UserService {
         }
     }
 
-    // Generates deterministic SHA-256 hash for SSN (for duplicate checking)
+    // Uses SHA-256 to hash
     private String generateSHA256Hash(String input) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

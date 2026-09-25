@@ -6,7 +6,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import main.services.validation.BuyOrderValidator;
-import main.services.calculation.OrderPriceCalculator;
 import main.dto.request.CreateOrderRequest;
 import main.entities.AccountsEntity;
 import main.entities.InstrumentEntity;
@@ -22,12 +21,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class BuyOrderValidatorTest {
     
     private BuyOrderValidator validator;
-    private OrderPriceCalculator priceCalculator;
     
     @BeforeEach
     void setUp() {
-        priceCalculator = new OrderPriceCalculator();
-        validator = new BuyOrderValidator(priceCalculator);
+        validator = new BuyOrderValidator();
     }
     
     private AccountsEntity createAccount(BigDecimal balance) {

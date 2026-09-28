@@ -11,7 +11,7 @@ public class TradeData {
     private List<String> conditions;
     
     @JsonProperty("i")
-    private int sequenceNumber;
+    private long sequenceNumber;
     
     @JsonProperty("p")
     private BigDecimal price;
@@ -31,8 +31,8 @@ public class TradeData {
     public List<String> getConditions() { return conditions; }
     public void setConditions(List<String> conditions) { this.conditions = conditions; }
     
-    public int getSequenceNumber() { return sequenceNumber; }
-    public void setSequenceNumber(int sequenceNumber) { this.sequenceNumber = sequenceNumber; }
+    public long getSequenceNumber() { return sequenceNumber; }
+    public void setSequenceNumber(long sequenceNumber) { this.sequenceNumber = sequenceNumber; }
     
     public BigDecimal getPrice() { return price; }
     public void setPrice(BigDecimal price) { this.price = price; }

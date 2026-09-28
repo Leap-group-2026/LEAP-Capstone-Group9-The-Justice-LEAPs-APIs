@@ -13,14 +13,28 @@ import io.github.cdimascio.dotenv.Dotenv;
 import main.dto.request.TradesResponse;
 import org.springframework.scheduling.annotation.Scheduled;
 import main.repos.OrdersRepo;
+import main.repos.CurrentPriceRepo;
+import main.repos.InstrumentRepo;
+import main.entities.CurrentPriceEntity;
 import main.entities.OrderEntity;
 import main.dto.request.TradeData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Service
 public class AlpacaPrices {
+    
+    private static final Logger logger = LoggerFactory.getLogger(AlpacaPrices.class);
+    
+    @Autowired
+    private CurrentPriceRepo currentPriceRepo;
+    
+    @Autowired
+    private InstrumentRepo instrumentRepo;
     
     private final Dotenv dotenv = Dotenv.load();
     private final RestTemplate template = new RestTemplate();
@@ -28,31 +42,43 @@ public class AlpacaPrices {
     
     @Scheduled(fixedRate = 10000)
     public void pollAlpaca(){
+        logger.info("Starting Alpaca API poll scheduled job");
         try{
             HttpHeaders headers = new HttpHeaders();
             headers.set("APCA-API-KEY-ID", dotenv.get("ALPACA_KEY"));
             headers.set("APCA-API-SECRET-KEY", dotenv.get("ALPACA_SECRET"));
             HttpEntity<String> entity = new HttpEntity<>(headers);
 
-            String url = "https://data.alpaca.markets/v2/stocks/trades/latest?symbols=AAPL,MSFT,TSLA";
+            // Top 50 S&P 500 stocks by market cap
+            String symbols = "NVDA,MSFT,AAPL,GOOGL,AMZN,META,TSLA,BRK.B,V,JNJ,WMT,XOM,JPM,PG,MA,HD,NFLX,KO,BAC,PEP,CSCO,DIS,VZ,MRK,AXP,ADBE,WBA,CRM,IBM,INTC,QCOM,TXN,CMG,COST,CVX,LLY,HON,UNH,CAT,BA,MMM,NOC,CCI,SLB,USB,WFC,BLK,SO,EOG,PSX,OXY";
+            String url = "https://data.alpaca.markets/v2/stocks/trades/latest?symbols=" + symbols;
             ResponseEntity<String> response = template.exchange(url, HttpMethod.GET, entity, String.class);
 
             if(response.getStatusCode().is2xxSuccessful() && response.getBody() != null){
+                logger.info("Successfully received response from Alpaca API");
                 TradesResponse tradesResponse = objectMapper.readValue(response.getBody(), TradesResponse.class);
                 processData(tradesResponse);
             }
         }
         catch(Exception e){
-            System.err.println("Error polling alpaca api");
-            e.printStackTrace();
+            logger.error("Error polling alpaca api", e);
         }
     }
 
     public void processData(TradesResponse tradesResponse){
+        int recordsProcessed = 0;
         for(Map.Entry<String, TradeData> entry : tradesResponse.getTrades().entrySet()){
             String symbol = entry.getKey();
             BigDecimal price = entry.getValue().getPrice();
             String quoteTime = entry.getValue().getTimestamp();
+
+            Integer instrumentId = instrumentRepo.findIdBySymbol(symbol);
+            if (instrumentId != null) {
+                CurrentPriceEntity currentPriceEntity = new CurrentPriceEntity(instrumentId, price, OffsetDateTime.parse(quoteTime), OffsetDateTime.now());
+                currentPriceRepo.upsert(currentPriceEntity);
+                recordsProcessed++;
+            }
         }
+        logger.info("Successfully processed and upserted {} price records", recordsProcessed);
     }
 }

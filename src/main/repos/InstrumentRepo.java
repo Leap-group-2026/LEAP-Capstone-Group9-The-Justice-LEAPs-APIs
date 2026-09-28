@@ -42,4 +42,7 @@ public interface InstrumentRepo {
 
     @Select("SELECT EXISTS(SELECT 1 FROM instruments WHERE ticker = #{ticker})")
     boolean existsByTicker(String ticker);
+
+    @Select("SELECT instrument_id FROM instruments WHERE ticker = #{symbol}")
+    Integer findIdBySymbol(String symbol);
 }

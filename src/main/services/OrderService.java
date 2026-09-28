@@ -82,11 +82,6 @@ public class OrderService {
 
         ordersRepo.insert(order);
 
-  
-        order.setAccountIdValue(account.getAccountId());
-        order.setInstrumentIdValue(instrument.getInstrumentId());
-
-   
         historicalOrdersService.captureOrderSnapshot(order);
 
         return new OrderSubmissionResponse(order.getOrderId(), order.getCreatedAt());

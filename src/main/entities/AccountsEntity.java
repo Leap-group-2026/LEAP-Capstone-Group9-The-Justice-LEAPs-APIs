@@ -35,7 +35,7 @@ public class AccountsEntity {
         this.accountId = accountId;
     }
 
-    // Bound to "user" so the nested object isn't serialized a second time as "userId"
+
     @JsonProperty("user")
     public UserEntity getUserId() {
         return user;

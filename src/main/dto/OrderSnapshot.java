@@ -33,7 +33,7 @@ public class OrderSnapshot {
     private LocalDateTime updatedAt;
 
 
-    // No-args constructor for Jackson deserialization
+   
     public OrderSnapshot() {
     }
 

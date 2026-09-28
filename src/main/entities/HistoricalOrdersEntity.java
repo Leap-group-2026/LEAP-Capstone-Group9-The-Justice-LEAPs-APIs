@@ -6,15 +6,15 @@ import java.time.LocalDateTime;
 public class HistoricalOrdersEntity {
     private Integer historicalOrderId;
     @JsonProperty("order_id")
-    private Integer orderId;
-    @JsonProperty("account_id")
-    private Integer accountId;
+    private OrderEntity orderId;
+    @JsonProperty("account")
+    private AccountsEntity account;
     @JsonProperty("order_information_json")
     private String orderInformationJson;
     @JsonProperty("created_at")
     private LocalDateTime createdAt;
 
-    // Getters and Setters
+ 
     public Integer getHistoricalOrderId() {
         return historicalOrderId;
     }
@@ -23,20 +23,20 @@ public class HistoricalOrdersEntity {
         this.historicalOrderId = historicalOrderId;
     }
 
-    public Integer getOrderId() {
+    public OrderEntity getOrderId() {
         return orderId;
     }
 
-    public void setOrderId(Integer orderId) {
+    public void setOrderId(OrderEntity orderId) {
         this.orderId = orderId;
     }
 
-    public Integer getAccountId() {
-        return accountId;
+    public AccountsEntity getAccount() {
+        return account;
     }
 
-    public void setAccountId(Integer accountId) {
-        this.accountId = accountId;
+    public void setAccount(AccountsEntity account) {
+        this.account = account;
     }
 
 

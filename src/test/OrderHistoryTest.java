@@ -80,9 +80,6 @@ public class OrderHistoryTest {
     
     @BeforeEach
     public void setUp() {
-        // Clear old snapshots from previous test runs
-        historicalOrdersRepo.deleteAll();
-        
         // Create a test user using MyBatis insert
         testUser = new UserEntity();
         testUser.setName("John Doe");

@@ -18,9 +18,6 @@ import java.math.BigDecimal;
 
 @Mapper
 public interface AccountsRepo {
-    // Closed accounts are indistinguishable from missing ones (callers return 404). This service
-    // can't verify who owns an account yet, so saying "closed" would leak that the id exists.
-    // Revisit when auth lands: an owner may deserve a clearer message.
     @Select("SELECT a.account_id, a.user_id, a.balance, a.portfolio_size, a.trade_type, a.created_at, a.account_active, " +
             "u.user_id, u.name, u.email, u.date_of_birth, u.address, u.ssn_hash, u.pass_hash " +
             "FROM accounts a LEFT JOIN user_info u ON a.user_id = u.user_id " +

@@ -7,7 +7,6 @@ import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.One;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Update;
-import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Param;
 import main.entities.AccountsEntity;
 import main.entities.PositionsEntity;
@@ -60,6 +59,4 @@ public interface PositionsRepo {
                 @Param("openedAt") LocalDateTime openedAt,
                 @Param("closedAt") LocalDateTime closedAt);
 
-    @Delete("DELETE FROM positions WHERE position_id = #{positionId}")
-    void delete(Integer positionId);
 }

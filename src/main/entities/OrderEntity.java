@@ -15,15 +15,11 @@ public class OrderEntity {
 
     @JsonProperty("account_id")
     private AccountsEntity accountId;
-    
-    // Scalar ID mapped directly to account_id column in database (for MyBatis)
-    private Integer accountIdValue;
+
 
     @JsonProperty("instrument_id")
     private InstrumentEntity instrumentId;
-    
-    // Scalar ID mapped directly to instrument_id column in database (for MyBatis)
-    private Integer instrumentIdValue;
+
 
     @JsonProperty("status")
     private String status;
@@ -67,18 +63,12 @@ public class OrderEntity {
     public AccountsEntity getAccountId() { return accountId; }
 
     public void setAccountId(AccountsEntity accountId) { this.accountId = accountId; }
-    
-    public Integer getAccountIdValue() { return accountIdValue; }
-    
-    public void setAccountIdValue(Integer accountIdValue) { this.accountIdValue = accountIdValue; }
+
 
     public InstrumentEntity getInstrumentId() { return instrumentId; }
 
     public void setInstrumentId(InstrumentEntity instrumentId) { this.instrumentId = instrumentId; }
-    
-    public Integer getInstrumentIdValue() { return instrumentIdValue; }
-    
-    public void setInstrumentIdValue(Integer instrumentIdValue) { this.instrumentIdValue = instrumentIdValue; }
+
 
     public String getStatus() { return status; }
 

@@ -1,15 +1,15 @@
 package main.dto.request;
 
 public class AdminCreation {
-    private String email;
+    private String username;
     private String password;
 
-    public String getEmail() {
-        return email;
+    public String getUsername() {
+        return username;
     }
 
-    public void setEmail(String name) {
-        this.email = name;
+    public void setUsername(String name) {
+        this.username = name;
     }
 
     public String getPassword(){

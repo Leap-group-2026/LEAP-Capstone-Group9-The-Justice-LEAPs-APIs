@@ -39,7 +39,7 @@ public class HistoricalOrderResponse {
     private LocalDateTime snapshotUpdatedAt;
     
     @JsonProperty("snapshot_error")
-    private String snapshotError;  // Set if snapshot JSON could not be deserialized
+    private String snapshotError;  
     
     public HistoricalOrderResponse() {
     }

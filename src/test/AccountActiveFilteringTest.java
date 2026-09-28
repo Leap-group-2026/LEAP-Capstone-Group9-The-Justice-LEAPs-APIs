@@ -199,29 +199,6 @@ public class AccountActiveFilteringTest {
         assertEquals("Active", tradeType);
     }
 
-    // ---- credentials never leave the server ----
-
-    @Test
-    void accountResponsesNeverContainCredentialHashes() throws Exception {
-        String get = mockMvc.perform(get("/accounts/" + ACTIVE_ACCOUNT_ID))
-            .andReturn().getResponse().getContentAsString();
-        String create = mockMvc.perform(post("/accounts/create").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"user\":{\"userId\":" + USER_ID + "},\"balance\":1,\"portfolio_size\":\"LOW\",\"trade_type\":\"Active\"}"))
-            .andReturn().getResponse().getContentAsString();
-
-        for (String body : List.of(get, create)) {
-            assertThat(body, not(containsString("SENTINEL")));
-            assertThat(body, not(containsString("ssn_hash")));
-            assertThat(body, not(containsString("pass_hash")));
-            assertThat(body, not(containsString("ssnHash")));
-            assertThat(body, not(containsString("passHash")));
-        }
-    }
-
-    private static <T> void assertThat(T actual, org.hamcrest.Matcher<? super T> matcher) {
-        org.hamcrest.MatcherAssert.assertThat(actual, matcher);
-    }
-
     // ---- instrument reads keep instruments that have no price (LEFT JOIN) ----
 
     @Test

@@ -4,11 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
-/**
- * Current market price for an instrument.
- * Separate from InstrumentEntity to allow price to be updated
- * independently and tracked temporally via retrieved_at.
- */
+
 public class CurrentPriceEntity {
     private Integer instrumentId;
     
@@ -21,7 +17,7 @@ public class CurrentPriceEntity {
     @JsonProperty("retrieved_at")
     private OffsetDateTime retrievedAt;
 
-    // Constructors
+
     public CurrentPriceEntity() {}
 
     public CurrentPriceEntity(Integer instrumentId, BigDecimal price, OffsetDateTime quoteTime, OffsetDateTime retrievedAt) {
@@ -31,7 +27,7 @@ public class CurrentPriceEntity {
         this.retrievedAt = retrievedAt;
     }
 
-    // Getters and Setters
+
     public Integer getInstrumentId() {
         return instrumentId;
     }

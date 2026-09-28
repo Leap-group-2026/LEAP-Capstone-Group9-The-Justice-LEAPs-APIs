@@ -5,10 +5,9 @@ import java.time.LocalDateTime;
 
 public class AdminEntity {
     private Integer adminId;
-    @JsonProperty("email")
-    private String email;
-    // Accepted on input, never written to a response
-    @JsonProperty(value = "pass_hash", access = JsonProperty.Access.WRITE_ONLY)
+    @JsonProperty("username")
+    private String username;
+    @JsonProperty("pass_hash")
     private String passHash;
     @JsonProperty("created_at")
     private LocalDateTime createdAt;
@@ -22,12 +21,12 @@ public class AdminEntity {
         this.adminId = adminId;
     }
 
-    public String getEmail() {
-        return email;
+    public String getUsername() {
+        return username;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getPassHash() {

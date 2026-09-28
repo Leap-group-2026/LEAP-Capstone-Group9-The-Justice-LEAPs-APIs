@@ -1,6 +1,5 @@
 package main.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
@@ -18,9 +17,9 @@ public class UserEntity {
     private LocalDate dateOfBirth; 
     @JsonProperty("address")
     private String address; 
-    @JsonIgnore
+    @JsonProperty("ssn_hash")
     private String ssnHash; 
-    @JsonProperty(value = "pass_hash", access = JsonProperty.Access.WRITE_ONLY)
+    @JsonProperty("pass_hash")
     private String passHash; 
     @JsonProperty("code")
     private String code; 

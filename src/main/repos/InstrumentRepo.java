@@ -26,7 +26,6 @@ public interface InstrumentRepo {
             "LEFT JOIN current_prices cp USING (instrument_id)")
     List<InstrumentWithPrice> findAll();
 
-    // Reference data only, for nested @One mappings whose target property is an InstrumentEntity
     @Select("SELECT instrument_id, ticker, asset_type, asset_name, currency FROM instruments WHERE instrument_id = #{instrumentId}")
     InstrumentEntity findEntityById(Integer instrumentId);
 

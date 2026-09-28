@@ -32,7 +32,7 @@ public class AccountService {
             entity.setCreatedAt(LocalDateTime.now());
         }
 
-        // Populates entity.accountId with the generated key
+  
         repo.insert(entity);
         return entity;
     }

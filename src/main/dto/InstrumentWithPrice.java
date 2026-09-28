@@ -20,7 +20,7 @@ public class InstrumentWithPrice {
     @JsonProperty("currency")
     private String currency;
     @JsonProperty("price")
-    private BigDecimal price;  // nullable: no current_prices row
+    private BigDecimal price; 
     @JsonProperty("quote_time")
     private OffsetDateTime quoteTime;  // nullable: no current_prices row; TIMESTAMPTZ in Postgres
 

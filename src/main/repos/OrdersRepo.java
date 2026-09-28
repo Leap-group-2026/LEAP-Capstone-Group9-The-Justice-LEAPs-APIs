@@ -21,8 +21,8 @@ public interface OrdersRepo {
     @Results({
         @Result(column = "order_id", property = "orderId"),
         @Result(column = "side", property = "side"),
-        @Result(column = "account_id", property = "accountIdValue"),
-        @Result(column = "instrument_id", property = "instrumentIdValue"),
+        @Result(column = "account_id", property = "accountId.accountId"),
+        @Result(column = "instrument_id", property = "instrumentId.instrumentId"),
         @Result(column = "status", property = "status"),
         @Result(column = "quantity", property = "quantity"),
         @Result(column = "total_price", property = "totalPrice"),
@@ -35,8 +35,8 @@ public interface OrdersRepo {
     @Results({
         @Result(column = "order_id", property = "orderId"),
         @Result(column = "side", property = "side"),
-        @Result(column = "account_id", property = "accountIdValue"),
-        @Result(column = "instrument_id", property = "instrumentIdValue"),
+        @Result(column = "account_id", property = "accountId.accountId"),
+        @Result(column = "instrument_id", property = "instrumentId.instrumentId"),
         @Result(column = "status", property = "status"),
         @Result(column = "quantity", property = "quantity"),
         @Result(column = "total_price", property = "totalPrice"),
@@ -50,10 +50,8 @@ public interface OrdersRepo {
     @Options(useGeneratedKeys = true, keyProperty = "orderId,createdAt,updatedAt", keyColumn = "order_id,created_at,updated_at")
     void insert(OrderEntity order);
 
-    @Update("UPDATE orders SET side=#{side}, account_id=#{accountIdValue}, instrument_id=#{instrumentIdValue}, " +
+    @Update("UPDATE orders SET side=#{side}, account_id=#{accountId.accountId}, instrument_id=#{instrumentId.instrumentId}, " +
             "status=#{status}, quantity=#{quantity}, total_price=#{totalPrice}, updated_at=#{updatedAt} WHERE order_id=#{orderId}")
     void update(OrderEntity order);
 
-    @Delete("DELETE FROM orders WHERE order_id = #{orderId}")
-    void delete(Integer orderId);
 }

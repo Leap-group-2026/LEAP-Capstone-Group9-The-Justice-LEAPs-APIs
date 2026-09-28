@@ -3,7 +3,7 @@ package main.services.validation;
 import org.springframework.stereotype.Component;
 import main.dto.request.CreateOrderRequest;
 import main.entities.AccountsEntity;
-import main.entities.InstrumentEntity;
+import main.dto.InstrumentWithPrice;
 import main.entities.PositionsEntity;
 import main.exception.InvalidOrderException;
 import main.repos.PositionsRepo;
@@ -17,7 +17,7 @@ public class SellOrderValidator {
         this.positionsRepo = positionsRepo;
     }
 
-    public void validate(CreateOrderRequest request, AccountsEntity account, InstrumentEntity instrument) {
+    public void validate(CreateOrderRequest request, AccountsEntity account, InstrumentWithPrice instrument) {
         validateRequest(request);
         validateAccount(account);
         validateInstrument(instrument);
@@ -41,7 +41,7 @@ public class SellOrderValidator {
         }
     }
 
-    private void validateInstrument(InstrumentEntity instrument) {
+    private void validateInstrument(InstrumentWithPrice instrument) {
         if (instrument == null) {
             throw new InvalidOrderException("instrument", "Instrument not found");
         }
@@ -50,7 +50,12 @@ public class SellOrderValidator {
             throw new InvalidOrderException("instrument", "Invalid instrument ID");
         }
         
-        if (instrument.getPrice() == null || instrument.getPrice().signum() <= 0) {
+        if (instrument.getPrice() == null) {
+            throw new InvalidOrderException("instrument",
+                "Instrument " + instrument.getTicker() + " has no current price");
+        }
+
+        if (instrument.getPrice().signum() <= 0) {
             throw new InvalidOrderException("instrument", "Instrument has invalid price");
         }
     }

@@ -38,6 +38,9 @@ public class HistoricalOrderResponse {
     @JsonProperty("snapshot_updated_at")
     private LocalDateTime snapshotUpdatedAt;
     
+    @JsonProperty("snapshot_error")
+    private String snapshotError;  // Set if snapshot JSON could not be deserialized
+    
     public HistoricalOrderResponse() {
     }
     
@@ -135,5 +138,13 @@ public class HistoricalOrderResponse {
 
     public void setSnapshotUpdatedAt(LocalDateTime snapshotUpdatedAt) {
         this.snapshotUpdatedAt = snapshotUpdatedAt;
+    }
+    
+    public String getSnapshotError() {
+        return snapshotError;
+    }
+    
+    public void setSnapshotError(String snapshotError) {
+        this.snapshotError = snapshotError;
     }
 }

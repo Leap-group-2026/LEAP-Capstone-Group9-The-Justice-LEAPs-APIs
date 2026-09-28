@@ -7,7 +7,7 @@ import org.mockito.MockitoAnnotations;
 
 import main.services.resolver.InstrumentResolver;
 import main.repos.InstrumentRepo;
-import main.entities.InstrumentEntity;
+import main.dto.InstrumentWithPrice;
 import main.exception.ResourceNotFoundException;
 
 import java.util.Optional;
@@ -30,11 +30,15 @@ class InstrumentResolverTest {
     
     @Test
     void testResolveInstrumentSuccess() {
-        InstrumentEntity instrument = new InstrumentEntity();
+        InstrumentWithPrice instrument = new InstrumentWithPrice();
         instrument.setInstrumentId(100);
+        instrument.setTicker("TEST");
+        instrument.setAssetType("STOCK");
+        instrument.setAssetName("Test Company");
+        instrument.setCurrency("USD");
         when(instrumentRepo.findById(100)).thenReturn(Optional.of(instrument));
         
-        InstrumentEntity result = resolver.resolve(100);
+        InstrumentWithPrice result = resolver.resolve(100);
         
         assertNotNull(result);
         assertEquals(100, result.getInstrumentId());

@@ -82,7 +82,8 @@ public class HistoricalOrdersController {
         } catch (JsonProcessingException e) {
             log.error("Failed to deserialize snapshot JSON for history event {}: {}", 
                 entity.getHistoricalOrderId(), e.getMessage());
-            // If deserialization fails, response will have null snapshot fields
+            // Mark the snapshot unreadable without hiding the event; parser detail stays in the log
+            response.setSnapshotError("Snapshot could not be read");
         }
         
         return response;

@@ -23,7 +23,7 @@ public class AdminController {
     @PostMapping("/create")
     public AdminEntity createAdmin(@RequestBody AdminCreation admin){
         AdminEntity adminEntity = new AdminEntity();
-        adminEntity.setUsername(admin.getUsername());
+        adminEntity.setEmail(admin.getEmail());
         String pass = passwordEncoder.encode(admin.getPassword());
         adminEntity.setPassHash(pass);
         return service.saveAdmin(adminEntity);
@@ -31,7 +31,7 @@ public class AdminController {
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody AdminCreation admin){
         AdminEntity adminEntity = new AdminEntity();
-        adminEntity.setUsername(admin.getUsername());
+        adminEntity.setEmail(admin.getEmail());
         adminEntity.setPassHash(admin.getPassword());
         return service.login(adminEntity);
     }

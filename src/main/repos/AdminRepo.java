@@ -18,20 +18,20 @@ public interface AdminRepo {
     @Select("SELECT * FROM admin")
     List<AdminEntity> findAll();
 
-    @Insert("INSERT INTO admin (username, pass_hash, created_at) " +
-            "VALUES (#{username}, #{passHash}, #{createdAt})")
+    @Insert("INSERT INTO admin (email, pass_hash, created_at) " +
+            "VALUES (#{email}, #{passHash}, #{createdAt})")
     @Options(useGeneratedKeys = true, keyProperty = "adminId")
     void insert(AdminEntity admin);
 
-    @Update("UPDATE admin SET username=#{username}, pass_hash=#{passHash} WHERE admin_id=#{adminId}")
+    @Update("UPDATE admin SET email=#{email}, pass_hash=#{passHash} WHERE admin_id=#{adminId}")
     void update(AdminEntity admin);
 
     @Delete("DELETE FROM admin WHERE admin_id = #{adminId}")
     void delete(Integer adminId);
 
-    @Select("SELECT EXISTS(SELECT 1 FROM admin WHERE username = #{username})")
-    boolean existsByUsername(String username);
+    @Select("SELECT EXISTS(SELECT 1 FROM admin WHERE email = #{email})")
+    boolean existsByEmail(String email);
 
-    @Select("SELECT * FROM admin WHERE username = #{username}")
-    Optional<AdminEntity> findByUsername(String username);
+    @Select("SELECT * FROM admin WHERE email = #{email}")
+    Optional<AdminEntity> findByEmail(String email);
 }

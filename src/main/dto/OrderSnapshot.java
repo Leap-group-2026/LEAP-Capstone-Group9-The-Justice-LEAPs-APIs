@@ -3,6 +3,7 @@ package main.dto;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonAlias;
 
 
 public class OrderSnapshot {
@@ -15,17 +16,22 @@ public class OrderSnapshot {
     @JsonProperty("quantity")
     private Integer quantity;
     
-    @JsonProperty("total_price")
+    @JsonProperty("totalPrice")
+    @JsonAlias("total_price")
     private BigDecimal totalPrice;
     
-    @JsonProperty("instrument_id")
+    @JsonProperty("instrumentId")
+    @JsonAlias("instrument_id")
     private Integer instrumentId;
     
-    @JsonProperty("account_id")
+    @JsonProperty("accountId")
+    @JsonAlias("account_id")
     private Integer accountId;
     
-    @JsonProperty("updated_at")
+    @JsonProperty("updatedAt")
+    @JsonAlias("updated_at")
     private LocalDateTime updatedAt;
+
 
     // No-args constructor for Jackson deserialization
     public OrderSnapshot() {

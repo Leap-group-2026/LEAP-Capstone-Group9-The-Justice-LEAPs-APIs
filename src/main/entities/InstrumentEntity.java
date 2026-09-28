@@ -14,12 +14,10 @@ public class InstrumentEntity {
     private String assetType;
     @JsonProperty("asset_name")
     private String assetName;
-    @JsonProperty("price")
-    private BigDecimal price;
     @JsonProperty("currency")
     private String currency;
 
-    // Getters and Setters
+
     public Integer getInstrumentId() {
         return instrumentId;
     }
@@ -50,14 +48,6 @@ public class InstrumentEntity {
 
     public void setAssetName(String assetName) {
         this.assetName = assetName;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
     }
 
     public String getCurrency() {

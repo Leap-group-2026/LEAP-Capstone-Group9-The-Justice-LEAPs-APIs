@@ -35,12 +35,20 @@ public class AccountsEntity {
         this.accountId = accountId;
     }
 
+    // Bound to "user" so the nested object isn't serialized a second time as "userId"
+    @JsonProperty("user")
     public UserEntity getUserId() {
         return user;
     }
 
+    @JsonProperty("user")
     public void setUserId(UserEntity user) {
         this.user = user;
+    }
+
+    @JsonProperty(value = "userId", access = JsonProperty.Access.READ_ONLY)
+    public Integer getOwnerUserId() {
+        return user != null ? user.getUserId() : null;
     }
 
     public BigDecimal getBalance() {

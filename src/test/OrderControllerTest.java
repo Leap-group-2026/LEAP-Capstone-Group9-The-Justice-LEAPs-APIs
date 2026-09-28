@@ -26,11 +26,13 @@ import main.entities.UserEntity;
 import main.entities.PortfolioSize;
 import main.repos.AccountsRepo;
 import main.repos.InstrumentRepo;
+import org.springframework.jdbc.core.JdbcTemplate;
 import main.repos.OrdersRepo;
 import main.repos.UserRepo;
 import test.config.TestClockConfig;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @SpringBootTest(classes = Application.class)
 @Import(TestClockConfig.class)
@@ -50,6 +52,9 @@ public class OrderControllerTest {
 
     @Autowired
     private UserRepo userRepo;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Autowired
     private OrdersRepo ordersRepo;
@@ -78,23 +83,23 @@ public class OrderControllerTest {
         testAccount.setPortfolioSize(PortfolioSize.BALANCED);
         testAccount.setTradeType("ACTIVE");
         testAccount.setAccountActive(true);
-        accountsRepo.insert(testUser.getUserId(), testAccount.getBalance(), 
-                           testAccount.getPortfolioSize().getValue(), testAccount.getTradeType(), null, true);
-        
-        // Retrieve the created account to get its ID
-        java.util.List<AccountsEntity> accounts = accountsRepo.findByUser(testUser.getUserId());
-        if (!accounts.isEmpty()) {
-            testAccount.setAccountId(accounts.get(0).getAccountId());
-        }
+        testAccount.setCreatedAt(LocalDateTime.now());
+        testAccount.setAccountActive(true);
+        accountsRepo.insert(testAccount);
+        // testAccount.accountId is now set by MyBatis via @Options
 
         testInstrument = new InstrumentEntity();
         testInstrument.setTicker("AAPL");
         testInstrument.setAssetType("STOCK");
         testInstrument.setAssetName("Apple Inc.");
-        testInstrument.setPrice(BigDecimal.valueOf(150.00));
         testInstrument.setCurrency("USD");
         instrumentRepo.insert(testInstrument);
         // testInstrument.instrumentId is now set by MyBatis via @Options
+        
+        // Seed current_prices directly; CurrentPriceRepo.upsert uses Postgres-only ON CONFLICT
+        jdbcTemplate.update(
+            "INSERT INTO current_prices (instrument_id, price, quote_time, retrieved_at) VALUES (?, ?, now(), now())",
+            testInstrument.getInstrumentId(), new BigDecimal("150.00"));
     }
 
     @Test

@@ -7,12 +7,16 @@ import static org.mockito.Mockito.*;
 
 import main.dto.request.CreateOrderRequest;
 import main.entities.AccountsEntity;
+import main.dto.InstrumentWithPrice;
 import main.entities.InstrumentEntity;
 import main.entities.PositionsEntity;
 import main.exception.InvalidOrderException;
 import main.repos.PositionsRepo;
 import main.services.validation.SellOrderValidator;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +28,7 @@ public class SellOrderValidatorTest {
     private SellOrderValidator validator;
     private CreateOrderRequest request;
     private AccountsEntity account;
-    private InstrumentEntity instrument;
+    private InstrumentWithPrice instrument;
     
     @BeforeEach
     void setUp() {
@@ -36,9 +40,14 @@ public class SellOrderValidatorTest {
         account = new AccountsEntity();
         account.setAccountId(1);
         
-        instrument = new InstrumentEntity();
+        instrument = new InstrumentWithPrice();
         instrument.setInstrumentId(1);
+        instrument.setTicker("AAPL");
+        instrument.setAssetType("STOCK");
+        instrument.setAssetName("Apple Inc.");
+        instrument.setCurrency("USD");
         instrument.setPrice(BigDecimal.valueOf(150.00));
+        instrument.setQuoteTime(OffsetDateTime.now(ZoneOffset.UTC));
     }
     
     @Test
@@ -87,6 +96,18 @@ public class SellOrderValidatorTest {
             () -> validator.validate(request, account, instrument));
     }
     
+    @Test
+    void testValidate_NoCurrentPrice() {
+        instrument.setPrice(null);
+        instrument.setQuoteTime(null);
+
+        InvalidOrderException exception = assertThrows(InvalidOrderException.class,
+            () -> validator.validate(request, account, instrument));
+
+        assertEquals("instrument", exception.getField());
+        assertTrue(exception.getReason().contains("has no current price"));
+    }
+
     @Test
     void testValidate_NoPositionForInstrument() {
         List<PositionsEntity> positions = new ArrayList<>();

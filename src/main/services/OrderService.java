@@ -8,6 +8,7 @@ import main.dto.response.OrderSubmissionResponse;
 import main.entities.OrderEntity;
 import main.entities.AccountsEntity;
 import main.entities.InstrumentEntity;
+import main.dto.InstrumentWithPrice;
 import main.repos.OrdersRepo;
 import main.repos.AccountsRepo;
 import main.repos.InstrumentRepo;
@@ -19,8 +20,6 @@ import main.services.resolver.InstrumentResolver;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.Clock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -28,8 +27,6 @@ import java.time.ZonedDateTime;
 
 @Service
 public class OrderService {
-    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
-    
     private final OrdersRepo ordersRepo;
     private final HistoricalOrdersService historicalOrdersService;
     private final BuyOrderValidator buyOrderValidator;
@@ -51,9 +48,12 @@ public class OrderService {
         this.clock = clock;
     }
 
+    // The order and its historical_orders snapshot commit together or not at all: the snapshot is a
+    // regulatory audit record, so an order must never exist without one
+    @Transactional
     public OrderSubmissionResponse createOrder(CreateOrderRequest request) {
         AccountsEntity account = accountResolver.resolve(request.accountId());
-        InstrumentEntity instrument = instrumentResolver.resolve(request.instrumentId());
+        InstrumentWithPrice instrument = instrumentResolver.resolve(request.instrumentId());
 
         String orderSide = request.side();
         
@@ -64,7 +64,7 @@ public class OrderService {
         else if ("SELL".equals(orderSide)) {
             sellOrderValidator.validate(request, account, instrument);
         } else {
-            // TODO: return an error response, invalid side
+
             throw new IllegalArgumentException("Invalid order: " + orderSide);
         }
 
@@ -73,26 +73,26 @@ public class OrderService {
         OrderEntity order = new OrderEntity();
         order.setSide(orderSide);
         order.setAccountId(account);
-        order.setInstrumentId(instrument);
+        InstrumentEntity instrumentRef = new InstrumentEntity();
+        instrumentRef.setInstrumentId(instrument.getInstrumentId());
+        order.setInstrumentId(instrumentRef);
         order.setStatus("PENDING");
         order.setQuantity(request.quantity());
         order.setTotalPrice(totalPrice);
 
         ordersRepo.insert(order);
-        
-        // Extract scalar IDs from entities for snapshot capture
+
+  
         order.setAccountIdValue(account.getAccountId());
         order.setInstrumentIdValue(instrument.getInstrumentId());
-        
-        // Capture initial snapshot of order for history tracking
+
+   
         historicalOrdersService.captureOrderSnapshot(order);
 
         return new OrderSubmissionResponse(order.getOrderId(), order.getCreatedAt());
     }
 
-    /**
-     * Retrieve all historical snapshots for an order in chronological order.
-     */
+
     public List<main.entities.HistoricalOrdersEntity> getHistoricalOrders(Integer orderId) {
         return historicalOrdersService.getHistoricalOrders(orderId);
     }

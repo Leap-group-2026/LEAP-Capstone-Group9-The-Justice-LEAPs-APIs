@@ -23,7 +23,7 @@ public interface HistoricalOrdersRepo {
     List<HistoricalOrdersEntity> findByOrderId_OrderIdOrderByCreatedAtAsc(@Param("orderId") Integer orderId);
 
     @Insert("INSERT INTO historical_orders (order_id, account_id, order_information_json, created_at) " +
-            "VALUES (#{orderId}, #{accountId}, #{orderInformationJson}, #{createdAt})")
+            "VALUES (#{orderId}, #{accountId}, #{orderInformationJson, typeHandler=main.config.JsonbStringTypeHandler}, #{createdAt})")
     void insert(@Param("orderId") Integer orderId, 
                 @Param("accountId") Integer accountId,
                 @Param("orderInformationJson") String orderInformationJson,

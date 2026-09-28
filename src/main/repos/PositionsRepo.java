@@ -30,7 +30,7 @@ public interface PositionsRepo {
         @Result(column = "position_id", property = "positionId"),
         @Result(column = "quantity", property = "quantity"),
         @Result(column = "instrument_id", property = "instrument", 
-                one = @One(select = "main.repos.InstrumentRepo.findById")),
+                one = @One(select = "main.repos.InstrumentRepo.findEntityById")),
         @Result(column = "opened_at", property = "openedAt"),
         @Result(column = "closed_at", property = "closedAt"),
         @Result(column = "total_price", property = "totalPrice"),

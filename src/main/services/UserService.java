@@ -169,28 +169,36 @@ public class UserService {
 
     public ResponseEntity<String> emailResetPassword(UserResponse entity){
         String email = entity.getEmail();
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Email is required");
+        }
+        
         int rand = 100000 + random.nextInt(900000);
         String code = Integer.toString(rand);
         
         UserEntity user = repo.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
-        entity.setEmail(user.getEmail());
         user.setCode(code);
         repo.update(user);
         
         if (emailService != null) {
-            String emailBody = "Hello " + user.getName() + ",\n\n" +
-                "We received a request to reset your password. Please use the code below to proceed with resetting your password.\n\n" +
-                "Reset Code: " + code + "\n\n" +
-                "This code will expire in 15 minutes. If you did not request a password reset, please ignore this email.\n\n" +
-                "For security reasons, never share this code with anyone.\n\n" +
-                "Best regards,\n" +
-                "The Ribbit Trading Team";
-            
-            emailService.sendEmail(
-                "electrowiz67@gmail.com",
-                "Password Reset Request - Ribbit Trading",
-                emailBody
-            );
+            try {
+                String emailBody = "Hello " + user.getName() + ",\n\n" +
+                    "We received a request to reset your password. Please use the code below to proceed with resetting your password.\n\n" +
+                    "Reset Code: " + code + "\n\n" +
+                    "This code will expire in 15 minutes. If you did not request a password reset, please ignore this email.\n\n" +
+                    "For security reasons, never share this code with anyone.\n\n" +
+                    "Best regards,\n" +
+                    "The Ribbit Trading Team";
+                
+                emailService.sendEmail(
+                    user.getEmail(),
+                    "Password Reset Request - Ribbit Trading",
+                    emailBody
+                );
+            } catch (Exception e) {
+                System.err.println("Warning: Failed to send reset email for user " + user.getEmail() + ": " + e.getMessage());
+                throw new RuntimeException("Failed to send reset email. Please try again later.");
+            }
         }
         return ResponseEntity.ok("Email sent successfully");
     }
@@ -198,7 +206,8 @@ public class UserService {
     public ResponseEntity<String> resetPassword(VerifyPasswordReset user){
         String email = user.getEmail();
         UserEntity userInDb = repo.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
-        if(!userInDb.getCode().equals(user.getCode())){
+        
+        if(userInDb.getCode() == null || !userInDb.getCode().equals(user.getCode())){
             return ResponseEntity.badRequest().body("Incorrect reset code");
         }
         else{

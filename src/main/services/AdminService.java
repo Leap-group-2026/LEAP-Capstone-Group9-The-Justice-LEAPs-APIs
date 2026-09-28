@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import main.repos.AdminRepo;
 import main.entities.AdminEntity;
+import java.time.LocalDateTime;
 
 @Service
 public class AdminService {
@@ -18,6 +19,10 @@ public class AdminService {
     public AdminEntity saveAdmin(AdminEntity entity){
         if (repo.existsByUsername(entity.getUsername())){
             throw new IllegalArgumentException("Username already exists");
+        }
+        // The insert binds created_at explicitly, so a null here would bypass the column default
+        if (entity.getCreatedAt() == null) {
+            entity.setCreatedAt(LocalDateTime.now());
         }
         repo.insert(entity);
         return entity;

@@ -1,6 +1,8 @@
 package main.entities;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
 
@@ -14,8 +16,10 @@ public class OrderEntity {
     @JsonProperty("account_id")
     private AccountsEntity accountId;
 
+
     @JsonProperty("instrument_id")
     private InstrumentEntity instrumentId;
+
 
     @JsonProperty("status")
     private String status;
@@ -60,9 +64,11 @@ public class OrderEntity {
 
     public void setAccountId(AccountsEntity accountId) { this.accountId = accountId; }
 
+
     public InstrumentEntity getInstrumentId() { return instrumentId; }
 
     public void setInstrumentId(InstrumentEntity instrumentId) { this.instrumentId = instrumentId; }
+
 
     public String getStatus() { return status; }
 

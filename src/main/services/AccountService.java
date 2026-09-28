@@ -5,6 +5,7 @@ import main.repos.AccountsRepo;
 import main.repos.UserRepo;
 import main.entities.AccountsEntity;
 import main.entities.UserEntity;
+import main.exception.ResourceNotFoundException;
 import java.time.LocalDateTime;
 
 @Service
@@ -18,25 +19,32 @@ public class AccountService {
     }
 
     public AccountsEntity findById(Integer id) {
-        return repo.findById(id).orElse(null);
+        return repo.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Account", String.valueOf(id)));
     }
 
     public AccountsEntity saveAccount(AccountsEntity entity) {
-        // Extract user ID
-        Integer userId = entity.getUserId() != null ? entity.getUserId().getUserId() : null;
-        String portfolioSize = entity.getPortfolioSize() != null ? entity.getPortfolioSize().getValue() : null;
-        Boolean accountActive = entity.getAccountActive() != null ? entity.getAccountActive() : true;
-        
-        // Set created_at to now if not provided
-        LocalDateTime createdAt = entity.getCreatedAt() != null ? entity.getCreatedAt() : LocalDateTime.now();
-        
-        repo.insert(userId, entity.getBalance(), portfolioSize, entity.getTradeType(), createdAt, accountActive);
+        if (entity.getAccountActive() == null) {
+            entity.setAccountActive(true);
+        }
+
+        if (entity.getCreatedAt() == null) {
+            entity.setCreatedAt(LocalDateTime.now());
+        }
+
+  
+        repo.insert(entity);
         return entity;
     }
     public String closeAccount(Integer accountId, Integer currentUserId) {
-        // Checks for an existing acocuntId
-        AccountsEntity existingAccount = repo.findById(accountId)
+        // Use unfiltered method to allow closing already-inactive accounts
+        AccountsEntity existingAccount = repo.findByIdIncludingInactive(accountId)
         .orElseThrow(() -> new IllegalStateException("Not a valid user"));
+        
+        // Check if account is already closed
+        if (!existingAccount.getAccountActive()) {
+            throw new IllegalStateException("Account is already closed");
+        }
         
         if(existingAccount.getUserId() == null || existingAccount.getUserId().getUserId() == null) {
         throw new IllegalStateException("Account user information is missing");

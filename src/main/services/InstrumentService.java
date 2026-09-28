@@ -1,5 +1,6 @@
 package main.services;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import main.repos.InstrumentRepo;
 import main.entities.InstrumentEntity;
@@ -12,7 +13,14 @@ public class InstrumentService {
     }
 
     public InstrumentEntity saveInstrument(InstrumentEntity entity) {
-        repo.insert(entity);
+        if (repo.existsByTicker(entity.getTicker())) {
+            throw new IllegalArgumentException("Ticker already exists");
+        }
+        try {
+            repo.insert(entity);
+        } catch (DuplicateKeyException e) {
+            throw new IllegalArgumentException("Ticker already exists");
+        }
         return entity;
     }
 }

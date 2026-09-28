@@ -15,9 +15,9 @@ public class ScheduledOrdersCheck {
 
     @Scheduled(fixedRate = 600000)
     public void checkOrders(){
-        List<OrderEntity> allOrders = repo.findAll();
-        for(int i = 0; i < allOrders.size(); i++){
-            if(allOrders.get(i).getStatus())
-        }
+        // List<OrderEntity> allOrders = repo.findAll();
+        // for(int i = 0; i < allOrders.size(); i++){
+        //     if(allOrders.get(i).getStatus())
+        // }
     }
 }

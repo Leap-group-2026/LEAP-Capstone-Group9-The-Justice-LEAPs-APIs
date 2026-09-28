@@ -3,7 +3,7 @@ package main.services.validation;
 import org.springframework.stereotype.Component;
 import main.dto.request.CreateOrderRequest;
 import main.entities.AccountsEntity;
-import main.entities.InstrumentEntity;
+import main.dto.InstrumentWithPrice;
 import main.exception.InvalidOrderException;
 import main.services.calculation.OrderPriceCalculator;
 import java.math.BigDecimal;
@@ -17,12 +17,12 @@ public class BuyOrderValidator {
     private static final LocalTime MARKET_OPEN = LocalTime.of(9, 30);
     private static final LocalTime MARKET_CLOSE = LocalTime.of(16, 0);
 
-    public void validate(CreateOrderRequest request, AccountsEntity account, InstrumentEntity instrument, ZonedDateTime submittedAt) {
+    public void validate(CreateOrderRequest request, AccountsEntity account, InstrumentWithPrice instrument, ZonedDateTime submittedAt) {
         validateBalance(request, account, instrument);
         validateMarketHours(submittedAt);
     }
 
-    private void validateBalance(CreateOrderRequest request, AccountsEntity account, InstrumentEntity instrument) {
+    private void validateBalance(CreateOrderRequest request, AccountsEntity account, InstrumentWithPrice instrument) {
         BigDecimal orderPrice = OrderPriceCalculator.calculateOrderPrice(instrument, request.quantity());
         BigDecimal accountBalance = account.getBalance();
 

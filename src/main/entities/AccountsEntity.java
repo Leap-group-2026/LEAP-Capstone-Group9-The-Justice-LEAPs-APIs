@@ -1,6 +1,8 @@
 package main.entities;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -33,12 +35,20 @@ public class AccountsEntity {
         this.accountId = accountId;
     }
 
+
+    @JsonProperty("user")
     public UserEntity getUserId() {
         return user;
     }
 
+    @JsonProperty("user")
     public void setUserId(UserEntity user) {
         this.user = user;
+    }
+
+    @JsonProperty(value = "userId", access = JsonProperty.Access.READ_ONLY)
+    public Integer getOwnerUserId() {
+        return user != null ? user.getUserId() : null;
     }
 
     public BigDecimal getBalance() {

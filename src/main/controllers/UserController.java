@@ -4,7 +4,13 @@ import main.services.UserService;
 import main.dto.request.UserRegistrationRequest;
 import main.dto.request.VerifyPasswordReset;
 import main.dto.request.LoginRequest;
+import main.dto.request.UpdateNameRequest;
+import main.dto.request.UpdateEmailRequest;
+import main.dto.request.UpdateAddressRequest;
 import main.dto.response.UserResponse;
+import main.dto.response.UpdateNameResponse;
+import main.dto.response.UpdateEmailResponse;
+import main.dto.response.UpdateAddressResponse;
 import main.entities.UserEntity;
 import main.dto.request.VerifyPasswordReset;
 import org.springframework.http.HttpStatus;
@@ -42,6 +48,27 @@ public class UserController {
         return service.login(request);
     }
 
-    
-    
+    @PatchMapping("/{id}/name")
+    public ResponseEntity<UpdateNameResponse> updateName(
+            @PathVariable Integer id,
+            @RequestBody UpdateNameRequest request) {
+        UpdateNameResponse response = service.updateUserName(id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}/email")
+    public ResponseEntity<UpdateEmailResponse> updateEmail(
+            @PathVariable Integer id,
+            @RequestBody UpdateEmailRequest request) {
+        UpdateEmailResponse response = service.updateUserEmail(id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}/address")
+    public ResponseEntity<UpdateAddressResponse> updateAddress(
+            @PathVariable Integer id,
+            @RequestBody UpdateAddressRequest request) {
+        UpdateAddressResponse response = service.updateUserAddress(id, request);
+        return ResponseEntity.ok(response);
+    }
 }

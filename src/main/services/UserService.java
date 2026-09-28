@@ -10,8 +10,15 @@ import main.entities.UserEntity;
 import main.dto.request.UserRegistrationRequest;
 import main.dto.request.LoginRequest;
 import main.dto.request.VerifyPasswordReset;
+import main.dto.request.UpdateNameRequest;
+import main.dto.request.UpdateEmailRequest;
+import main.dto.request.UpdateAddressRequest;
 import main.dto.response.UserResponse;
+import main.dto.response.UpdateNameResponse;
+import main.dto.response.UpdateEmailResponse;
+import main.dto.response.UpdateAddressResponse;
 import main.services.EmailService;
+import main.exception.ResourceNotFoundException;
 
 import java.security.MessageDigest;
 import java.util.Base64;
@@ -200,5 +207,62 @@ public class UserService {
             repo.updatePassword(userInDb.getUserId(), encodedPassword);
             return ResponseEntity.ok("Password reset successfully");
         }
+    }
+
+    public UpdateNameResponse updateUserName(Integer userId, UpdateNameRequest request) {
+        if (request.name() == null || request.name().isBlank()) {
+            throw new IllegalArgumentException("Name cannot be empty");
+        }
+
+        UserEntity user = repo.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", userId.toString()));
+
+        user.setName(request.name().trim());
+        repo.update(user);
+
+        return new UpdateNameResponse(user.getUserId(), user.getName());
+    }
+
+    public UpdateEmailResponse updateUserEmail(Integer userId, UpdateEmailRequest request) {
+        if (request.email() == null || request.email().isBlank()) {
+            throw new IllegalArgumentException("Email cannot be empty");
+        }
+
+        String newEmail = request.email().trim().toLowerCase();
+        
+        if (!isValidEmail(newEmail)) {
+            throw new IllegalArgumentException("Invalid email format");
+        }
+
+        UserEntity user = repo.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", userId.toString()));
+
+        if (repo.existsByEmail(newEmail) && !user.getEmail().equalsIgnoreCase(newEmail)) {
+            throw new IllegalArgumentException("Email already in use");
+        }
+
+        user.setEmail(newEmail);
+        repo.update(user);
+
+        return new UpdateEmailResponse(user.getUserId(), user.getEmail());
+    }
+
+    public UpdateAddressResponse updateUserAddress(Integer userId, UpdateAddressRequest request) {
+        if (request.address() == null || request.address().isBlank()) {
+            throw new IllegalArgumentException("Address cannot be empty");
+        }
+
+        UserEntity user = repo.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", userId.toString()));
+
+        user.setAddress(request.address().trim());
+        repo.update(user);
+
+        return new UpdateAddressResponse(user.getUserId(), user.getAddress());
+    }
+
+    private boolean isValidEmail(String email) {
+        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
+        return email.matches(emailRegex) && email.length() <= 255;
     }
 }

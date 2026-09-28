@@ -53,21 +53,21 @@ public class CloseAccountTest {
     @Test
     public void testCloseAccountSuccessfully() {
         // Arrange
-        when(accountsRepo.findById(1)).thenReturn(Optional.of(testAccount));
+        when(accountsRepo.findByIdIncludingInactive(1)).thenReturn(Optional.of(testAccount));
         
         // Act
         String result = accountService.closeAccount(1, 1);
         
         // Assert
         assertEquals("Success", result);
-        verify(accountsRepo, times(1)).findById(1);
+        verify(accountsRepo, times(1)).findByIdIncludingInactive(1);
         verify(accountsRepo, times(1)).update(1, 1, BigDecimal.ZERO, "BALANCED", "Stock", false);
     }
     
     @Test
     public void testCloseAccountNotFound() {
         // Arrange
-        when(accountsRepo.findById(999)).thenReturn(Optional.empty());
+        when(accountsRepo.findByIdIncludingInactive(999)).thenReturn(Optional.empty());
         
         // Act & Assert
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
@@ -84,7 +84,7 @@ public class CloseAccountTest {
         otherUser.setUserId(2);
         testAccount.setUserId(otherUser);
         
-        when(accountsRepo.findById(1)).thenReturn(Optional.of(testAccount));
+        when(accountsRepo.findByIdIncludingInactive(1)).thenReturn(Optional.of(testAccount));
         
         // Act & Assert
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
@@ -99,7 +99,7 @@ public class CloseAccountTest {
     public void testCloseAccountWithNonZeroBalance() {
         // Arrange - set balance to non-zero
         testAccount.setBalance(BigDecimal.valueOf(100.00));
-        when(accountsRepo.findById(1)).thenReturn(Optional.of(testAccount));
+        when(accountsRepo.findByIdIncludingInactive(1)).thenReturn(Optional.of(testAccount));
         
         // Act & Assert
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
@@ -113,7 +113,7 @@ public class CloseAccountTest {
     public void testCloseAccountWithNegativeBalance() {
         // Arrange - set negative balance (edge case)
         testAccount.setBalance(BigDecimal.valueOf(-50.00));
-        when(accountsRepo.findById(1)).thenReturn(Optional.of(testAccount));
+        when(accountsRepo.findByIdIncludingInactive(1)).thenReturn(Optional.of(testAccount));
         
         // Act & Assert - Should reject because balance is not exactly $0
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
@@ -128,7 +128,7 @@ public class CloseAccountTest {
     public void testCloseAccountWithVerySmallNonZeroBalance() {
         // Arrange - set very small balance (0.01)
         testAccount.setBalance(BigDecimal.valueOf(0.01));
-        when(accountsRepo.findById(1)).thenReturn(Optional.of(testAccount));
+        when(accountsRepo.findByIdIncludingInactive(1)).thenReturn(Optional.of(testAccount));
         
         // Act & Assert - Should reject even for tiny amounts
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
@@ -154,14 +154,14 @@ public class CloseAccountTest {
         boolean account1ActiveBefore = testAccount.getAccountActive();
         BigDecimal account1BalanceBefore = testAccount.getBalance();
         
-        when(accountsRepo.findById(2)).thenReturn(Optional.of(account2));
+        when(accountsRepo.findByIdIncludingInactive(2)).thenReturn(Optional.of(account2));
         
         // Act
         String result = accountService.closeAccount(2, 1);
         
         // Assert - Should succeed because User 1 owns account 2
         assertEquals("Success", result);
-        verify(accountsRepo, times(1)).findById(2);
+        verify(accountsRepo, times(1)).findByIdIncludingInactive(2);
         verify(accountsRepo, times(1)).update(2, 1, BigDecimal.ZERO, "HIGH", "Options", false);
         
         // Assert - Account 1 should remain unchanged
@@ -173,7 +173,7 @@ public class CloseAccountTest {
     @Test
     public void testCloseAccountVerifyAccountMarkedInactive() {
         // Arrange
-        when(accountsRepo.findById(1)).thenReturn(Optional.of(testAccount));
+        when(accountsRepo.findByIdIncludingInactive(1)).thenReturn(Optional.of(testAccount));
         
         // Act
         accountService.closeAccount(1, 1);
@@ -188,7 +188,7 @@ public class CloseAccountTest {
     public void testCloseAccountWithNullUserObject() {
         // Arrange - account has no user associated
         testAccount.setUserId(null);
-        when(accountsRepo.findById(1)).thenReturn(Optional.of(testAccount));
+        when(accountsRepo.findByIdIncludingInactive(1)).thenReturn(Optional.of(testAccount));
         
         // Act & Assert
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
@@ -203,7 +203,7 @@ public class CloseAccountTest {
         // Arrange - user object exists but userId is null
         testUser.setUserId(null);
         testAccount.setUserId(testUser);
-        when(accountsRepo.findById(1)).thenReturn(Optional.of(testAccount));
+        when(accountsRepo.findByIdIncludingInactive(1)).thenReturn(Optional.of(testAccount));
         
         // Act & Assert
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
@@ -216,14 +216,29 @@ public class CloseAccountTest {
     @Test
     public void testCloseAccountWithNullCurrentUserId() {
         // Arrange
-        when(accountsRepo.findById(1)).thenReturn(Optional.of(testAccount));
+        when(accountsRepo.findByIdIncludingInactive(1)).thenReturn(Optional.of(testAccount));
         
         // Act & Assert - When currentUserId is null, should fail authorization check
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             accountService.closeAccount(1, null);
         });
         
-        assertEquals("You are unauthorized to close this account, it does not belong to you", 
+        assertEquals("You are unauthorized to close this account, it does not belong to you",
                      exception.getMessage());
+    }
+
+    @Test
+    public void testCloseAccountAlreadyClosed() {
+        // Arrange
+        testAccount.setAccountActive(false);
+        when(accountsRepo.findByIdIncludingInactive(1)).thenReturn(Optional.of(testAccount));
+
+        // Act & Assert
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            accountService.closeAccount(1, 1);
+        });
+
+        assertEquals("Account is already closed", exception.getMessage());
+        verify(accountsRepo, never()).update(anyInt(), anyInt(), any(), anyString(), anyString(), anyBoolean());
     }
 }

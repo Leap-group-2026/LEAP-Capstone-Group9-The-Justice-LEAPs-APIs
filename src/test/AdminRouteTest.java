@@ -1,3 +1,5 @@
+package test;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -9,11 +11,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.hamcrest.Matchers.notNullValue;
 
 import main.controllers.AdminController;
 import main.Application;
 import main.entities.AdminEntity;
 import main.repos.AdminRepo;
+
+import java.time.LocalDateTime;
 
 @SpringBootTest(classes = Application.class)
 @AutoConfigureMockMvc
@@ -31,7 +37,7 @@ public class AdminRouteTest {
         AdminEntity testAdmin = new AdminEntity();
         testAdmin.setUsername("aryann");
         testAdmin.setPassHash(passwordEncoder.encode("secret"));
-        testAdmin.setAdminId(1);
+        testAdmin.setCreatedAt(LocalDateTime.now());
         adminRepo.insert(testAdmin);
         
         mockMvc.perform(post("/admin/login")
@@ -54,5 +60,16 @@ public class AdminRouteTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"username\":\"aryan\",\"password\":\"gg\"}"))
             .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void createAdminSucceeds() throws Exception {
+        // Failed on every call before created_at was defaulted in AdminService
+        mockMvc.perform(post("/admin/create")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"username\":\"new.admin@example.com\",\"password\":\"secret\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.username").value("new.admin@example.com"))
+            .andExpect(jsonPath("$.created_at", notNullValue()));
     }
 }

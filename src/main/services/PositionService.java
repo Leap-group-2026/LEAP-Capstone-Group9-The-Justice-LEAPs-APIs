@@ -8,6 +8,7 @@ import main.entities.PositionsEntity;
 import main.entities.AccountsEntity;
 import main.entities.InstrumentEntity;
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Service
 public class PositionService {
@@ -30,8 +31,12 @@ public class PositionService {
         Integer accountId = entity.getAccountId() != null ? entity.getAccountId().getAccountId() : null;
         Integer instrumentId = entity.getInstrumentId() != null ? entity.getInstrumentId().getInstrumentId() : null;
         
+        // Auto-set openedAt to now() if not provided
+        LocalDateTime openedAt = entity.getOpenedAt() != null ? entity.getOpenedAt() : LocalDateTime.now();
+        
         if (accountId != null) {
-            repo.insert(accountId, instrumentId, entity.getQuantity(), entity.getAveragePrice(), entity.getOpenedAt());
+            repo.insert(accountId, instrumentId, entity.getQuantity(), entity.getTotalPrice(), 
+                       entity.getAveragePrice(), openedAt, entity.getClosedAt());
         }
         return entity;
     }

@@ -8,12 +8,15 @@ import org.junit.jupiter.params.provider.MethodSource;
 import main.services.validation.BuyOrderValidator;
 import main.dto.request.CreateOrderRequest;
 import main.entities.AccountsEntity;
-import main.entities.InstrumentEntity;
+import main.dto.InstrumentWithPrice;
 import main.exception.InvalidOrderException;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,9 +36,15 @@ class BuyOrderValidatorTest {
         return account;
     }
     
-    private InstrumentEntity createInstrument(BigDecimal price) {
-        InstrumentEntity instrument = new InstrumentEntity();
+    private InstrumentWithPrice createInstrument(BigDecimal price) {
+        InstrumentWithPrice instrument = new InstrumentWithPrice();
+        instrument.setInstrumentId(1);
+        instrument.setTicker("AAPL");
+        instrument.setAssetType("STOCK");
+        instrument.setAssetName("Apple Inc.");
+        instrument.setCurrency("USD");
         instrument.setPrice(price);
+        instrument.setQuoteTime(OffsetDateTime.now(ZoneOffset.UTC));
         return instrument;
     }
     
@@ -43,7 +52,7 @@ class BuyOrderValidatorTest {
     void testValidate_BothValidationsPass() {
         CreateOrderRequest request = new CreateOrderRequest("BUY", 1, 1, 100);
         AccountsEntity account = createAccount(BigDecimal.valueOf(2000.00));
-        InstrumentEntity instrument = createInstrument(BigDecimal.valueOf(10.00));
+        InstrumentWithPrice instrument = createInstrument(BigDecimal.valueOf(10.00));
         
         // Create a ZonedDateTime during market hours (12:00 PM ET)
         ZonedDateTime marketHoursTime = ZonedDateTime.of(2024, 9, 24, 12, 0, 0, 0, ZoneId.of("America/New_York"));
@@ -57,7 +66,7 @@ class BuyOrderValidatorTest {
     void testValidateBalance_InsufficientBalance() {
         CreateOrderRequest request = new CreateOrderRequest("BUY", 1, 1, 100);
         AccountsEntity account = createAccount(BigDecimal.valueOf(500.00));
-        InstrumentEntity instrument = createInstrument(BigDecimal.valueOf(10.00));
+        InstrumentWithPrice instrument = createInstrument(BigDecimal.valueOf(10.00));
         
         ZonedDateTime marketHoursTime = ZonedDateTime.of(2024, 9, 24, 12, 0, 0, 0, ZoneId.of("America/New_York"));
         
@@ -75,7 +84,7 @@ class BuyOrderValidatorTest {
     void testValidateBalance_BalanceEqualsOrderPrice() {
         CreateOrderRequest request = new CreateOrderRequest("BUY", 1, 1, 100);
         AccountsEntity account = createAccount(BigDecimal.valueOf(1000.00));
-        InstrumentEntity instrument = createInstrument(BigDecimal.valueOf(10.00));
+        InstrumentWithPrice instrument = createInstrument(BigDecimal.valueOf(10.00));
         
         ZonedDateTime marketHoursTime = ZonedDateTime.of(2024, 9, 24, 12, 0, 0, 0, ZoneId.of("America/New_York"));
         
@@ -88,7 +97,7 @@ class BuyOrderValidatorTest {
     void testValidateBalance_BalanceExceedsOrderPrice() {
         CreateOrderRequest request = new CreateOrderRequest("BUY", 1, 1, 100);
         AccountsEntity account = createAccount(BigDecimal.valueOf(2000.00));
-        InstrumentEntity instrument = createInstrument(BigDecimal.valueOf(10.00));
+        InstrumentWithPrice instrument = createInstrument(BigDecimal.valueOf(10.00));
         
         ZonedDateTime marketHoursTime = ZonedDateTime.of(2024, 9, 24, 12, 0, 0, 0, ZoneId.of("America/New_York"));
         
@@ -101,7 +110,7 @@ class BuyOrderValidatorTest {
     void testValidateMarketHours_BeforeMarketOpen() {
         CreateOrderRequest request = new CreateOrderRequest("BUY", 1, 1, 100);
         AccountsEntity account = createAccount(BigDecimal.valueOf(2000.00));
-        InstrumentEntity instrument = createInstrument(BigDecimal.valueOf(10.00));
+        InstrumentWithPrice instrument = createInstrument(BigDecimal.valueOf(10.00));
         
         // 9:29:59 AM ET (before market open)
         ZonedDateTime beforeMarketOpen = ZonedDateTime.of(2024, 9, 24, 9, 29, 59, 0, ZoneId.of("America/New_York"));
@@ -118,7 +127,7 @@ class BuyOrderValidatorTest {
     void testValidateMarketHours_ExactlyAtMarketOpen() {
         CreateOrderRequest request = new CreateOrderRequest("BUY", 1, 1, 100);
         AccountsEntity account = createAccount(BigDecimal.valueOf(2000.00));
-        InstrumentEntity instrument = createInstrument(BigDecimal.valueOf(10.00));
+        InstrumentWithPrice instrument = createInstrument(BigDecimal.valueOf(10.00));
         
         // Exactly 9:30:00 AM ET (market opens)
         ZonedDateTime exactlyAtOpen = ZonedDateTime.of(2024, 9, 24, 9, 30, 0, 0, ZoneId.of("America/New_York"));
@@ -132,7 +141,7 @@ class BuyOrderValidatorTest {
     void testValidateMarketHours_DuringMarketHours() {
         CreateOrderRequest request = new CreateOrderRequest("BUY", 1, 1, 100);
         AccountsEntity account = createAccount(BigDecimal.valueOf(2000.00));
-        InstrumentEntity instrument = createInstrument(BigDecimal.valueOf(10.00));
+        InstrumentWithPrice instrument = createInstrument(BigDecimal.valueOf(10.00));
         
         // 12:00:00 PM ET (mid-day during market hours)
         ZonedDateTime midDay = ZonedDateTime.of(2024, 9, 24, 12, 0, 0, 0, ZoneId.of("America/New_York"));
@@ -146,7 +155,7 @@ class BuyOrderValidatorTest {
     void testValidateMarketHours_ExactlyAtMarketClose() {
         CreateOrderRequest request = new CreateOrderRequest("BUY", 1, 1, 100);
         AccountsEntity account = createAccount(BigDecimal.valueOf(2000.00));
-        InstrumentEntity instrument = createInstrument(BigDecimal.valueOf(10.00));
+        InstrumentWithPrice instrument = createInstrument(BigDecimal.valueOf(10.00));
         
         // Exactly 4:00:00 PM ET (market close, inclusive boundary)
         ZonedDateTime exactlyAtClose = ZonedDateTime.of(2024, 9, 24, 16, 0, 0, 0, ZoneId.of("America/New_York"));
@@ -160,7 +169,7 @@ class BuyOrderValidatorTest {
     void testValidateMarketHours_AfterMarketClose() {
         CreateOrderRequest request = new CreateOrderRequest("BUY", 1, 1, 100);
         AccountsEntity account = createAccount(BigDecimal.valueOf(2000.00));
-        InstrumentEntity instrument = createInstrument(BigDecimal.valueOf(10.00));
+        InstrumentWithPrice instrument = createInstrument(BigDecimal.valueOf(10.00));
         
         // 4:00:01 PM ET (after market close)
         ZonedDateTime afterClose = ZonedDateTime.of(2024, 9, 24, 16, 0, 1, 0, ZoneId.of("America/New_York"));
@@ -178,7 +187,7 @@ class BuyOrderValidatorTest {
     void testIsMarketOpen_TimezoneConversions(String testName, ZonedDateTime zonedTime, boolean expectedResult) {
         CreateOrderRequest request = new CreateOrderRequest("BUY", 1, 1, 100);
         AccountsEntity account = createAccount(BigDecimal.valueOf(2000.00));
-        InstrumentEntity instrument = createInstrument(BigDecimal.valueOf(10.00));
+        InstrumentWithPrice instrument = createInstrument(BigDecimal.valueOf(10.00));
         
         if (expectedResult) {
             assertDoesNotThrow(() -> {

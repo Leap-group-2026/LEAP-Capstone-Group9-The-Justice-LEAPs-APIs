@@ -119,6 +119,12 @@ public interface AccountsRepo {
 
     @Delete("DELETE FROM accounts WHERE account_id = #{accountId}")
     void delete(Integer accountId);
+
+    @Select("SELECT account_id, balance, account_active FROM accounts WHERE account_id = #{accountId} FOR UPDATE")
+    Optional<AccountsEntity> findByIdForUpdate(Integer accountId);
+
+    @Update("UPDATE accounts SET balance = #{balance} WHERE account_id = #{account_id}")
+    void updateBalance(@Param("accountId") Integer accountId, @Param("balance") BigDecimal balance);
 }
 
 

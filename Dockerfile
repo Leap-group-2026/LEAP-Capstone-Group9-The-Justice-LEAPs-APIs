@@ -4,10 +4,11 @@ WORKDIR /build
 COPY pom.xml .
 RUN mvn dependency:go-offline
 COPY src ./src
-RUN mvn clean package -DskipTest
+RUN mvn clean package -DskipTests
 
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 COPY --from=builder /build/target/justice-leaps-api-1.0.0.jar app.jar
+COPY .env* ./
 EXPOSE 8081
 ENTRYPOINT ["java", "-jar", "app.jar"]

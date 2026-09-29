@@ -9,9 +9,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Result;
-import org.apache.ibatis.annotations.One;
 import main.entities.AccountsEntity;
-import main.entities.UserEntity;
 import java.util.Optional;
 import java.util.List;
 import java.math.BigDecimal;
@@ -119,6 +117,12 @@ public interface AccountsRepo {
 
     @Delete("DELETE FROM accounts WHERE account_id = #{accountId}")
     void delete(Integer accountId);
+
+    @Select("SELECT account_id, balance, account_active FROM accounts WHERE account_id = #{accountId} FOR UPDATE")
+    Optional<AccountsEntity> findByIdForUpdate(Integer accountId);
+
+    @Update("UPDATE accounts SET balance = #{balance} WHERE account_id = #{accountId}")
+    void updateBalance(@Param("accountId") Integer accountId, @Param("balance") BigDecimal balance);
 }
 
 

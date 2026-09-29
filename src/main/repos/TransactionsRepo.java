@@ -10,6 +10,7 @@ import main.entities.TransactionsEntity;
 import java.util.Optional;
 import java.util.List;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Mapper
 public interface TransactionsRepo {
@@ -18,6 +19,13 @@ public interface TransactionsRepo {
 
     @Select("SELECT * FROM transactions")
     List<TransactionsEntity> findAll();
+
+    @Select("SELECT COALESCE(SUM(amount), 0) FROM transactions " +
+            "WHERE account_id = #{account_id} AND side = 'OUT' AND transaction_type = 'TRADE' " +
+            "AND happened_at >= #{startInclusive} AND happened_at < #{endExclusive}")
+    BigDecimal sumExecutedBuys(@Param("accountId") Integer accountId,
+                               @Param("startInclusive") LocalDateTime startInclusive,
+                               @Param("endExclusive") LocalDateTime endExclusive);
 
     @Insert("INSERT INTO transactions (amount, side, account_id, transaction_type, happened_at) " +
             "VALUES (#{amount}, #{side}, #{accountId}, #{transactionType}, #{happenedAt})")

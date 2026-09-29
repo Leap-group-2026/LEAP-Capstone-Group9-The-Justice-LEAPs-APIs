@@ -3,8 +3,10 @@ package main.dto.response;
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 public class HistoricalOrderResponse {
+    @Schema(description = "Id of this history event")
     @JsonProperty("event_id")
     private Integer eventId;
     
@@ -14,9 +16,11 @@ public class HistoricalOrderResponse {
     @JsonProperty("account_id")
     private Integer accountId;
     
+    @Schema(description = "The stored snapshot exactly as recorded, as a raw JSON string")
     @JsonProperty("snapshot")
     private String snapshot;
     
+    @Schema(description = "When this history event was recorded")
     @JsonProperty("occurred_at")
     private LocalDateTime occurredAt;
     
@@ -35,9 +39,12 @@ public class HistoricalOrderResponse {
     @JsonProperty("instrument_id")
     private Integer instrumentId;
     
+    @Schema(description = "The order's updated_at as captured in the snapshot (not when the event was recorded)")
     @JsonProperty("snapshot_updated_at")
     private LocalDateTime snapshotUpdatedAt;
     
+    @Schema(description = "Set to \"Snapshot could not be read\" when the stored snapshot is unreadable; the snapshot fields "
+        + "(status, side, quantity, total_price, instrument_id, snapshot_updated_at) are then null. Null when the snapshot was read normally.", nullable = true)
     @JsonProperty("snapshot_error")
     private String snapshotError;  
     

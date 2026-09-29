@@ -166,7 +166,7 @@ public class AccountActiveFilteringTest {
 
     @Test
     void closingTwiceGivesExplicitErrorSecondTime() throws Exception {
-        String body = "{\"user\":{\"userId\":" + USER_ID + "}}";
+        String body = "{\"userId\":" + USER_ID + "}";
 
         mockMvc.perform(post("/accounts/close/" + ZERO_BALANCE_ACCOUNT_ID).contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isOk())
@@ -185,8 +185,8 @@ public class AccountActiveFilteringTest {
 
     @Test
     void createReturnsGeneratedIdOfTheStoredRow() throws Exception {
-        String body = "{\"user\":{\"userId\":" + USER_ID + "},\"balance\":250.5,"
-            + "\"portfolio_size\":\"LOW\",\"trade_type\":\"Active\"}";
+        String body = "{\"userId\":" + USER_ID + ",\"balance\":250.5,"
+            + "\"portfolioSize\":\"LOW\",\"tradeType\":\"Active\"}";
 
         MvcResult result = mockMvc.perform(post("/accounts/create").contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isOk())
@@ -197,6 +197,59 @@ public class AccountActiveFilteringTest {
         String tradeType = jdbcTemplate.queryForObject(
             "SELECT trade_type FROM accounts WHERE account_id = ? AND user_id = ?", String.class, newId, USER_ID);
         assertEquals("Active", tradeType);
+    }
+
+    @Test
+    void createWithoutUserIdIsRejectedAndNothingIsWritten() throws Exception {
+        Integer before = jdbcTemplate.queryForObject("SELECT count(*) FROM accounts", Integer.class);
+
+        mockMvc.perform(post("/accounts/create").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"balance\":10,\"portfolioSize\":\"LOW\",\"tradeType\":\"Active\"}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value("Validation failed"))
+            .andExpect(jsonPath("$.fieldName").value("userId"));
+
+        assertEquals(before, jdbcTemplate.queryForObject("SELECT count(*) FROM accounts", Integer.class));
+    }
+
+    @Test
+    void closeWithoutUserIdIsRejected() throws Exception {
+        mockMvc.perform(post("/accounts/close/" + ZERO_BALANCE_ACCOUNT_ID).contentType(MediaType.APPLICATION_JSON).content("{}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.fieldName").value("userId"));
+
+        Boolean active = jdbcTemplate.queryForObject(
+            "SELECT account_active FROM accounts WHERE account_id = ?", Boolean.class, ZERO_BALANCE_ACCOUNT_ID);
+        assertTrue(active);
+    }
+
+    // ---- positions take ids, not nested objects ----
+
+    @Test
+    void createPositionWithIdsStoresTheRow() throws Exception {
+        String body = "{\"accountId\":" + ACTIVE_ACCOUNT_ID + ",\"instrumentId\":" + PRICED_INSTRUMENT_ID
+            + ",\"quantity\":7,\"totalPrice\":70.00,\"averagePrice\":10.00}";
+
+        mockMvc.perform(post("/positions/create").contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isOk());
+
+        Integer quantity = jdbcTemplate.queryForObject(
+            "SELECT quantity FROM positions WHERE account_id = ? AND instrument_id = ?",
+            Integer.class, ACTIVE_ACCOUNT_ID, PRICED_INSTRUMENT_ID);
+        assertEquals(7, quantity);
+    }
+
+    @Test
+    void createPositionWithoutAccountIdIsRejectedAndNothingIsWritten() throws Exception {
+        String body = "{\"instrumentId\":" + PRICED_INSTRUMENT_ID + ",\"quantity\":7,\"totalPrice\":70.00,\"averagePrice\":10.00}";
+
+        mockMvc.perform(post("/positions/create").contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.fieldName").value("accountId"));
+
+        Integer rows = jdbcTemplate.queryForObject(
+            "SELECT count(*) FROM positions WHERE instrument_id = ?", Integer.class, PRICED_INSTRUMENT_ID);
+        assertEquals(0, rows);
     }
 
     // ---- instrument reads keep instruments that have no price (LEFT JOIN) ----

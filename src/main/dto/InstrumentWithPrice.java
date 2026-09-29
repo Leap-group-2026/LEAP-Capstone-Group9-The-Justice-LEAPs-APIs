@@ -1,6 +1,7 @@
 package main.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
@@ -19,8 +20,10 @@ public class InstrumentWithPrice {
     private String assetName;
     @JsonProperty("currency")
     private String currency;
+    @Schema(description = "Current price from current_prices; null when the instrument has no price row (never 0)", nullable = true)
     @JsonProperty("price")
     private BigDecimal price; 
+    @Schema(description = "When the market quoted the price, so callers can judge how stale it is; null when there is no price", nullable = true)
     @JsonProperty("quote_time")
     private OffsetDateTime quoteTime;  // nullable: no current_prices row; TIMESTAMPTZ in Postgres
 

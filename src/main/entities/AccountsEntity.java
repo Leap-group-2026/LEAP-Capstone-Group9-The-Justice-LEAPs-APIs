@@ -1,6 +1,7 @@
 package main.entities;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import java.math.BigDecimal;
@@ -25,6 +26,7 @@ public class AccountsEntity {
     @JsonProperty("created_at")
     private LocalDateTime createdAt;
 
+    @Schema(description = "false once the account is closed; closed accounts are never returned by the account endpoints")
     @JsonProperty("account_active")
     private Boolean accountActive;
     public Integer getAccountId() {
@@ -46,6 +48,7 @@ public class AccountsEntity {
         this.user = user;
     }
 
+    @Schema(description = "Id of the owning user (read-only; send user.userId on input)")
     @JsonProperty(value = "userId", access = JsonProperty.Access.READ_ONLY)
     public Integer getOwnerUserId() {
         return user != null ? user.getUserId() : null;

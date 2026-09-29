@@ -10,6 +10,7 @@ import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import io.github.cdimascio.dotenv.Dotenv;
+import io.github.cdimascio.dotenv.DotenvException;
 import main.dto.request.TradesResponse;
 import org.springframework.scheduling.annotation.Scheduled;
 import main.repos.OrdersRepo;
@@ -36,17 +37,35 @@ public class AlpacaPrices {
     @Autowired
     private InstrumentRepo instrumentRepo;
     
-    private final Dotenv dotenv = Dotenv.load();
+    private Dotenv dotenv;
     private final RestTemplate template = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    
+    public AlpacaPrices() {
+        try {
+            this.dotenv = Dotenv.load();
+        } catch (DotenvException e) {
+            this.dotenv = null;
+        }
+    }
+    
+    private String getEnvValue(String key) {
+        if (dotenv != null) {
+            String value = dotenv.get(key);
+            if (value != null) {
+                return value;
+            }
+        }
+        return System.getenv(key);
+    }
     
     @Scheduled(fixedRate = 10000)
     public void pollAlpaca(){
         logger.info("Starting Alpaca API poll scheduled job");
         try{
             HttpHeaders headers = new HttpHeaders();
-            headers.set("APCA-API-KEY-ID", dotenv.get("ALPACA_KEY"));
-            headers.set("APCA-API-SECRET-KEY", dotenv.get("ALPACA_SECRET"));
+            headers.set("APCA-API-KEY-ID", getEnvValue("ALPACA_KEY"));
+            headers.set("APCA-API-SECRET-KEY", getEnvValue("ALPACA_SECRET"));
             HttpEntity<String> entity = new HttpEntity<>(headers);
 
             // Top 50 S&P 500 stocks by market cap

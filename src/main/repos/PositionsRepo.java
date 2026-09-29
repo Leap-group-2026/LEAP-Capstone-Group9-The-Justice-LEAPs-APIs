@@ -37,6 +37,21 @@ public interface PositionsRepo {
     })
     List<PositionsEntity> findByAccount(@Param("accountId") Integer accountId);
 
+    @Select("SELECT * FROM positions WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} " +
+            "AND closed_at IS NULL ORDER BY opened_at ASC, position_id ASC LIMIT 1 FOR UPDATE")
+    @Results({
+            @Result(column = "position_id", property = "positionId"),
+            @Result(column = "account_id", property = "account.accountId"),
+            @Result(column = "instrument_id", property = "instrument.instrumentId"),
+            @Result(column = "quantity", property = "quantity"),
+            @Result(column = "opened_at", property = "openedAt"),
+            @Result(column = "closed_at", property = "closedAt"),
+            @Result(column = "total_price", property = "totalPrice"),
+            @Result(column = "average_price", property = "averagePrice")
+    })
+    Optional<PositionsEntity> findOpenForUpdate(@Param("accountId") Integer accountId,
+                                                @Param("instrumentId") Integer instrumentId);
+
     @Insert("INSERT INTO positions (account_id, instrument_id, quantity, total_price, average_price, opened_at, closed_at) " +
             "VALUES (#{accountId}, #{instrumentId}, #{quantity}, #{totalPrice}, #{averagePrice}, #{openedAt}, #{closedAt})")
     void insert(@Param("accountId") Integer accountId,

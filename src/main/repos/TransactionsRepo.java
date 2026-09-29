@@ -21,7 +21,7 @@ public interface TransactionsRepo {
     List<TransactionsEntity> findAll();
 
     @Select("SELECT COALESCE(SUM(amount), 0) FROM transactions " +
-            "WHERE account_id = #{account_id} AND side = 'OUT' AND transaction_type = 'TRADE' " +
+            "WHERE account_id = #{accountId} AND side = 'OUT' AND transaction_type = 'TRADE' " +
             "AND happened_at >= #{startInclusive} AND happened_at < #{endExclusive}")
     BigDecimal sumExecutedBuys(@Param("accountId") Integer accountId,
                                @Param("startInclusive") LocalDateTime startInclusive,

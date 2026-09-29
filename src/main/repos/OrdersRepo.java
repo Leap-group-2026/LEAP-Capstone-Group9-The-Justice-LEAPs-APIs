@@ -54,7 +54,7 @@ public interface OrdersRepo {
             "status=#{status}, quantity=#{quantity}, total_price=#{totalPrice}, updated_at=#{updatedAt} WHERE order_id=#{orderId}")
     void update(OrderEntity order);
 
-    @Update("UPDATE orders SET total_price = #{totalPrice}, status = #{status}, update_at = #{updatedAt} WHERE order_id = #{orderId}")
+    @Update("UPDATE orders SET total_price = #{totalPrice}, status = #{status}, updated_at = #{updatedAt} WHERE order_id = #{orderId}")
     void updateExecutionOutcome(@Param("orderId") Integer orderId,
                                 @Param("totalPrice") BigDecimal totalPrice,
                                 @Param("status") String status,

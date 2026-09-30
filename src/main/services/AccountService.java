@@ -5,8 +5,11 @@ import main.repos.AccountsRepo;
 import main.repos.UserRepo;
 import main.entities.AccountsEntity;
 import main.entities.UserEntity;
+import main.dto.response.AccountResponse;
 import main.exception.ResourceNotFoundException;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class AccountService {
@@ -62,5 +65,20 @@ public class AccountService {
         repo.update(accountId, existingAccount.getUserId().getUserId(), existingAccount.getBalance(), 
                    existingAccount.getPortfolioSize().getValue(), existingAccount.getTradeType(), false);
         return "Success";
+    }
+
+    public List<AccountResponse> getAccountsByUserID (int userId)
+    {
+        return repo.findByUser(userId).stream()
+            .map(account -> new AccountResponse(
+                account.getAccountId(),
+                account.getUserId().getUserId(),
+                account.getBalance(),
+                account.getPortfolioSize().getValue(),
+                account.getTradeType(),
+                account.getCreatedAt(),
+                account.getAccountActive()
+            ))
+            .collect(Collectors.toList());
     }
 }

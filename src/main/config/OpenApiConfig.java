@@ -25,6 +25,8 @@ public class OpenApiConfig {
                 new Tag().name("Accounts").description("Trading accounts: open, look up and close (soft delete) an account belonging to a user"),
                 new Tag().name("Orders").description("Place BUY and SELL orders against an account"),
                 new Tag().name("Positions").description("Holdings of an instrument within an account"),
-                new Tag().name("Order history").description("Append-only audit trail of order status changes, kept for dispute reconstruction")));
+                new Tag().name("Transactions").description("Deposits, withdrawals and trade settlements recorded against an account"),
+                new Tag().name("Order history").description("Append-only audit trail of order status changes, kept for dispute reconstruction")
+            ));
     }
 }

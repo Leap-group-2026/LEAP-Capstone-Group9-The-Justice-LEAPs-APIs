@@ -1,6 +1,8 @@
 package main.controllers;
 
 import org.springframework.web.bind.annotation.*;
+import main.dto.response.OrderHistoryResponse;
+import java.util.List;
 
 import jakarta.validation.Valid;
 import main.dto.request.CreateOrderRequest;
@@ -45,5 +47,17 @@ public class OrderController {
     @PostMapping
     public OrderSubmissionResponse createOrder(@RequestBody @Valid CreateOrderRequest request) {
         return orderService.createOrder(request);
+    }
+
+    @Operation(summary = "Get order history for an account",
+        description = "Retrieves the list of orders for the specified account.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Order history retrieved successfully"),
+        @ApiResponse(responseCode = "404", description = "Account not found",
+            content = @Content(schema = @Schema(implementation = ValidationError.class)))
+    })
+    @GetMapping("/account/{accountId}")
+    public List<OrderHistoryResponse> getOrderHistory(@PathVariable Integer accountId) {
+        return orderService.getOrderHistory(accountId);
     }
 }

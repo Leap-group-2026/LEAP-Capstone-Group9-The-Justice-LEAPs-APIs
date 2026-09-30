@@ -243,6 +243,70 @@ public class OrderProcessingServiceTest {
         assertTrue(transactions(ACCOUNT_ID).isEmpty());
     }
 
+    // ---- Sell fills (processSell) ----
+
+    @Test
+    void partialSellReducesPositionAtAverageCostAndCreditsBalance() {
+        insertOpenPosition(5, "40.0000", "8.0000");
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "SELL", 2);
+
+        orderProcessingService.process(ORDER_ID);
+
+        assertEquals("FILLED", orderStatus());
+        List<Map<String, Object>> positions = positions();
+        assertEquals(1, positions.size());
+        assertEquals(3, positions.get(0).get("quantity"));
+        assertMoney("8", positions.get(0).get("average_price"));
+        assertMoney("24", positions.get(0).get("total_price"));
+        assertNull(positions.get(0).get("closed_at"));
+        assertMoney("1020", balance(ACCOUNT_ID));
+        List<Map<String, Object>> txns = transactions(ACCOUNT_ID);
+        assertEquals(1, txns.size());
+        assertMoney("20", txns.get(0).get("amount"));
+        assertEquals("IN", txns.get(0).get("side"));
+        assertEquals("TRADE", txns.get(0).get("transaction_type"));
+    }
+
+    @Test
+    void sellingTheWholePositionClosesIt() {
+        insertOpenPosition(5, "40.0000", "8.0000");
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "SELL", 5);
+
+        orderProcessingService.process(ORDER_ID);
+
+        assertEquals("FILLED", orderStatus());
+        List<Map<String, Object>> positions = positions();
+        assertEquals(1, positions.size());
+        assertEquals(0, positions.get(0).get("quantity"));
+        assertMoney("0", positions.get(0).get("total_price"));
+        assertEquals(Timestamp.valueOf(FILL_TIME), positions.get(0).get("closed_at"));
+        assertMoney("1050", balance(ACCOUNT_ID));
+    }
+
+    @Test
+    void sellingMoreThanHeldIsDeclinedWithoutSideEffects() {
+        insertOpenPosition(5, "40.0000", "8.0000");
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "SELL", 6);
+
+        orderProcessingService.process(ORDER_ID);
+
+        assertEquals("DECLINED", orderStatus());
+        assertEquals(5, positions().get(0).get("quantity"));
+        assertMoney("1000", balance(ACCOUNT_ID));
+        assertTrue(transactions(ACCOUNT_ID).isEmpty());
+    }
+
+    @Test
+    void sellingWithNoPositionIsDeclined() {
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "SELL", 1);
+
+        orderProcessingService.process(ORDER_ID);
+
+        assertEquals("DECLINED", orderStatus());
+        assertMoney("1000", balance(ACCOUNT_ID));
+        assertTrue(transactions(ACCOUNT_ID).isEmpty());
+    }
+
     // ---- The existing idempotency guard, which the Kafka consumer will rely on ----
 
     @Test

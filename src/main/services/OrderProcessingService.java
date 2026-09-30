@@ -52,10 +52,13 @@ public class OrderProcessingService {
     }
 
     public boolean isMarketOpen() {
-        LocalTime easternTime = ZonedDateTime.now(clock)
-                .withZoneSameInstant(EASTERN_ZONE)
-                .toLocalTime();
+        ZonedDateTime nowEastern = ZonedDateTime.now(clock).withZoneSameInstant(EASTERN_ZONE);
+        DayOfWeek day = nowEastern.getDayOfWeek();
+        if (day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY) {
+            return false;
+        }
 
+        LocalTime easternTime = nowEastern.toLocalTime();
         return !easternTime.isBefore(MARKET_OPEN) && !easternTime.isAfter(MARKET_CLOSE);
     }
 
@@ -161,7 +164,77 @@ public class OrderProcessingService {
     }
 
     private void processSell(OrderEntity order, AccountsEntity account, BigDecimal executionTotal, LocalDateTime happenedAt) {
+        Integer instrumentId = order.getInstrumentId().getInstrumentId();
+        Optional<PositionsEntity> existingPosition = positionsRepo.findOpenForUpdate(account.getAccountId(), instrumentId);
 
+        if (existingPosition.isEmpty()) {
+            decline(order, executionTotal, happenedAt);
+            return;
+        }
+
+        PositionsEntity position = existingPosition.get();
+
+        if (position.getQuantity() == null || position.getAveragePrice() == null || position.getTotalPrice() == null
+                || position.getQuantity() < order.getQuantity()) {
+            decline(order, executionTotal, happenedAt);
+            return;
+        }
+
+        int remainingQuantity = position.getQuantity() - order.getQuantity();
+
+        if (remainingQuantity == 0) {
+            positionsRepo.update(
+                position.getPositionId(),
+                account.getAccountId(),
+                instrumentId,
+                0,
+                BigDecimal.ZERO,
+                position.getAveragePrice(),
+                position.getOpenedAt(),
+                happenedAt
+            );
+        }
+        else {
+            BigDecimal quantitySold = BigDecimal.valueOf(order.getQuantity());
+            BigDecimal reducedCostBasis = position.getAveragePrice().multiply(quantitySold);
+            BigDecimal remainingTotal = position.getTotalPrice().subtract(reducedCostBasis);
+
+            if (remainingTotal.compareTo(BigDecimal.ZERO) < 0) {
+                remainingTotal = BigDecimal.ZERO;
+            }
+
+            positionsRepo.update(
+                position.getPositionId(),
+                account.getAccountId(),
+                instrumentId,
+                remainingQuantity,
+                remainingTotal,
+                position.getAveragePrice(),
+                position.getOpenedAt(),
+                null
+            );
+        }
+
+        transactionsRepo.insert(
+            executionTotal, "IN", account.getAccountId(), "TRADE", happenedAt
+        );
+
+        accountsRepo.updateBalance(account.getAccountId(), account.getBalance().add(executionTotal));
+
+        fill(order, executionTotal, happenedAt);
+    }
+
+
+    @Transactional
+    public void markFailed(Integer orderId) {
+        OrderEntity order = ordersRepo.findByIdForUpdate(orderId).orElse(null);
+
+        if (order == null || !"PENDING".equals(order.getStatus())) {
+            return;
+        }
+
+        LocalDateTime failedAt = ZonedDateTime.now(clock).withZoneSameInstant(EASTERN_ZONE).toLocalDateTime();
+        transition(order, order.getTotalPrice(), "FAILED", failedAt);
     }
 
     private void fill(OrderEntity order, BigDecimal executionTotal, LocalDateTime happenedAt) {

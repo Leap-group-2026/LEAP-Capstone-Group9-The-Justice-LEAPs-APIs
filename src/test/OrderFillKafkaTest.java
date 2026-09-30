@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.NestedTestConfiguration;
 import org.springframework.http.MediaType;
@@ -20,16 +21,22 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import main.Application;
+import main.entities.OrderEntity;
 import main.events.OrderSubmittedEvent;
+import main.services.HistoricalOrdersService;
 import test.config.TestClockConfig;
 
 import java.math.BigDecimal;
@@ -88,6 +95,10 @@ public class OrderFillKafkaTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    // Real behaviour unless a test stubs it; only the rollback test does, to make an order's snapshot fail
+    @SpyBean
+    private HistoricalOrdersService historicalOrdersService;
 
     @BeforeEach
     void setUp() {
@@ -164,6 +175,32 @@ public class OrderFillKafkaTest {
         }
     }
 
+    private long publishedCount() throws Exception {
+        try (AdminClient admin = AdminClient.create(
+                Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, broker.getBrokersAsString()))) {
+            Map<TopicPartition, OffsetSpec> latest = IntStream.range(0, 3).boxed()
+                .collect(Collectors.toMap(p -> new TopicPartition(TOPIC, p), p -> OffsetSpec.latest()));
+            return admin.listOffsets(latest).all().get().values().stream().mapToLong(o -> o.offset()).sum();
+        }
+    }
+
+    private int placeOrder(String side, int quantity) throws Exception {
+        String body = "{\"side\":\"" + side + "\",\"accountId\":" + ACCOUNT_ID
+            + ",\"instrumentId\":" + INSTRUMENT_ID + ",\"quantity\":" + quantity + "}";
+        String response = mockMvc.perform(post("/orders").contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+        int orderId = objectMapper.readTree(response).path("order_id").asInt();
+        assertTrue(orderId > 0, "no order_id in response: " + response);
+        return orderId;
+    }
+
+    // The story's promise: filled within 5 seconds of being placed
+    private void awaitFilledWithinFiveSeconds(int orderId) {
+        await().atMost(Duration.ofSeconds(5)).pollInterval(Duration.ofMillis(100)).until(() -> "FILLED".equals(
+            jdbcTemplate.queryForObject("SELECT status FROM orders WHERE order_id = ?", String.class, orderId)));
+    }
+
     private BigDecimal balance() {
         return jdbcTemplate.queryForObject("SELECT balance FROM accounts WHERE account_id = ?", BigDecimal.class, ACCOUNT_ID);
     }
@@ -188,23 +225,63 @@ public class OrderFillKafkaTest {
     }
 
     @Test
-    void submittedOrderIsPublishedAfterCommitAndFilledThroughKafka() throws Exception {
-        String body = "{\"side\":\"BUY\",\"accountId\":" + ACCOUNT_ID
-            + ",\"instrumentId\":" + INSTRUMENT_ID + ",\"quantity\":3}";
+    void buyPlacedThroughTheApiIsPublishedOnceAndFilledWithinFiveSeconds() throws Exception {
+        long publishedBefore = publishedCount();
 
-        String response = mockMvc.perform(post("/orders").contentType(MediaType.APPLICATION_JSON).content(body))
-            .andExpect(status().isOk())
-            .andReturn().getResponse().getContentAsString();
-        int orderId = objectMapper.readTree(response).path("order_id").asInt();
-        assertTrue(orderId > 0, "no order_id in response: " + response);
+        int orderId = placeOrder("BUY", 3);
+        awaitFilledWithinFiveSeconds(orderId);
 
-        await().atMost(Duration.ofSeconds(30)).pollInterval(Duration.ofMillis(200)).until(() -> "FILLED".equals(
-            jdbcTemplate.queryForObject("SELECT status FROM orders WHERE order_id = ?", String.class, orderId)));
-
+        assertEquals(publishedBefore + 1, publishedCount(), "each order must publish exactly one message");
         assertEquals(0, new BigDecimal("970").compareTo(balance()));
         assertEquals(List.of("PENDING", "FILLED"), jdbcTemplate.queryForList(
             "SELECT order_information_json FROM historical_orders WHERE order_id = ? ORDER BY historical_order_id",
             String.class, orderId).stream().map(this::snapshotStatus).toList());
+    }
+
+    @Test
+    void sellPlacedThroughTheApiIsFilledWithinFiveSeconds() throws Exception {
+        jdbcTemplate.update(
+            "INSERT INTO positions (account_id, instrument_id, quantity, total_price, average_price, opened_at) " +
+            "VALUES (?, ?, 5, 40.0000, 8.0000, TIMESTAMP '2024-09-01 10:00:00')",
+            ACCOUNT_ID, INSTRUMENT_ID);
+
+        int orderId = placeOrder("SELL", 2);
+        awaitFilledWithinFiveSeconds(orderId);
+
+        assertEquals(0, new BigDecimal("1020").compareTo(balance()));
+        assertEquals(3, jdbcTemplate.queryForObject(
+            "SELECT quantity FROM positions WHERE account_id = ? AND instrument_id = ?", Integer.class, ACCOUNT_ID, INSTRUMENT_ID));
+        assertEquals("IN", jdbcTemplate.queryForObject(
+            "SELECT side FROM transactions WHERE account_id = ?", String.class, ACCOUNT_ID));
+    }
+
+    @Test
+    void rolledBackOrderPublishesNothing() throws Exception {
+        // Let the order and snapshot be written and the event be published, then fail the commit itself.
+        // A publisher that sent immediately (e.g. @EventListener) would already have sent by then.
+        doAnswer(invocation -> {
+            invocation.callRealMethod();
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void beforeCommit(boolean readOnly) {
+                    throw new IllegalStateException("simulated failure at commit");
+                }
+            });
+            return null;
+        }).when(historicalOrdersService).captureOrderSnapshot(any(OrderEntity.class));
+        long publishedBefore = publishedCount();
+        String body = "{\"side\":\"BUY\",\"accountId\":" + ACCOUNT_ID
+            + ",\"instrumentId\":" + INSTRUMENT_ID + ",\"quantity\":3}";
+
+        // The unhandled failure surfaces as a servlet exception (a 500 in the running app)
+        assertThrows(Exception.class, () ->
+            mockMvc.perform(post("/orders").contentType(MediaType.APPLICATION_JSON).content(body)));
+
+        assertEquals(0, jdbcTemplate.queryForObject(
+            "SELECT count(*) FROM orders WHERE account_id = ?", Integer.class, ACCOUNT_ID), "the order should have rolled back");
+        // Nothing may be published at all, so watch for a while rather than checking once
+        await().during(Duration.ofSeconds(2)).atMost(Duration.ofSeconds(3))
+            .until(() -> publishedCount() == publishedBefore);
     }
 
     /**

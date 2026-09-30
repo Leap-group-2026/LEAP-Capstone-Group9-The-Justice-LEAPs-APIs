@@ -1,29 +1,15 @@
 package main.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.Id;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Column;
-import org.hibernate.annotations.CreationTimestamp;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "admin")
 public class AdminEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer adminId;
-    @JsonProperty("username")
-    @Column(name = "username")
-    private String username;
+    @JsonProperty("email")
+    private String email;
     @JsonProperty("pass_hash")
-    @Column(name = "pass_hash")
     private String passHash;
-    @CreationTimestamp
-    @Column(name = "created_at")
+    @JsonProperty("created_at")
     private LocalDateTime createdAt;
 
     // Getters and Setters
@@ -35,12 +21,12 @@ public class AdminEntity {
         this.adminId = adminId;
     }
 
-    public String getUsername() {
-        return username;
+    public String getEmail() {
+        return email;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getPassHash() {

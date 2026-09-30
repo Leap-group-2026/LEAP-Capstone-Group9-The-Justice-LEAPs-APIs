@@ -1,28 +1,41 @@
+package test;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.hamcrest.Matchers;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import main.Application;
+import main.dto.response.OrderSubmissionResponse;
 import main.entities.AccountsEntity;
 import main.entities.InstrumentEntity;
 import main.entities.UserEntity;
 import main.entities.PortfolioSize;
 import main.repos.AccountsRepo;
 import main.repos.InstrumentRepo;
+import org.springframework.jdbc.core.JdbcTemplate;
+import main.repos.OrdersRepo;
 import main.repos.UserRepo;
+import test.config.TestClockConfig;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @SpringBootTest(classes = Application.class)
+@Import(TestClockConfig.class)
 @AutoConfigureMockMvc
 @Transactional
 @DisplayName("OrderController.createOrder() Tests")
@@ -40,6 +53,15 @@ public class OrderControllerTest {
     @Autowired
     private UserRepo userRepo;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private OrdersRepo ordersRepo;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
     private AccountsEntity testAccount;
     private InstrumentEntity testInstrument;
 
@@ -52,22 +74,32 @@ public class OrderControllerTest {
         testUser.setAddress("123 Test Street");
         testUser.setSsnHash("ssn_hash_value");
         testUser.setPassHash("pass_hash_value");
-        testUser = userRepo.save(testUser);
+        userRepo.insert(testUser);
+        // testUser.userId is now set by MyBatis via @Options
 
         testAccount = new AccountsEntity();
         testAccount.setUserId(testUser);
-        testAccount.setBalance(BigDecimal.valueOf(10000.00));
+        testAccount.setBalance(BigDecimal.valueOf(20000.00));
         testAccount.setPortfolioSize(PortfolioSize.BALANCED);
         testAccount.setTradeType("ACTIVE");
-        testAccount = accountsRepo.save(testAccount);
+        testAccount.setAccountActive(true);
+        testAccount.setCreatedAt(LocalDateTime.now());
+        testAccount.setAccountActive(true);
+        accountsRepo.insert(testAccount);
+        // testAccount.accountId is now set by MyBatis via @Options
 
         testInstrument = new InstrumentEntity();
         testInstrument.setTicker("AAPL");
         testInstrument.setAssetType("STOCK");
         testInstrument.setAssetName("Apple Inc.");
-        testInstrument.setPrice(BigDecimal.valueOf(150.00));
         testInstrument.setCurrency("USD");
-        testInstrument = instrumentRepo.save(testInstrument);
+        instrumentRepo.insert(testInstrument);
+        // testInstrument.instrumentId is now set by MyBatis via @Options
+        
+        // Seed current_prices directly; CurrentPriceRepo.upsert uses Postgres-only ON CONFLICT
+        jdbcTemplate.update(
+            "INSERT INTO current_prices (instrument_id, price, quote_time, retrieved_at) VALUES (?, ?, now(), now())",
+            testInstrument.getInstrumentId(), new BigDecimal("150.00"));
     }
 
     @Test
@@ -128,14 +160,22 @@ public class OrderControllerTest {
     @DisplayName("Should successfully create order with valid payload")
     void testCreateOrder_Success() throws Exception {
         String jsonPayload = "{\"side\": \"BUY\", \"accountId\": " + testAccount.getAccountId()
-            + ", \"instrumentId\": " + testInstrument.getInstrumentId() + ", \"quantity\": 100}";
+            + ", \"instrumentId\": " + testInstrument.getInstrumentId() + ", \"quantity\": 50}";
 
-        mockMvc.perform(post("/orders")
+        MvcResult result = mockMvc.perform(post("/orders")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonPayload))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.side").value("BUY"))
-            .andExpect(jsonPath("$.quantity").value(100))
-            .andExpect(jsonPath("$.total_price").value(15000.0));
+            .andExpect(jsonPath("$.order_id").value(Matchers.greaterThan(0)))
+            .andExpect(jsonPath("$.created_at").value(Matchers.not(Matchers.blankOrNullString())))
+            .andReturn();
+
+        OrderSubmissionResponse response = objectMapper.readValue(
+            result.getResponse().getContentAsString(),
+            OrderSubmissionResponse.class
+        );
+
+        assertThat(response.createdAt())
+            .isEqualTo(ordersRepo.findById(response.orderId()).orElseThrow().getCreatedAt());
     }
 }

@@ -1,7 +1,7 @@
 package main.services.resolver;
 
 import org.springframework.stereotype.Component;
-import main.entities.InstrumentEntity;
+import main.dto.InstrumentWithPrice;
 import main.exception.ResourceNotFoundException;
 import main.repos.InstrumentRepo;
 
@@ -14,7 +14,7 @@ public class InstrumentResolver {
         this.instrumentRepo = instrumentRepo;
     }
 
-    public InstrumentEntity resolve(Integer instrumentId) {
+    public InstrumentWithPrice resolve(Integer instrumentId) {
         return instrumentRepo.findById(instrumentId)
             .orElseThrow(() -> new ResourceNotFoundException("Instrument", instrumentId.toString()));
     }

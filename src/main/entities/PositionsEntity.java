@@ -1,64 +1,40 @@
 package main.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Column;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import main.entities.AccountsEntity;
-import main.entities.InstrumentEntity;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import java.math.BigDecimal;
-
-
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "positions")
 public class PositionsEntity {
-    @Id
-    @GeneratedValue (strategy = GenerationType.IDENTITY)
     private Integer positionId;
 
-    @ManyToOne
-    @JoinColumn(name = "account_id", nullable = false)
     @JsonProperty("account")
     private AccountsEntity account;
 
     @JsonProperty("quantity")
-    @Column(name = "quantity")
     private Integer quantity;
 
-    @ManyToOne
-    @JoinColumn(name = "instrument_id", nullable = false)
     @JsonProperty("instrument")
     private InstrumentEntity instrument;
 
     @JsonProperty("opened_at")
-    @Column(name = "opened_at")
+    @JsonAlias("openedAt")
     private LocalDateTime openedAt;
 
     @JsonProperty("closed_at")
-    @Column(name = "closed_at")
+    @JsonAlias("closedAt")
     private LocalDateTime closedAt;
 
     @JsonProperty("total_price")
-    @Column(name = "total_price")
+    @JsonAlias("totalPrice")
     private BigDecimal totalPrice;
 
     @JsonProperty("average_price")
-    @Column(name = "average_price")
+    @JsonAlias("averagePrice")
     private BigDecimal averagePrice;
 
     public Integer getPositionId() {
         return positionId;
-    }
-
-    public void setPositionId(Integer positionId) {
-        this.positionId = positionId;
     }
 
     public AccountsEntity getAccountId() {

@@ -45,4 +45,30 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
+
+    @ExceptionHandler(InvalidOrderException.class)
+    public ResponseEntity<ValidationError> handleInvalidOrder(InvalidOrderException ex) {
+        ValidationError error = new ValidationError(
+            HttpStatus.BAD_REQUEST.value(),
+            "Invalid order",
+            LocalDateTime.now(),
+            ex.getField(),
+            null,
+            ex.getReason()
+        );
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(TransactionProcessingException.class)
+    public ResponseEntity<ValidationError> handleTransactionProcessing(TransactionProcessingException ex) {
+        ValidationError error = new ValidationError(
+            HttpStatus.INTERNAL_SERVER_ERROR.value(),
+            "Order processing transaction failed",
+            LocalDateTime.now(),
+            "orderId",
+            ex.getOrderId(),
+            ex.getReason()
+        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
 }

@@ -5,6 +5,8 @@ import main.repos.AccountsRepo;
 import main.repos.UserRepo;
 import main.entities.AccountsEntity;
 import main.entities.UserEntity;
+import main.exception.ResourceNotFoundException;
+import java.time.LocalDateTime;
 
 @Service
 public class AccountService {
@@ -17,18 +19,48 @@ public class AccountService {
     }
 
     public AccountsEntity findById(Integer id) {
-        return repo.findById(id).orElse(null);
+        return repo.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Account", String.valueOf(id)));
     }
 
     public AccountsEntity saveAccount(AccountsEntity entity) {
-        // Fetch the user from database to ensure it's a managed entity
-        if (entity.getUserId() != null && entity.getUserId().getUserId() != null) {
-            UserEntity managedUser = userRepository.findById(entity.getUserId().getUserId()).orElse(null);
-            if (managedUser != null) {
-                entity.setUserId(managedUser);
-            }
+        if (entity.getAccountActive() == null) {
+            entity.setAccountActive(true);
         }
-        return repo.save(entity);
+
+        if (entity.getCreatedAt() == null) {
+            entity.setCreatedAt(LocalDateTime.now());
+        }
+
+  
+        repo.insert(entity);
+        return entity;
     }
-    
+    public String closeAccount(Integer accountId, Integer currentUserId) {
+        // Use unfiltered method to allow closing already-inactive accounts
+        AccountsEntity existingAccount = repo.findByIdIncludingInactive(accountId)
+        .orElseThrow(() -> new IllegalStateException("Not a valid user"));
+        
+        // Check if account is already closed
+        if (!existingAccount.getAccountActive()) {
+            throw new IllegalStateException("Account is already closed");
+        }
+        
+        if(existingAccount.getUserId() == null || existingAccount.getUserId().getUserId() == null) {
+        throw new IllegalStateException("Account user information is missing");
+        }
+        // Checking to see if the user is who they say they are and if not they will not be able to close the account
+        if(!existingAccount.getUserId().getUserId().equals(currentUserId)) {
+            throw new IllegalStateException("You are unauthorized to close this account, it does not belong to you");
+        }
+        // If the account balance is not 0, closing the account will not work
+        if (existingAccount.getBalance().compareTo(java.math.BigDecimal.ZERO) != 0) {
+            throw new IllegalStateException("In order to close an account your balance must be exactly $0, please sell your holdings");
+        }
+        // If all checks pass then make the account inactive
+        existingAccount.setAccountActive(false);
+        repo.update(accountId, existingAccount.getUserId().getUserId(), existingAccount.getBalance(), 
+                   existingAccount.getPortfolioSize().getValue(), existingAccount.getTradeType(), false);
+        return "Success";
+    }
 }

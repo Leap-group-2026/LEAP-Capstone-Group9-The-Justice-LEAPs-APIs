@@ -4,11 +4,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
+
 import main.repos.UserRepo;
 import main.entities.UserEntity; 
 import main.dto.request.UserRegistrationRequest;
+import main.dto.request.LoginRequest;
+import main.dto.request.VerifyPasswordReset;
+import main.dto.request.UpdateNameRequest;
+import main.dto.request.UpdateEmailRequest;
+import main.dto.request.UpdateAddressRequest;
 import main.dto.response.UserResponse;
+import main.dto.response.UpdateNameResponse;
+import main.dto.response.UpdateEmailResponse;
+import main.dto.response.UpdateAddressResponse;
 import main.services.EmailService;
+import main.exception.ResourceNotFoundException;
 
 import java.security.MessageDigest;
 import java.util.Base64;
@@ -33,11 +43,6 @@ public class UserService {
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
     }
-
-    /* 
-    public UserEntity saveUser(UserEntity entity){
-        return repo.save(entity);
-    }*/
 
     public UserResponse registerUser(UserRegistrationRequest request){
         validateRequired(request);
@@ -65,15 +70,44 @@ public class UserService {
         user.setSsnHash(ssnHash);
         user.setPassHash(passwordEncoder.encode(request.getPassword()));
 
-        UserEntity savedUser = repo.save(user);
+        repo.insert(user);
+
+        if (emailService != null) {
+            try {
+                String subject = "Welcome to Ribbit!";
+                String body = "Hello " + user.getName() + ",\n\n" +
+                        "Welcome to Ribbit! Your account has been successfully created.\n\n" +
+                        "You can now log in to your account and start trading.\n\n" +
+                        "If you have any questions or need assistance, please don't hesitate to reach out.\n\n" +
+                        "Best regards,\n" +
+                        "The Ribbit Trading Team";
+                emailService.sendEmail(user.getEmail(), subject, body);
+            } catch (Exception e) {
+                System.err.println("Warning: Failed to send welcome email for user " + user.getEmail() + ": " + e.getMessage());
+            }
+        }
 
         return new UserResponse(
-            savedUser.getUserId(),
-            savedUser.getName(),
-            savedUser.getEmail(),
-            savedUser.getDateOfBirth(),
-            savedUser.getAddress()
+            user.getUserId(),
+            user.getName(),
+            user.getEmail(),
+            user.getDateOfBirth(),
+            user.getAddress()
         );
+    }
+
+    public ResponseEntity<String> login(LoginRequest request){
+        if (!repo.existsByEmail(request.getEmail())){
+            throw new IllegalArgumentException("Email doesn't exist");
+        }
+        UserEntity user = repo.findByEmail(request.getEmail()).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        boolean match = passwordEncoder.matches(request.getPassword(), user.getPassHash());
+        if(!match){
+            return ResponseEntity.badRequest().body("Wrong password");
+        }
+        else{
+            return ResponseEntity.ok("Login successful");
+        }
     }
 
 
@@ -122,7 +156,7 @@ public class UserService {
         }
     }
 
-    // Generates deterministic SHA-256 hash for SSN (for duplicate checking)
+    // Uses SHA-256 to hash
     private String generateSHA256Hash(String input) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -133,30 +167,111 @@ public class UserService {
         }
     }
 
-    public ResponseEntity<String> resetPassword(UserResponse entity){
+    public ResponseEntity<String> emailResetPassword(UserResponse entity){
         String email = entity.getEmail();
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Email is required");
+        }
+        
         int rand = 100000 + random.nextInt(900000);
         String code = Integer.toString(rand);
         
         UserEntity user = repo.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
         user.setCode(code);
-        repo.save(user);
+        repo.update(user);
         
         if (emailService != null) {
-            String emailBody = "Hello " + user.getName() + ",\n\n" +
-                "We received a request to reset your password. Please use the code below to proceed with resetting your password.\n\n" +
-                "Reset Code: " + code + "\n\n" +
-                "This code will expire in 15 minutes. If you did not request a password reset, please ignore this email.\n\n" +
-                "For security reasons, never share this code with anyone.\n\n" +
-                "Best regards,\n" +
-                "The Ribbit Trading Team";
-            
-            emailService.sendEmail(
-                email,
-                "Password Reset Request - Ribbit Trading",
-                emailBody
-            );
+            try {
+                String emailBody = "Hello " + user.getName() + ",\n\n" +
+                    "We received a request to reset your password. Please use the code below to proceed with resetting your password.\n\n" +
+                    "Reset Code: " + code + "\n\n" +
+                    "This code will expire in 15 minutes. If you did not request a password reset, please ignore this email.\n\n" +
+                    "For security reasons, never share this code with anyone.\n\n" +
+                    "Best regards,\n" +
+                    "The Ribbit Trading Team";
+                
+                emailService.sendEmail(
+                    user.getEmail(),
+                    "Password Reset Request - Ribbit Trading",
+                    emailBody
+                );
+            } catch (Exception e) {
+                System.err.println("Warning: Failed to send reset email for user " + user.getEmail() + ": " + e.getMessage());
+                throw new RuntimeException("Failed to send reset email. Please try again later.");
+            }
         }
         return ResponseEntity.ok("Email sent successfully");
+    }
+
+    public ResponseEntity<String> resetPassword(VerifyPasswordReset user){
+        String email = user.getEmail();
+        UserEntity userInDb = repo.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        
+        if(userInDb.getCode() == null || !userInDb.getCode().equals(user.getCode())){
+            return ResponseEntity.badRequest().body("Incorrect reset code");
+        }
+        else{
+            validatePass(user.getPassword());
+            String encodedPassword = passwordEncoder.encode(user.getPassword());
+            repo.updatePassword(userInDb.getUserId(), encodedPassword);
+            return ResponseEntity.ok("Password reset successfully");
+        }
+    }
+
+    public UpdateNameResponse updateUserName(Integer userId, UpdateNameRequest request) {
+        if (request.name() == null || request.name().isBlank()) {
+            throw new IllegalArgumentException("Name cannot be empty");
+        }
+
+        UserEntity user = repo.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", userId.toString()));
+
+        user.setName(request.name().trim());
+        repo.update(user);
+
+        return new UpdateNameResponse(user.getUserId(), user.getName());
+    }
+
+    public UpdateEmailResponse updateUserEmail(Integer userId, UpdateEmailRequest request) {
+        if (request.email() == null || request.email().isBlank()) {
+            throw new IllegalArgumentException("Email cannot be empty");
+        }
+
+        String newEmail = request.email().trim().toLowerCase();
+        
+        if (!isValidEmail(newEmail)) {
+            throw new IllegalArgumentException("Invalid email format");
+        }
+
+        UserEntity user = repo.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", userId.toString()));
+
+        if (repo.existsByEmail(newEmail) && !user.getEmail().equalsIgnoreCase(newEmail)) {
+            throw new IllegalArgumentException("Email already in use");
+        }
+
+        user.setEmail(newEmail);
+        repo.update(user);
+
+        return new UpdateEmailResponse(user.getUserId(), user.getEmail());
+    }
+
+    public UpdateAddressResponse updateUserAddress(Integer userId, UpdateAddressRequest request) {
+        if (request.address() == null || request.address().isBlank()) {
+            throw new IllegalArgumentException("Address cannot be empty");
+        }
+
+        UserEntity user = repo.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", userId.toString()));
+
+        user.setAddress(request.address().trim());
+        repo.update(user);
+
+        return new UpdateAddressResponse(user.getUserId(), user.getAddress());
+    }
+
+    private boolean isValidEmail(String email) {
+        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
+        return email.matches(emailRegex) && email.length() <= 255;
     }
 }

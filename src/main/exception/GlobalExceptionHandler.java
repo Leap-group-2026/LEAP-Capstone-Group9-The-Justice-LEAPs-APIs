@@ -58,4 +58,17 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.badRequest().body(error);
     }
+
+    @ExceptionHandler(TransactionProcessingException.class)
+    public ResponseEntity<ValidationError> handleTransactionProcessing(TransactionProcessingException ex) {
+        ValidationError error = new ValidationError(
+            HttpStatus.INTERNAL_SERVER_ERROR.value(),
+            "Order processing transaction failed",
+            LocalDateTime.now(),
+            "orderId",
+            ex.getOrderId(),
+            ex.getReason()
+        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
 }

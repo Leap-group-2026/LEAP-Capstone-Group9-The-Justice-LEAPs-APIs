@@ -11,6 +11,8 @@ import main.repos.HistoricalOrdersRepo;
 import main.repos.OrdersRepo;
 import main.entities.HistoricalOrdersEntity;
 import main.dto.OrderSnapshot;
+
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -25,11 +27,15 @@ public class HistoricalOrdersService {
         this.ordersRepo = ordersRepo;
     }
 
+    public void captureOrderSnapshot(OrderEntity order) {
+        captureOrderSnapshot(order, order.getCreatedAt());
+    }
+
     /**
      * Capture an immutable snapshot of the order's current state.
      * Stores ONLY scalar values and IDs, not entity references.
      */
-    public void captureOrderSnapshot(OrderEntity order) {
+    public void captureOrderSnapshot(OrderEntity order, LocalDateTime occuredAt) {
         Integer instrumentId = order.getInstrumentId().getInstrumentId();
         Integer accountId = order.getAccountId().getAccountId();
         

@@ -77,11 +77,12 @@ public class OrderProcessingService {
         Integer accountId = order.getAccountId().getAccountId();
         Integer instrumentId = order.getInstrumentId().getInstrumentId();
 
-        AccountsEntity account = accountsRepo.findById(accountId).orElse(null);
+        AccountsEntity account = accountsRepo.findByIdForUpdate(accountId).orElse(null);
         Optional<CurrentPriceEntity> currentPrice = currentPriceRepo.findByInstrumentId(instrumentId);
 
-        if (account == null || currentPrice.isEmpty() || !account.getAccountActive()) {
+        if (account == null || currentPrice.isEmpty() || !Boolean.TRUE.equals(account.getAccountActive())) {
             decline(order, order.getTotalPrice(), happenedAt);
+            return;
         }
 
         BigDecimal executionTotal = OrderPriceCalculator.calculateExecutionTotal(
@@ -117,7 +118,7 @@ public class OrderProcessingService {
         Integer instrumentId = order.getInstrumentId().getInstrumentId();
         Optional<PositionsEntity> existingPosition = positionsRepo.findOpenForUpdate(account.getAccountId(), instrumentId);
 
-        if (existingPosition.isEmpty()) {
+        if (existingPosition.isPresent()) {
             PositionsEntity position = existingPosition.get();
 
             int newQuantity = position.getQuantity() + order.getQuantity();

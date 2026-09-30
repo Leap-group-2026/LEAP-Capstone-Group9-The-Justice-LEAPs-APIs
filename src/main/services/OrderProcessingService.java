@@ -82,6 +82,7 @@ public class OrderProcessingService {
 
         if (account == null || currentPrice.isEmpty() || !account.getAccountActive()) {
             decline(order, order.getTotalPrice(), happenedAt);
+            return;
         }
 
         BigDecimal executionTotal = OrderPriceCalculator.calculateExecutionTotal(
@@ -117,7 +118,7 @@ public class OrderProcessingService {
         Integer instrumentId = order.getInstrumentId().getInstrumentId();
         Optional<PositionsEntity> existingPosition = positionsRepo.findOpenForUpdate(account.getAccountId(), instrumentId);
 
-        if (existingPosition.isEmpty()) {
+        if (existingPosition.isPresent()) {
             PositionsEntity position = existingPosition.get();
 
             int newQuantity = position.getQuantity() + order.getQuantity();
@@ -160,7 +161,64 @@ public class OrderProcessingService {
     }
 
     private void processSell(OrderEntity order, AccountsEntity account, BigDecimal executionTotal, LocalDateTime happenedAt) {
+        Integer instrumentId = order.getInstrumentId().getInstrumentId();
+        Optional<PositionsEntity> existingPosition = positionsRepo.findOpenForUpdate(account.getAccountId(), instrumentId);
 
+        if (existingPosition.isEmpty()) {
+            decline(order, executionTotal, happenedAt);
+            return;
+        }
+
+        PositionsEntity position = existingPosition.get();
+
+        if (position.getQuantity() == null || position.getAveragePrice() == null || position.getTotalPrice() == null
+                || position.getQuantity() < order.getQuantity()) {
+            decline(order, executionTotal, happenedAt);
+            return;
+        }
+
+        int remainingQuantity = position.getQuantity() - order.getQuantity();
+
+        if (remainingQuantity == 0) {
+            positionsRepo.update(
+                position.getPositionId(),
+                account.getAccountId(),
+                instrumentId,
+                0,
+                BigDecimal.ZERO,
+                position.getAveragePrice(),
+                position.getOpenedAt(),
+                happenedAt
+            );
+        }
+        else {
+            BigDecimal quantitySold = BigDecimal.valueOf(order.getQuantity());
+            BigDecimal reducedCostBasis = position.getAveragePrice().multiply(quantitySold);
+            BigDecimal remainingTotal = position.getTotalPrice().subtract(reducedCostBasis);
+
+            if (remainingTotal.compareTo(BigDecimal.ZERO) < 0) {
+                remainingTotal = BigDecimal.ZERO;
+            }
+
+            positionsRepo.update(
+                position.getPositionId(),
+                account.getAccountId(),
+                instrumentId,
+                remainingQuantity,
+                remainingTotal,
+                position.getAveragePrice(),
+                position.getOpenedAt(),
+                null
+            );
+        }
+
+        transactionsRepo.insert(
+            executionTotal, "IN", account.getAccountId(), "TRADE", happenedAt
+        );
+
+        accountsRepo.updateBalance(account.getAccountId(), account.getBalance().add(executionTotal));
+
+        fill(order, executionTotal, happenedAt);
     }
 
     private void fill(OrderEntity order, BigDecimal executionTotal, LocalDateTime happenedAt) {

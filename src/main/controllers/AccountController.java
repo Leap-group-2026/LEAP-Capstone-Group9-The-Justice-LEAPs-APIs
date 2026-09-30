@@ -6,6 +6,7 @@ import main.entities.AccountsEntity;
 import main.entities.UserEntity;
 import main.dto.request.CreateAccountRequest;
 import main.dto.request.CloseAccountRequest;
+import main.dto.response.AccountResponse;
 import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,7 +99,7 @@ public class AccountController {
         description = "Returns all active accounts owned by the specified user.")
     @ApiResponse(responseCode = "200", description = "List of active accounts for the user")
     @GetMapping("/user/{userId}")
-    public List<AccountsEntity> getAccountsbyUserId(@PathVariable int userId)
+    public List<AccountResponse> getAccountsbyUserId(@PathVariable int userId)
     {
         return accountService.getAccountsByUserID(userId);
     }

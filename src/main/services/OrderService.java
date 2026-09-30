@@ -35,10 +35,11 @@ public class OrderService {
     private final OrderPriceCalculator priceCalculator;
     private final AccountResolver accountResolver;
     private final InstrumentResolver instrumentResolver;
+    private final InstrumentRepo instrumentRepo;
     private final Clock clock;
 
     public OrderService(OrdersRepo ordersRepo, HistoricalOrdersService historicalOrdersService, BuyOrderValidator buyOrderValidator, SellOrderValidator sellOrderValidator,
-                       OrderPriceCalculator priceCalculator, AccountResolver accountResolver, InstrumentResolver instrumentResolver, Clock clock) {
+                       OrderPriceCalculator priceCalculator, AccountResolver accountResolver, InstrumentResolver instrumentResolver, InstrumentRepo instrumentRepo, Clock clock) {
         this.ordersRepo = ordersRepo;
         this.historicalOrdersService = historicalOrdersService;
         this.buyOrderValidator = buyOrderValidator;
@@ -46,6 +47,7 @@ public class OrderService {
         this.priceCalculator = priceCalculator;
         this.accountResolver = accountResolver;
         this.instrumentResolver = instrumentResolver;
+        this.instrumentRepo = instrumentRepo;
         this.clock = clock;
     }
 
@@ -98,8 +100,21 @@ public class OrderService {
         return historicalOrdersService.getHistoricalOrders(orderId);
     }
 
-    public OrderEntity getByOrderId(Integer orderId)
+    public OrderHistoryResponse getByOrderId(Integer orderId)
     {
-        return ordersRepo.findById(orderId).orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId)); 
+        OrderEntity order = ordersRepo.findById(orderId).orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
+        InstrumentEntity instrument = instrumentRepo.findEntityById(order.getInstrumentId().getInstrumentId());
+        OrderHistoryResponse response = new OrderHistoryResponse();
+        response.setOrderId(order.getOrderId());
+        response.setTicker(instrument.getTicker());
+        response.setSide(order.getSide());
+        response.setQuantity(order.getQuantity());
+        response.setPricePerUnit(order.getTotalPrice().divide(BigDecimal.valueOf(order.getQuantity())));
+        response.setStatus(order.getStatus());
+        response.setTotalPrice(order.getTotalPrice());
+        if ("FILLED".equals(order.getStatus())) {
+            response.setExecutedAt(order.getUpdatedAt());
+        }
+        return response;
     }
 }

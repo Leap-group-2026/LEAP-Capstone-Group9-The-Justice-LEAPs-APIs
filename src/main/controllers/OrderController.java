@@ -70,7 +70,7 @@ public class OrderController {
             content = @Content(schema = @Schema(implementation = ValidationError.class)))
     })
     @GetMapping("/{orderId}")
-    public OrderEntity getByOrderId(@PathVariable Integer orderId)
+    public OrderHistoryResponse getByOrderId(@PathVariable Integer orderId)
     {
         return orderService.getByOrderId(orderId);
     }

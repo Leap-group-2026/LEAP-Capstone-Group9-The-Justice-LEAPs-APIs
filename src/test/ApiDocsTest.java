@@ -29,7 +29,7 @@ public class ApiDocsTest {
 
     // The order Swagger UI shows the groups in (set in OpenApiConfig)
     private static final List<String> TAGS = List.of(
-        "Admin", "Users", "Accounts", "Orders", "Instruments", "Positions", "Transactions", "Order history");
+        "Users", "Transactions", "Orders", "Accounts", "Instruments", "Positions", "Order history", "Admin");
 
     // method -> path, one entry per endpoint found by scanning the controllers
     private static final List<Map.Entry<String, String>> ENDPOINTS = List.of(

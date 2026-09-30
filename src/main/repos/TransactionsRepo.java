@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Param;
 import main.entities.TransactionsEntity;
+import main.dto.response.TransactionHistoryResponse;
 import java.util.Optional;
 import java.util.List;
 import java.math.BigDecimal;
@@ -33,7 +34,7 @@ public interface TransactionsRepo {
                 @Param("side") String side,
                 @Param("accountId") Integer accountId,
                 @Param("transactionType") String transactionType,
-                @Param("happenedAt") Object happenedAt);
+                @Param("happenedAt") LocalDateTime happenedAt);
 
     @Update("UPDATE transactions SET amount=#{amount}, side=#{side}, account_id=#{accountId}, " +
             "transaction_type=#{transactionType}, happened_at=#{happenedAt} WHERE transaction_id=#{transactionId}")
@@ -42,8 +43,10 @@ public interface TransactionsRepo {
                 @Param("side") String side,
                 @Param("accountId") Integer accountId,
                 @Param("transactionType") String transactionType,
-                @Param("happenedAt") Object happenedAt);
-
-    @Delete("DELETE FROM transactions WHERE transaction_id = #{transactionId}")
-    void delete(Integer transactionId);
+                @Param("happenedAt") LocalDateTime happenedAt);
+        
+     @Select("SELECT t.transaction_id, t.transaction_type, t.amount, t.side, t.account_id, t.happened_at " +
+             "FROM transactions t WHERE t.account_id = #{accountId} " +
+             "ORDER BY t.happened_at DESC, t.transaction_id DESC")
+     List<TransactionHistoryResponse> getTransactionsByAccountId(@Param("accountId") Integer accountId);
 }

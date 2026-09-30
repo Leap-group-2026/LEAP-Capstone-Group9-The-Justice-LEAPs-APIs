@@ -12,6 +12,7 @@ import main.dto.InstrumentWithPrice;
 import main.repos.OrdersRepo;
 import main.repos.AccountsRepo;
 import main.repos.InstrumentRepo;
+import main.dto.response.OrderHistoryResponse;
 import main.services.validation.BuyOrderValidator;
 import main.services.validation.SellOrderValidator;
 import main.services.calculation.OrderPriceCalculator;
@@ -85,6 +86,11 @@ public class OrderService {
         historicalOrdersService.captureOrderSnapshot(order);
 
         return new OrderSubmissionResponse(order.getOrderId(), order.getCreatedAt());
+    }
+
+    public List<OrderHistoryResponse> getOrderHistory(Integer accountId) {
+        accountResolver.resolve(accountId);
+        return ordersRepo.findOrdersByAccountId(accountId);
     }
 
 

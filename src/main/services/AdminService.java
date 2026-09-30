@@ -17,8 +17,8 @@ public class AdminService {
     }
 
     public AdminEntity saveAdmin(AdminEntity entity){
-        if (repo.existsByUsername(entity.getUsername())){
-            throw new IllegalArgumentException("Username already exists");
+        if (repo.existsByEmail(entity.getEmail())){
+            throw new IllegalArgumentException("Email already exists");
         }
         // The insert binds created_at explicitly, so a null here would bypass the column default
         if (entity.getCreatedAt() == null) {
@@ -29,10 +29,10 @@ public class AdminService {
     }
 
     public ResponseEntity<String> login(AdminEntity entity){
-        if (!repo.existsByUsername(entity.getUsername())){
-            throw new IllegalArgumentException("Username doesn't exist");
+        if (!repo.existsByEmail(entity.getEmail())){
+            throw new IllegalArgumentException("Email doesn't exist");
         }
-        AdminEntity user = repo.findByUsername(entity.getUsername()).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        AdminEntity user = repo.findByEmail(entity.getEmail()).orElseThrow(() -> new IllegalArgumentException("User not found"));
         boolean match = passwordEncoder.matches(entity.getPassHash(), user.getPassHash());
         if(!match){
             return ResponseEntity.badRequest().body("Wrong password");

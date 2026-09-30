@@ -35,7 +35,7 @@ public class AdminRouteTest {
     @Test 
     public void loginSuccess() throws Exception {
         AdminEntity testAdmin = new AdminEntity();
-        testAdmin.setUsername("aryann");
+        testAdmin.setEmail("aryann");
         testAdmin.setPassHash(passwordEncoder.encode("secret"));
         testAdmin.setCreatedAt(LocalDateTime.now());
         adminRepo.insert(testAdmin);
@@ -69,7 +69,7 @@ public class AdminRouteTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"username\":\"new.admin@example.com\",\"password\":\"secret\"}"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.username").value("new.admin@example.com"))
+            .andExpect(jsonPath("$.email").value("new.admin@example.com"))
             .andExpect(jsonPath("$.created_at", notNullValue()));
     }
 }

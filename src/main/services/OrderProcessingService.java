@@ -98,14 +98,14 @@ public class OrderProcessingService {
     }
 
     private void processBuy(OrderEntity order, AccountsEntity account, BigDecimal executionTotal, ZonedDateTime nowEastern, LocalDateTime happenedAt) {
-        if (executionTotal.compareTo(MAX_SINGLE_BUY) >= 0 || account.getBalance().compareTo(executionTotal) < 0) {
+        if (executionTotal.compareTo(MAX_SINGLE_BUY) > 0 || account.getBalance().compareTo(executionTotal) < 0) {
             decline(order, executionTotal, happenedAt);
             return;
         }
 
-        LocalDate easterDate = nowEastern.toLocalDate();
-        LocalDateTime dayStart = easterDate.atStartOfDay();
-        LocalDateTime nextDayStart = easterDate.plusDays(1).atStartOfDay();
+        LocalDate easternDate = nowEastern.toLocalDate();
+        LocalDateTime dayStart = easternDate.atStartOfDay();
+        LocalDateTime nextDayStart = easternDate.plusDays(1).atStartOfDay();
 
         BigDecimal dailyBuyTotal = transactionsRepo.sumExecutedBuys(account.getAccountId(), dayStart, nextDayStart);
 

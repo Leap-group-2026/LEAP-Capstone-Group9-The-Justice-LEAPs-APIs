@@ -18,6 +18,7 @@ import main.services.validation.SellOrderValidator;
 import main.services.calculation.OrderPriceCalculator;
 import main.services.resolver.AccountResolver;
 import main.services.resolver.InstrumentResolver;
+import main.exception.ResourceNotFoundException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.Clock;
@@ -35,10 +36,11 @@ public class OrderService {
     private final OrderPriceCalculator priceCalculator;
     private final AccountResolver accountResolver;
     private final InstrumentResolver instrumentResolver;
+    private final InstrumentRepo instrumentRepo;
     private final Clock clock;
 
     public OrderService(OrdersRepo ordersRepo, HistoricalOrdersService historicalOrdersService, BuyOrderValidator buyOrderValidator, SellOrderValidator sellOrderValidator,
-                       OrderPriceCalculator priceCalculator, AccountResolver accountResolver, InstrumentResolver instrumentResolver, Clock clock) {
+                       OrderPriceCalculator priceCalculator, AccountResolver accountResolver, InstrumentResolver instrumentResolver, InstrumentRepo instrumentRepo, Clock clock) {
         this.ordersRepo = ordersRepo;
         this.historicalOrdersService = historicalOrdersService;
         this.buyOrderValidator = buyOrderValidator;
@@ -46,6 +48,7 @@ public class OrderService {
         this.priceCalculator = priceCalculator;
         this.accountResolver = accountResolver;
         this.instrumentResolver = instrumentResolver;
+        this.instrumentRepo = instrumentRepo;
         this.clock = clock;
     }
 
@@ -96,5 +99,23 @@ public class OrderService {
 
     public List<main.entities.HistoricalOrdersEntity> getHistoricalOrders(Integer orderId) {
         return historicalOrdersService.getHistoricalOrders(orderId);
+    }
+
+    public OrderHistoryResponse getByOrderId(Integer orderId)
+    {
+        OrderEntity order = ordersRepo.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("Order", orderId.toString()));
+        InstrumentEntity instrument = instrumentRepo.findEntityById(order.getInstrumentId().getInstrumentId());
+        OrderHistoryResponse response = new OrderHistoryResponse();
+        response.setOrderId(order.getOrderId());
+        response.setTicker(instrument.getTicker());
+        response.setSide(order.getSide());
+        response.setQuantity(order.getQuantity());
+        response.setPricePerUnit(order.getTotalPrice().divide(BigDecimal.valueOf(order.getQuantity())));
+        response.setStatus(order.getStatus());
+        response.setTotalPrice(order.getTotalPrice());
+        if ("FILLED".equals(order.getStatus())) {
+            response.setExecutedAt(order.getUpdatedAt());
+        }
+        return response;
     }
 }

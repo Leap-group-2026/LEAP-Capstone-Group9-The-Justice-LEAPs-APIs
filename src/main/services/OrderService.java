@@ -18,6 +18,7 @@ import main.services.validation.SellOrderValidator;
 import main.services.calculation.OrderPriceCalculator;
 import main.services.resolver.AccountResolver;
 import main.services.resolver.InstrumentResolver;
+import main.exception.ResourceNotFoundException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.Clock;
@@ -102,7 +103,7 @@ public class OrderService {
 
     public OrderHistoryResponse getByOrderId(Integer orderId)
     {
-        OrderEntity order = ordersRepo.findById(orderId).orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
+        OrderEntity order = ordersRepo.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("Order", orderId.toString()));
         InstrumentEntity instrument = instrumentRepo.findEntityById(order.getInstrumentId().getInstrumentId());
         OrderHistoryResponse response = new OrderHistoryResponse();
         response.setOrderId(order.getOrderId());

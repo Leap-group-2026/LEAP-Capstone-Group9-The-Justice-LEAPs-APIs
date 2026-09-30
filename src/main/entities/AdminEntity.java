@@ -5,8 +5,8 @@ import java.time.LocalDateTime;
 
 public class AdminEntity {
     private Integer adminId;
-    @JsonProperty("username")
-    private String username;
+    @JsonProperty("email")
+    private String email;
     @JsonProperty("pass_hash")
     private String passHash;
     @JsonProperty("created_at")
@@ -21,12 +21,12 @@ public class AdminEntity {
         this.adminId = adminId;
     }
 
-    public String getUsername() {
-        return username;
+    public String getEmail() {
+        return email;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getPassHash() {

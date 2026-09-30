@@ -17,6 +17,10 @@ public class OrderPriceCalculator {
         }
         return instrument.getPrice().multiply(BigDecimal.valueOf(quantity));
     }
+
+    public static BigDecimal calculateExecutionTotal(BigDecimal currentPrice, Integer quantity) {
+        return currentPrice.multiply(BigDecimal.valueOf(quantity));
+    }
     
     public BigDecimal calculate(InstrumentWithPrice instrument, Integer quantity) {
         return calculateOrderPrice(instrument, quantity);

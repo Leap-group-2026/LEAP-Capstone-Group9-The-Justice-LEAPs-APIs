@@ -1,5 +1,6 @@
 package main.controllers;
 
+import java.util.List;
 import main.services.AccountService;
 import main.entities.AccountsEntity;
 import main.entities.UserEntity;
@@ -91,5 +92,14 @@ public class AccountController {
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
+    }
+
+    @Operation(summary = "Get all accounts for a user",
+        description = "Returns all active accounts owned by the specified user.")
+    @ApiResponse(responseCode = "200", description = "List of active accounts for the user")
+    @GetMapping("/user/{userId}")
+    public List<AccountsEntity> getAccountsbyUserId(@PathVariable int userId)
+    {
+        return accountService.getAccountsByUserID(userId);
     }
 }

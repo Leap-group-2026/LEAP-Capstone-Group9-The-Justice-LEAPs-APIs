@@ -7,6 +7,7 @@ import main.entities.AccountsEntity;
 import main.entities.UserEntity;
 import main.exception.ResourceNotFoundException;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class AccountService {
@@ -62,5 +63,10 @@ public class AccountService {
         repo.update(accountId, existingAccount.getUserId().getUserId(), existingAccount.getBalance(), 
                    existingAccount.getPortfolioSize().getValue(), existingAccount.getTradeType(), false);
         return "Success";
+    }
+
+    public List<AccountsEntity> getAccountsByUserID (int userId)
+    {
+        return repo.findByUser(userId);
     }
 }

@@ -97,4 +97,9 @@ public class OrderService {
     public List<main.entities.HistoricalOrdersEntity> getHistoricalOrders(Integer orderId) {
         return historicalOrdersService.getHistoricalOrders(orderId);
     }
+
+    public OrderEntity getByOrderId(Integer orderId)
+    {
+        return ordersRepo.findById(orderId).orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId)); 
+    }
 }

@@ -2,6 +2,10 @@ package services;
 
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import com.github.pagehelper.PageHelper;
+
 import repos.InstrumentRepo;
 import dto.InstrumentWithPrice;
 import entities.InstrumentEntity;
@@ -31,7 +35,8 @@ public class InstrumentService {
         return repo.findByTicker(ticker).orElseThrow(() -> new ResourceNotFoundException("Instrument", ticker));
     }
 
-    public List<InstrumentWithPrice> getAllInstruments() {
+    public List<InstrumentWithPrice> getAllInstruments(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
         return repo.findAll();
     }
 }

@@ -39,9 +39,10 @@ public class InstrumentController {
     @ApiResponse(responseCode = "200", 
                  description = "Successfully retrieved all instruments",
                  content = @Content(mediaType = "application/json"))
-    @GetMapping("/all")
-    public List<InstrumentWithPrice> getAllInstruments() {
-        return service.getAllInstruments();
+    @GetMapping
+    public List<InstrumentWithPrice> getAllInstruments(@RequestParam(defaultValue = "1") int pageNum,
+        @RequestParam(defaultValue = "10") int pageSize) {
+        return service.getAllInstruments(pageNum, pageSize);
     }
 }
 

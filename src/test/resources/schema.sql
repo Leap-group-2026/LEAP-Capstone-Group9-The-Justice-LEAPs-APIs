@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS admin (
 	admin_id		SERIAL PRIMARY KEY,
 	email 			TEXT NOT NULL UNIQUE,
 	pass_hash 		TEXT NOT NULL,
-	role			TEXT NOT NULL,
-	created_at 		TIMESTAMP NOT NULL DEFAULT now()
+	created_at 		TIMESTAMP NOT NULL DEFAULT now(),
+	role 			TEXT
 );
 
 CREATE TABLE IF NOT EXISTS accounts (

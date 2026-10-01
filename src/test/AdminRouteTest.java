@@ -38,6 +38,7 @@ public class AdminRouteTest {
         testAdmin.setEmail("aryann");
         testAdmin.setPassHash(passwordEncoder.encode("secret"));
         testAdmin.setCreatedAt(LocalDateTime.now());
+        testAdmin.setRole("ADMIN");
         adminRepo.insert(testAdmin);
         
         mockMvc.perform(post("/admin/login")
@@ -67,9 +68,9 @@ public class AdminRouteTest {
         // Failed on every call before created_at was defaulted in AdminService
         mockMvc.perform(post("/admin/create")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"email\":\"new.admin@example.com\",\"password\":\"secret\"}"))
+            .content("{\"email\":\"admin@example.com\",\"password\":\"secret\"}"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.email").value("new.admin@example.com"))
+            .andExpect(jsonPath("$.email").value("admin@example.com"))
             .andExpect(jsonPath("$.created_at", notNullValue()));
     }
 }

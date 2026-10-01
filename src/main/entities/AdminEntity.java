@@ -46,12 +46,11 @@ public class AdminEntity {
         this.createdAt = createdAt;
     }
 
-    public String getRole(){
+    public String getRole() {
         return role;
     }
 
-    public void setRole(String role){
+    public void setRole(String role) {
         this.role = role;
     }
 }
-

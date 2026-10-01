@@ -37,7 +37,7 @@ public class TransactionHistoryByAccountTest {
     private static final int NEVER_EXISTED_ACCOUNT_ID = 999997;
 
     private static final int DEPOSIT_ID = 900401;
-    private static final int TRADE_ID = 900402;
+    private static final int EXCHANGE_ID = 900402;
     private static final int WITHDRAWAL_ID = 900403;
     private static final int OTHER_ACCOUNT_TRANSACTION_ID = 900404;
     private static final int CLOSED_ACCOUNT_TRANSACTION_ID = 900405;
@@ -60,7 +60,7 @@ public class TransactionHistoryByAccountTest {
         insertAccount(EMPTY_ACCOUNT_ID, true);
 
         // Inserted out of time order, so a missing ORDER BY is likely to show
-        insertTransaction(TRADE_ID, ACCOUNT_ID, "30.5000", "OUT", "TRADE", "2026-01-02 11:00:00");
+        insertTransaction(EXCHANGE_ID, ACCOUNT_ID, "30.5000", "EXCHANGE", "CURRENCY EXCHANGE", "2026-01-02 11:00:00");
         insertTransaction(DEPOSIT_ID, ACCOUNT_ID, "1000.0000", "IN", "DEPOSIT", "2026-01-01 09:00:00");
         insertTransaction(WITHDRAWAL_ID, ACCOUNT_ID, "200.2500", "OUT", "WITHDRAWAL", "2026-01-03 15:30:00");
         insertTransaction(OTHER_ACCOUNT_TRANSACTION_ID, OTHER_ACCOUNT_ID, "50.0000", "IN", "DEPOSIT", "2026-01-04 09:00:00");
@@ -85,10 +85,10 @@ public class TransactionHistoryByAccountTest {
     void transactionReturnsEveryAcceptanceCriteriaField() throws Exception {
         mockMvc.perform(get("/transactions/account/" + ACCOUNT_ID))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$[1].transaction_id").value(TRADE_ID))
-            .andExpect(jsonPath("$[1].transaction_type").value("TRADE"))
+            .andExpect(jsonPath("$[1].transaction_id").value(EXCHANGE_ID))
+            .andExpect(jsonPath("$[1].transaction_type").value("CURRENCY EXCHANGE"))
             .andExpect(jsonPath("$[1].amount").value(30.5))
-            .andExpect(jsonPath("$[1].side").value("OUT"))
+            .andExpect(jsonPath("$[1].side").value("EXCHANGE"))
             .andExpect(jsonPath("$[1].account_id").value(ACCOUNT_ID))
             .andExpect(jsonPath("$[1].happened_at").value("2026-01-02T11:00:00"));
     }
@@ -105,7 +105,7 @@ public class TransactionHistoryByAccountTest {
         mockMvc.perform(get("/transactions/account/" + ACCOUNT_ID))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(3)))
-            .andExpect(jsonPath("$[*].transaction_id", contains(WITHDRAWAL_ID, TRADE_ID, DEPOSIT_ID)))
+            .andExpect(jsonPath("$[*].transaction_id", contains(WITHDRAWAL_ID, EXCHANGE_ID, DEPOSIT_ID)))
             .andExpect(jsonPath("$[*].account_id", everyItem(is(ACCOUNT_ID))));
     }
 

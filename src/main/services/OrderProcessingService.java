@@ -18,7 +18,6 @@ import main.repos.AccountsRepo;
 import main.repos.CurrentPriceRepo;
 import main.repos.OrdersRepo;
 import main.repos.PositionsRepo;
-import main.repos.TransactionsRepo;
 import main.services.calculation.OrderPriceCalculator;
 
 @Service
@@ -32,7 +31,6 @@ public class OrderProcessingService {
 
     private final OrdersRepo ordersRepo;
     private final AccountsRepo accountsRepo;
-    private final TransactionsRepo transactionsRepo;
     private final PositionsRepo positionsRepo;
     private final CurrentPriceRepo currentPriceRepo;
     private final HistoricalOrdersService historicalOrdersService;
@@ -40,14 +38,12 @@ public class OrderProcessingService {
 
     public OrderProcessingService(OrdersRepo ordersRepo,
                                   AccountsRepo accountsRepo,
-                                  TransactionsRepo transactionsRepo,
                                   PositionsRepo positionsRepo,
                                   CurrentPriceRepo currentPriceRepo,
                                   HistoricalOrdersService historicalOrdersService,
                                   Clock clock) {
         this.ordersRepo = ordersRepo;
         this.accountsRepo = accountsRepo;
-        this.transactionsRepo = transactionsRepo;
         this.positionsRepo = positionsRepo;
         this.currentPriceRepo = currentPriceRepo;
         this.historicalOrdersService = historicalOrdersService;
@@ -55,10 +51,13 @@ public class OrderProcessingService {
     }
 
     public boolean isMarketOpen() {
-        LocalTime easternTime = ZonedDateTime.now(clock)
-                .withZoneSameInstant(EASTERN_ZONE)
-                .toLocalTime();
+        ZonedDateTime nowEastern = ZonedDateTime.now(clock).withZoneSameInstant(EASTERN_ZONE);
+        DayOfWeek day = nowEastern.getDayOfWeek();
+        if (day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY) {
+            return false;
+        }
 
+        LocalTime easternTime = nowEastern.toLocalTime();
         return !easternTime.isBefore(MARKET_OPEN) && !easternTime.isAfter(MARKET_CLOSE);
     }
 
@@ -91,7 +90,7 @@ public class OrderProcessingService {
         Integer accountId = order.getAccountId().getAccountId();
         Integer instrumentId = order.getInstrumentId().getInstrumentId();
 
-        AccountsEntity account = accountsRepo.findById(accountId).orElse(null);
+        AccountsEntity account = accountsRepo.findByIdForUpdate(accountId).orElse(null);
         Optional<CurrentPriceEntity> currentPrice = currentPriceRepo.findByInstrumentId(instrumentId);
 
         logger.info("Fetched processing dependencies for orderId={}: accountFound={}, currentPriceFound={}",
@@ -147,7 +146,7 @@ public class OrderProcessingService {
         LocalDateTime dayStart = easternDate.atStartOfDay();
         LocalDateTime nextDayStart = easternDate.plusDays(1).atStartOfDay();
 
-        BigDecimal dailyBuyTotal = transactionsRepo.sumExecutedBuys(account.getAccountId(), dayStart, nextDayStart);
+        BigDecimal dailyBuyTotal = ordersRepo.sumFilledBuys(account.getAccountId(), dayStart, nextDayStart);
 
         logger.info("Calculated daily BUY exposure for orderId={}: currentDailyTotal={}, proposedDailyTotal={}",
             order.getOrderId(),
@@ -286,6 +285,19 @@ public class OrderProcessingService {
             account.getBalance().add(executionTotal));
 
         fill(order, executionTotal, happenedAt);
+    }
+
+
+    @Transactional
+    public void markFailed(Integer orderId) {
+        OrderEntity order = ordersRepo.findByIdForUpdate(orderId).orElse(null);
+
+        if (order == null || !"PENDING".equals(order.getStatus())) {
+            return;
+        }
+
+        LocalDateTime failedAt = ZonedDateTime.now(clock).withZoneSameInstant(EASTERN_ZONE).toLocalDateTime();
+        transition(order, order.getTotalPrice(), "FAILED", failedAt);
     }
 
     private void fill(OrderEntity order, BigDecimal executionTotal, LocalDateTime happenedAt) {

@@ -1,222 +1,411 @@
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-
-import java.math.BigDecimal;
-import java.lang.reflect.Field;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.Optional;
+package test;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import main.entities.AccountsEntity;
-import main.entities.CurrentPriceEntity;
-import main.entities.InstrumentEntity;
-import main.entities.OrderEntity;
-import main.entities.PositionsEntity;
+import main.Application;
 import main.repos.AccountsRepo;
 import main.repos.CurrentPriceRepo;
-import main.repos.HistoricalOrdersRepo;
 import main.repos.OrdersRepo;
 import main.repos.PositionsRepo;
-import main.repos.TransactionsRepo;
 import main.services.HistoricalOrdersService;
 import main.services.OrderProcessingService;
+import main.services.ScheduledOrdersCheck;
+import test.config.TestClockConfig;
 
-@ExtendWith(MockitoExtension.class)
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * OrderProcessingService.process, the fill path, verified against the database.
+ *
+ * Fixtures are inserted with raw SQL through JdbcTemplate and every outcome is read back the same way,
+ * so a test can't pass merely because the service's writer and reader agree with each other.
+ * TestClockConfig fixes the clock at 12:00 ET on a Tuesday, so the market is open.
+ *
+ * OrderProcessingService is a spy only so the scheduler tests can make one chosen order throw: no real
+ * data makes process() throw any more. Unstubbed calls go to the real method, so every other test is unaffected.
+ */
+@SpringBootTest(classes = Application.class)
+@Import(TestClockConfig.class)
+@Transactional
 public class OrderProcessingServiceTest {
 
-	private static final Instant MARKET_OPEN_INSTANT = Instant.parse("2026-01-05T15:00:00Z");
-	private static final LocalDateTime EXPECTED_HAPPENED_AT = LocalDateTime.of(2026, 1, 5, 10, 0);
+    private static final int USER_ID = 900701;
+    private static final int ACCOUNT_ID = 900701;
+    private static final int CLOSED_ACCOUNT_ID = 900702;
+    private static final int INSTRUMENT_ID = 900701;
+    private static final int UNPRICED_INSTRUMENT_ID = 900702;
+    private static final int ORDER_ID = 900801;
+    private static final int SECOND_ORDER_ID = 900802;
+    private static final int THIRD_ORDER_ID = 900803;
+    private static final int EXISTING_POSITION_ID = 900901;
 
-	@Mock
-	private AccountsRepo accountsRepo;
+    private static final LocalDateTime FILL_TIME = LocalDateTime.of(2024, 9, 24, 12, 0);
 
-	@Mock
-	private OrdersRepo ordersRepo;
+    @SpyBean
+    private OrderProcessingService orderProcessingService;
 
-	@Mock
-	private CurrentPriceRepo currentPriceRepo;
+    @Autowired
+    private ScheduledOrdersCheck scheduledOrdersCheck;
 
-	@Mock
-	private PositionsRepo positionsRepo;
+    @Autowired private OrdersRepo ordersRepo;
+    @Autowired private AccountsRepo accountsRepo;
+    @Autowired private PositionsRepo positionsRepo;
+    @Autowired private CurrentPriceRepo currentPriceRepo;
+    @Autowired private HistoricalOrdersService historicalOrdersService;
+    @Autowired private ObjectMapper objectMapper;
 
-	@Mock
-	private TransactionsRepo transactionsRepo;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
-	@Mock
-	private HistoricalOrdersRepo historicalOrdersRepo;
+    @BeforeEach
+    void setUp() {
+        jdbcTemplate.update(
+            "INSERT INTO user_info (user_id, name, email, date_of_birth, address, ssn_hash, pass_hash) " +
+            "VALUES (?, 'Fill Test', 'fill.test@example.com', DATE '1990-01-01', '1 Test St', 'ssn', 'pass')",
+            USER_ID);
+        insertAccount(ACCOUNT_ID, "1000.0000", true);
+        insertAccount(CLOSED_ACCOUNT_ID, "1000.0000", false);
 
-	private OrderProcessingService orderProcessingService;
-	private HistoricalOrdersService historicalOrdersService;
-	private AccountsEntity account;
-	private InstrumentEntity instrument;
+        jdbcTemplate.update(
+            "INSERT INTO instruments (instrument_id, ticker, asset_type, asset_name, currency) VALUES (?, 'FILL_PRICED', 'STOCK', 'Priced Co', 'USD')",
+            INSTRUMENT_ID);
+        jdbcTemplate.update(
+            "INSERT INTO current_prices (instrument_id, price, quote_time, retrieved_at) VALUES (?, 10.0000, now(), now())",
+            INSTRUMENT_ID);
+        jdbcTemplate.update(
+            "INSERT INTO instruments (instrument_id, ticker, asset_type, asset_name, currency) VALUES (?, 'FILL_UNPRICED', 'STOCK', 'Unpriced Co', 'USD')",
+            UNPRICED_INSTRUMENT_ID);
+    }
 
-	@BeforeEach
-	void setUp() {
-		Clock clock = Clock.fixed(MARKET_OPEN_INSTANT, ZoneOffset.UTC);
-		historicalOrdersService = new HistoricalOrdersService(historicalOrdersRepo, new ObjectMapper().findAndRegisterModules(), ordersRepo);
-		orderProcessingService = new OrderProcessingService(
-			ordersRepo,
-			accountsRepo,
-			transactionsRepo,
-			positionsRepo,
-			currentPriceRepo,
-			historicalOrdersService,
-			clock);
+    private void insertAccount(int accountId, String balance, boolean active) {
+        jdbcTemplate.update(
+            "INSERT INTO accounts (account_id, user_id, balance, portfolio_size, trade_type, created_at, account_active) " +
+            "VALUES (?, ?, CAST(? AS NUMERIC(18,4)), 'BALANCED', 'Passive', now(), ?)",
+            accountId, USER_ID, balance, active);
+    }
 
-		account = new AccountsEntity();
-		account.setAccountId(202);
-		account.setBalance(new BigDecimal("500.0000"));
-		account.setAccountActive(true);
+    private void insertPendingOrder(int accountId, int instrumentId, String side, int quantity) {
+        insertPendingOrder(ORDER_ID, accountId, instrumentId, side, quantity);
+    }
 
-		instrument = new InstrumentEntity();
-		instrument.setInstrumentId(303);
-	}
+    private void insertPendingOrder(int orderId, int accountId, int instrumentId, String side, int quantity) {
+        jdbcTemplate.update(
+            "INSERT INTO orders (order_id, side, account_id, instrument_id, status, quantity, total_price, created_at, updated_at) " +
+            "VALUES (?, ?, ?, ?, 'PENDING', ?, 0.0000, TIMESTAMP '2024-09-24 11:00:00', TIMESTAMP '2024-09-24 11:00:00')",
+            orderId, side, accountId, instrumentId, quantity);
+    }
 
-	@Test
-	void processSellDeclinesWhenNoOpenPositionExists() {
-		OrderEntity order = insertSellOrder(4);
-		CurrentPriceEntity currentPrice = currentPrice("25.0000");
+    private void insertOpenPosition(int quantity, String totalPrice, String averagePrice) {
+        jdbcTemplate.update(
+            "INSERT INTO positions (position_id, account_id, instrument_id, quantity, total_price, average_price, opened_at, closed_at) " +
+            "VALUES (?, ?, ?, ?, CAST(? AS NUMERIC(18,4)), CAST(? AS NUMERIC(18,4)), TIMESTAMP '2024-09-01 10:00:00', NULL)",
+            EXISTING_POSITION_ID, ACCOUNT_ID, INSTRUMENT_ID, quantity, totalPrice, averagePrice);
+    }
 
-		when(ordersRepo.findByIdForUpdate(order.getOrderId())).thenReturn(Optional.of(order));
-		when(accountsRepo.findById(account.getAccountId())).thenReturn(Optional.of(account));
-		when(currentPriceRepo.findByInstrumentId(instrument.getInstrumentId())).thenReturn(Optional.of(currentPrice));
-		when(positionsRepo.findOpenForUpdate(account.getAccountId(), instrument.getInstrumentId())).thenReturn(Optional.empty());
+    private String orderStatus() {
+        return orderStatus(ORDER_ID);
+    }
 
-		orderProcessingService.process(order.getOrderId());
+    private String orderStatus(int orderId) {
+        return jdbcTemplate.queryForObject("SELECT status FROM orders WHERE order_id = ?", String.class, orderId);
+    }
 
-		verify(ordersRepo).updateExecutionOutcome(
-			order.getOrderId(),
-			new BigDecimal("100.0000"),
-			"DECLINED",
-			EXPECTED_HAPPENED_AT);
-		verify(positionsRepo, never()).update(
-			org.mockito.ArgumentMatchers.anyInt(),
-			org.mockito.ArgumentMatchers.anyInt(),
-			org.mockito.ArgumentMatchers.anyInt(),
-			org.mockito.ArgumentMatchers.anyInt(),
-			org.mockito.ArgumentMatchers.any(),
-			org.mockito.ArgumentMatchers.any(),
-			org.mockito.ArgumentMatchers.any(),
-			org.mockito.ArgumentMatchers.any());
-		verify(accountsRepo, never()).updateBalance(org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.any());
-		verify(historicalOrdersRepo).insert(eq(order.getOrderId()), eq(account.getAccountId()), anyString(), eq(order.getCreatedAt()));
-	}
+    private List<String> snapshotStatuses(int orderId) {
+        return jdbcTemplate.queryForList(
+            "SELECT order_information_json FROM historical_orders WHERE order_id = ? ORDER BY historical_order_id",
+            String.class, orderId).stream()
+            .map(json -> {
+                try {
+                    return objectMapper.readTree(json).path("status").asText();
+                } catch (Exception e) {
+                    throw new IllegalStateException("unreadable snapshot: " + json, e);
+                }
+            })
+            .toList();
+    }
 
-	@Test
-	void processSellPartiallyReducesPositionAndCreditsBalance() {
-		OrderEntity order = insertSellOrder(3);
-		CurrentPriceEntity currentPrice = currentPrice("30.0000");
-		PositionsEntity position = position(404, 12, "240.0000", "20.0000");
+    private BigDecimal balance(int accountId) {
+        return jdbcTemplate.queryForObject("SELECT balance FROM accounts WHERE account_id = ?", BigDecimal.class, accountId);
+    }
 
-		when(ordersRepo.findByIdForUpdate(order.getOrderId())).thenReturn(Optional.of(order));
-		when(accountsRepo.findById(account.getAccountId())).thenReturn(Optional.of(account));
-		when(currentPriceRepo.findByInstrumentId(instrument.getInstrumentId())).thenReturn(Optional.of(currentPrice));
-		when(positionsRepo.findOpenForUpdate(account.getAccountId(), instrument.getInstrumentId())).thenReturn(Optional.of(position));
+    private List<Map<String, Object>> positions() {
+        return jdbcTemplate.queryForList(
+            "SELECT position_id, quantity, total_price, average_price, opened_at, closed_at FROM positions " +
+            "WHERE account_id = ? AND instrument_id = ? ORDER BY position_id", ACCOUNT_ID, INSTRUMENT_ID);
+    }
 
-		orderProcessingService.process(order.getOrderId());
+    private List<Map<String, Object>> transactions(int accountId) {
+        return jdbcTemplate.queryForList(
+            "SELECT amount, side, transaction_type, happened_at FROM transactions WHERE account_id = ?", accountId);
+    }
 
-		verify(positionsRepo).update(
-			404,
-			account.getAccountId(),
-			instrument.getInstrumentId(),
-			9,
-			new BigDecimal("180.0000"),
-			new BigDecimal("20.0000"),
-			LocalDateTime.of(2024, 9, 1, 9, 30),
-			null);
-		verify(accountsRepo).updateBalance(account.getAccountId(), new BigDecimal("590.0000"));
-		verify(ordersRepo).updateExecutionOutcome(
-			order.getOrderId(),
-			new BigDecimal("90.0000"),
-			"FILLED",
-			EXPECTED_HAPPENED_AT);
-		verify(historicalOrdersRepo).insert(eq(order.getOrderId()), eq(account.getAccountId()), anyString(), eq(order.getCreatedAt()));
-	}
+    private static void assertMoney(String expected, Object actual) {
+        assertEquals(0, new BigDecimal(expected).compareTo((BigDecimal) actual), "expected " + expected + " but was " + actual);
+    }
 
-	@Test
-	void processSellClosesPositionWhenQuantityIsFullySold() {
-		OrderEntity order = insertSellOrder(5);
-		CurrentPriceEntity currentPrice = currentPrice("25.0000");
-		PositionsEntity position = position(405, 5, "100.0000", "20.0000");
+    // ---- Bug 1: the position branch was inverted ----
 
-		when(ordersRepo.findByIdForUpdate(order.getOrderId())).thenReturn(Optional.of(order));
-		when(accountsRepo.findById(account.getAccountId())).thenReturn(Optional.of(account));
-		when(currentPriceRepo.findByInstrumentId(instrument.getInstrumentId())).thenReturn(Optional.of(currentPrice));
-		when(positionsRepo.findOpenForUpdate(account.getAccountId(), instrument.getInstrumentId())).thenReturn(Optional.of(position));
+    @Test
+    void firstBuyOfAnInstrumentOpensAPositionAndFills() {
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "BUY", 3);
 
-		orderProcessingService.process(order.getOrderId());
+        orderProcessingService.process(ORDER_ID);
 
-		verify(positionsRepo).update(
-			405,
-			account.getAccountId(),
-			instrument.getInstrumentId(),
-			0,
-			BigDecimal.ZERO,
-			new BigDecimal("20.0000"),
-			LocalDateTime.of(2024, 9, 1, 9, 30),
-			EXPECTED_HAPPENED_AT);
-		verify(accountsRepo).updateBalance(account.getAccountId(), new BigDecimal("625.0000"));
-		verify(ordersRepo).updateExecutionOutcome(
-			order.getOrderId(),
-			new BigDecimal("125.0000"),
-			"FILLED",
-			EXPECTED_HAPPENED_AT);
-		verify(historicalOrdersRepo).insert(eq(order.getOrderId()), eq(account.getAccountId()), anyString(), eq(order.getCreatedAt()));
-	}
+        assertEquals("FILLED", orderStatus());
+        List<Map<String, Object>> positions = positions();
+        assertEquals(1, positions.size());
+        assertEquals(3, positions.get(0).get("quantity"));
+        assertMoney("30", positions.get(0).get("total_price"));
+        assertMoney("10", positions.get(0).get("average_price"));
+        assertEquals(Timestamp.valueOf(FILL_TIME), positions.get(0).get("opened_at"));
+        assertNull(positions.get(0).get("closed_at"));
+        assertMoney("970", balance(ACCOUNT_ID));
+        assertTrue(transactions(ACCOUNT_ID).isEmpty(), "trades are not recorded in transactions");
+    }
 
-	private OrderEntity insertSellOrder(int quantity) {
-		OrderEntity order = new OrderEntity();
-		order.setOrderId(101 + quantity);
-		order.setSide("SELL");
-		order.setAccountId(account);
-		order.setInstrumentId(instrument);
-		order.setStatus("PENDING");
-		order.setQuantity(quantity);
-		order.setTotalPrice(new BigDecimal("0.0000"));
-		order.setCreatedAt(LocalDateTime.of(2026, 1, 5, 9, 55));
-		return order;
-	}
+    @Test
+    void buyIntoAnExistingPositionUpdatesItInsteadOfOpeningAnother() {
+        insertOpenPosition(2, "16.0000", "8.0000");
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "BUY", 3);
 
-	private CurrentPriceEntity currentPrice(String price) {
-		CurrentPriceEntity currentPrice = new CurrentPriceEntity();
-		currentPrice.setInstrumentId(instrument.getInstrumentId());
-		currentPrice.setPrice(new BigDecimal(price));
-		return currentPrice;
-	}
+        orderProcessingService.process(ORDER_ID);
 
-	private PositionsEntity position(int positionId, int quantity, String totalPrice, String averagePrice) {
-		PositionsEntity position = new PositionsEntity();
-		position.setQuantity(quantity);
-		position.setTotalPrice(new BigDecimal(totalPrice));
-		position.setAveragePrice(new BigDecimal(averagePrice));
-		position.setOpenedAt(LocalDateTime.of(2024, 9, 1, 9, 30));
-		position.setClosedAt(null);
-		position.setAccountId(account);
-		position.setInstrumentId(instrument);
-		setPositionId(position, positionId);
-		return position;
-	}
+        assertEquals("FILLED", orderStatus());
+        List<Map<String, Object>> positions = positions();
+        assertEquals(1, positions.size(), "a second buy must not open a duplicate position");
+        assertEquals(EXISTING_POSITION_ID, positions.get(0).get("position_id"));
+        assertEquals(5, positions.get(0).get("quantity"));
+        assertMoney("46", positions.get(0).get("total_price"));
+        assertMoney("9.2", positions.get(0).get("average_price"));
+        assertEquals(Timestamp.valueOf("2024-09-01 10:00:00"), positions.get(0).get("opened_at"));
+        assertMoney("970", balance(ACCOUNT_ID));
+    }
 
-	private void setPositionId(PositionsEntity position, int positionId) {
-		try {
-			Field field = PositionsEntity.class.getDeclaredField("positionId");
-			field.setAccessible(true);
-			field.set(position, positionId);
-		} catch (ReflectiveOperationException ex) {
-			throw new IllegalStateException("Unable to set test position id", ex);
-		}
-	}
+    // ---- Bug 2: decline carried on instead of returning ----
+
+    @Test
+    void orderForUnpricedInstrumentIsDeclinedWithoutSideEffects() {
+        insertPendingOrder(ACCOUNT_ID, UNPRICED_INSTRUMENT_ID, "BUY", 3);
+
+        assertDoesNotThrow(() -> orderProcessingService.process(ORDER_ID));
+
+        assertEquals("DECLINED", orderStatus());
+        assertMoney("1000", balance(ACCOUNT_ID));
+        assertTrue(transactions(ACCOUNT_ID).isEmpty());
+    }
+
+    @Test
+    void orderOnClosedAccountIsDeclinedWithoutSideEffects() {
+        insertPendingOrder(CLOSED_ACCOUNT_ID, INSTRUMENT_ID, "BUY", 3);
+
+        assertDoesNotThrow(() -> orderProcessingService.process(ORDER_ID));
+
+        assertEquals("DECLINED", orderStatus());
+        assertMoney("1000", balance(CLOSED_ACCOUNT_ID));
+        assertTrue(transactions(CLOSED_ACCOUNT_ID).isEmpty());
+    }
+
+    @Test
+    void buyBeyondBalanceIsDeclinedWithoutSideEffects() {
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "BUY", 101);
+
+        orderProcessingService.process(ORDER_ID);
+
+        assertEquals("DECLINED", orderStatus());
+        assertMoney("1000", balance(ACCOUNT_ID));
+        assertTrue(positions().isEmpty());
+        assertTrue(transactions(ACCOUNT_ID).isEmpty());
+    }
+
+    // ---- Sell fills (processSell) ----
+
+    @Test
+    void partialSellReducesPositionAtAverageCostAndCreditsBalance() {
+        insertOpenPosition(5, "40.0000", "8.0000");
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "SELL", 2);
+
+        orderProcessingService.process(ORDER_ID);
+
+        assertEquals("FILLED", orderStatus());
+        List<Map<String, Object>> positions = positions();
+        assertEquals(1, positions.size());
+        assertEquals(3, positions.get(0).get("quantity"));
+        assertMoney("8", positions.get(0).get("average_price"));
+        assertMoney("24", positions.get(0).get("total_price"));
+        assertNull(positions.get(0).get("closed_at"));
+        assertMoney("1020", balance(ACCOUNT_ID));
+        assertTrue(transactions(ACCOUNT_ID).isEmpty(), "trades are not recorded in transactions");
+    }
+
+    @Test
+    void sellingTheWholePositionClosesIt() {
+        insertOpenPosition(5, "40.0000", "8.0000");
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "SELL", 5);
+
+        orderProcessingService.process(ORDER_ID);
+
+        assertEquals("FILLED", orderStatus());
+        List<Map<String, Object>> positions = positions();
+        assertEquals(1, positions.size());
+        assertEquals(0, positions.get(0).get("quantity"));
+        assertMoney("0", positions.get(0).get("total_price"));
+        assertEquals(Timestamp.valueOf(FILL_TIME), positions.get(0).get("closed_at"));
+        assertMoney("1050", balance(ACCOUNT_ID));
+    }
+
+    @Test
+    void sellingMoreThanHeldIsDeclinedWithoutSideEffects() {
+        insertOpenPosition(5, "40.0000", "8.0000");
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "SELL", 6);
+
+        orderProcessingService.process(ORDER_ID);
+
+        assertEquals("DECLINED", orderStatus());
+        assertEquals(5, positions().get(0).get("quantity"));
+        assertMoney("1000", balance(ACCOUNT_ID));
+        assertTrue(transactions(ACCOUNT_ID).isEmpty());
+    }
+
+    @Test
+    void sellingWithNoPositionIsDeclined() {
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "SELL", 1);
+
+        orderProcessingService.process(ORDER_ID);
+
+        assertEquals("DECLINED", orderStatus());
+        assertMoney("1000", balance(ACCOUNT_ID));
+        assertTrue(transactions(ACCOUNT_ID).isEmpty());
+    }
+
+    // ---- The existing idempotency guard, which the Kafka consumer will rely on ----
+
+    @Test
+    void processingTheSameOrderTwiceFillsItOnce() {
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "BUY", 3);
+
+        orderProcessingService.process(ORDER_ID);
+        orderProcessingService.process(ORDER_ID);
+
+        assertEquals("FILLED", orderStatus());
+        assertMoney("970", balance(ACCOUNT_ID));
+        assertEquals(List.of("FILLED"), snapshotStatuses(ORDER_ID), "the fill must have run exactly once");
+        assertEquals(3, positions().get(0).get("quantity"));
+    }
+
+    // ---- The scheduler (sweeper) ----
+
+    @Test
+    void oneFailingOrderDoesNotStopTheRestOfTheRun() {
+        insertPendingOrder(ORDER_ID, ACCOUNT_ID, INSTRUMENT_ID, "BUY", 1);
+        insertPendingOrder(SECOND_ORDER_ID, ACCOUNT_ID, INSTRUMENT_ID, "BUY", 1);
+        insertPendingOrder(THIRD_ORDER_ID, ACCOUNT_ID, INSTRUMENT_ID, "BUY", 1);
+        doThrow(new IllegalStateException("simulated processing failure"))
+            .when(orderProcessingService).process(SECOND_ORDER_ID);
+
+        assertDoesNotThrow(() -> scheduledOrdersCheck.processOrders());
+
+        assertEquals("FILLED", orderStatus(ORDER_ID));
+        assertEquals("FAILED", orderStatus(SECOND_ORDER_ID));
+        assertEquals("FILLED", orderStatus(THIRD_ORDER_ID), "an earlier failure stopped this order being processed");
+        List<String> failedSnapshots = snapshotStatuses(SECOND_ORDER_ID);
+        assertEquals("FAILED", failedSnapshots.get(failedSnapshots.size() - 1), "FAILED needs its snapshot");
+        assertMoney("980", balance(ACCOUNT_ID));
+    }
+
+    @Test
+    void anOrderFilledMeanwhileIsNotOverwrittenWithFailed() {
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "BUY", 3);
+        // Simulates a Kafka delivery filling the order while the sweeper's attempt fails
+        doAnswer(invocation -> {
+            jdbcTemplate.update("UPDATE orders SET status = 'FILLED' WHERE order_id = ?", ORDER_ID);
+            throw new IllegalStateException("simulated processing failure");
+        }).when(orderProcessingService).process(ORDER_ID);
+
+        try {
+            scheduledOrdersCheck.processOrders();
+        } catch (RuntimeException rethrown) {
+            // Whether the run rethrows is covered by the test above; this one is only about the status
+        }
+
+        assertEquals("FILLED", orderStatus());
+        assertFalse(snapshotStatuses(ORDER_ID).contains("FAILED"), "a FAILED snapshot was written for a filled order");
+    }
+
+    @Test
+    void theMarketIsClosedOnSaturdays() {
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "BUY", 3);
+        // 2024-09-28 is a Saturday; 16:00 UTC is 12:00 ET, inside weekday trading hours
+        Clock saturdayNoon = Clock.fixed(Instant.parse("2024-09-28T16:00:00Z"), ZoneId.of("America/New_York"));
+        OrderProcessingService onSaturday = new OrderProcessingService(ordersRepo, accountsRepo,
+            positionsRepo, currentPriceRepo, historicalOrdersService, saturdayNoon);
+
+        assertFalse(onSaturday.isMarketOpen());
+        onSaturday.process(ORDER_ID);
+
+        assertEquals("PENDING", orderStatus());
+        assertMoney("1000", balance(ACCOUNT_ID));
+        assertTrue(transactions(ACCOUNT_ID).isEmpty());
+    }
+
+    // ---- Daily buy limit: counted from FILLED BUY orders, since trades aren't written to transactions ----
+
+    private void insertOrder(int orderId, String side, String status, String totalPrice, String updatedAt) {
+        jdbcTemplate.update(
+            "INSERT INTO orders (order_id, side, account_id, instrument_id, status, quantity, total_price, created_at, updated_at) " +
+            "VALUES (?, ?, ?, ?, ?, 1, CAST(? AS NUMERIC(18,4)), CAST(? AS TIMESTAMP), CAST(? AS TIMESTAMP))",
+            orderId, side, ACCOUNT_ID, INSTRUMENT_ID, status, totalPrice, updatedAt, updatedAt);
+    }
+
+    @Test
+    void buysFilledEarlierTodayCountTowardsTheDailyLimit() {
+        insertOrder(900811, "BUY", "FILLED", "2999990.0000", "2024-09-24 10:00:00");
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "BUY", 3);
+
+        orderProcessingService.process(ORDER_ID);
+
+        assertEquals("DECLINED", orderStatus(), "30 on top of 2,999,990 already bought today exceeds 3,000,000");
+        assertMoney("1000", balance(ACCOUNT_ID));
+    }
+
+    @Test
+    void buysFilledOnAnEarlierDayDoNotCount() {
+        insertOrder(900811, "BUY", "FILLED", "2999990.0000", "2024-09-23 15:00:00");
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "BUY", 3);
+
+        orderProcessingService.process(ORDER_ID);
+
+        assertEquals("FILLED", orderStatus());
+    }
+
+    @Test
+    void onlyFilledBuysCountTowardsTheDailyLimit() {
+        insertOrder(900811, "SELL", "FILLED", "2999990.0000", "2024-09-24 10:00:00");
+        insertOrder(900812, "BUY", "DECLINED", "2999990.0000", "2024-09-24 10:00:00");
+        insertOrder(900813, "BUY", "PENDING", "2999990.0000", "2024-09-24 10:00:00");
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "BUY", 3);
+
+        orderProcessingService.process(ORDER_ID);
+
+        assertEquals("FILLED", orderStatus(), "sells, declined and pending buys must not use up the daily limit");
+    }
 }

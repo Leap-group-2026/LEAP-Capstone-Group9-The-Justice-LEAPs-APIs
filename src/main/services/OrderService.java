@@ -1,5 +1,6 @@
 package main.services;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +14,7 @@ import main.repos.OrdersRepo;
 import main.repos.AccountsRepo;
 import main.repos.InstrumentRepo;
 import main.dto.response.OrderHistoryResponse;
+import main.events.OrderSubmittedEvent;
 import main.services.validation.BuyOrderValidator;
 import main.services.validation.SellOrderValidator;
 import main.services.calculation.OrderPriceCalculator;
@@ -24,6 +26,7 @@ import java.time.LocalDateTime;
 import java.time.Clock;
 
 import java.util.List;
+import java.util.UUID;
 
 import java.time.ZonedDateTime;
 
@@ -38,9 +41,11 @@ public class OrderService {
     private final InstrumentResolver instrumentResolver;
     private final InstrumentRepo instrumentRepo;
     private final Clock clock;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     public OrderService(OrdersRepo ordersRepo, HistoricalOrdersService historicalOrdersService, BuyOrderValidator buyOrderValidator, SellOrderValidator sellOrderValidator,
-                       OrderPriceCalculator priceCalculator, AccountResolver accountResolver, InstrumentResolver instrumentResolver, InstrumentRepo instrumentRepo, Clock clock) {
+                       OrderPriceCalculator priceCalculator, AccountResolver accountResolver, InstrumentResolver instrumentResolver, InstrumentRepo instrumentRepo, Clock clock,
+                       ApplicationEventPublisher applicationEventPublisher) {
         this.ordersRepo = ordersRepo;
         this.historicalOrdersService = historicalOrdersService;
         this.buyOrderValidator = buyOrderValidator;
@@ -50,6 +55,7 @@ public class OrderService {
         this.instrumentResolver = instrumentResolver;
         this.instrumentRepo = instrumentRepo;
         this.clock = clock;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     // The order and its historical_orders snapshot commit together or not at all: the snapshot is a
@@ -87,6 +93,17 @@ public class OrderService {
         ordersRepo.insert(order);
 
         historicalOrdersService.captureOrderSnapshot(order);
+
+        applicationEventPublisher.publishEvent(new OrderSubmittedEvent(
+            UUID.randomUUID(),
+            order.getOrderId(),
+            account.getAccountId(),
+            instrument.getInstrumentId(),
+            order.getSide(),
+            order.getQuantity(),
+            order.getTotalPrice(),
+            order.getCreatedAt(),
+            1));
 
         return new OrderSubmissionResponse(order.getOrderId(), order.getCreatedAt());
     }

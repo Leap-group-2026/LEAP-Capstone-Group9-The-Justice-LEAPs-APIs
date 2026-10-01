@@ -94,7 +94,6 @@ public class OrderService {
 
         historicalOrdersService.captureOrderSnapshot(order);
 
-        // Only a notice inside the transaction: OrderEventPublisher sends it to Kafka after commit, and never on rollback
         applicationEventPublisher.publishEvent(new OrderSubmittedEvent(
             UUID.randomUUID(),
             order.getOrderId(),

@@ -220,7 +220,8 @@ public class OrderFillKafkaTest {
             "SELECT status FROM orders WHERE order_id = ?", String.class, ORDER_ID));
         assertEquals(0, new BigDecimal("970").compareTo(balance()), "balance moved more than once: " + balance());
         assertEquals(1, jdbcTemplate.queryForObject(
-            "SELECT count(*) FROM transactions WHERE account_id = ?", Integer.class, ACCOUNT_ID));
+            "SELECT count(*) FROM historical_orders WHERE order_id = ?", Integer.class, ORDER_ID),
+            "one FILLED snapshot: the fill ran once");
         assertEquals(deadLettersBefore, deadLetterCount(), "the duplicate should be absorbed, not dead-lettered");
     }
 
@@ -251,8 +252,9 @@ public class OrderFillKafkaTest {
         assertEquals(0, new BigDecimal("1020").compareTo(balance()));
         assertEquals(3, jdbcTemplate.queryForObject(
             "SELECT quantity FROM positions WHERE account_id = ? AND instrument_id = ?", Integer.class, ACCOUNT_ID, INSTRUMENT_ID));
-        assertEquals("IN", jdbcTemplate.queryForObject(
-            "SELECT side FROM transactions WHERE account_id = ?", String.class, ACCOUNT_ID));
+        assertEquals(0, jdbcTemplate.queryForObject(
+            "SELECT count(*) FROM transactions WHERE account_id = ?", Integer.class, ACCOUNT_ID),
+            "trades are not recorded in transactions");
     }
 
     @Test

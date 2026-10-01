@@ -11,7 +11,7 @@ public class TransactionHistoryResponse {
     @JsonProperty("transaction_id")
     private Integer transactionId;
 
-    @Schema(description = "Type of the transaction")
+    @Schema(description = "Type of the transaction: WITHDRAWAL, DEPOSIT or CURRENCY EXCHANGE. Trades are not recorded here; see the account's orders")
     @JsonProperty("transaction_type")
     private String transactionType;
 
@@ -19,7 +19,7 @@ public class TransactionHistoryResponse {
     @JsonProperty("amount")
     private BigDecimal amount;
 
-    @Schema(description = "Side of the transaction (e.g., IN or OUT)")
+    @Schema(description = "Direction of the money: IN, OUT or EXCHANGE")
     @JsonProperty("side")
     private String side;
 

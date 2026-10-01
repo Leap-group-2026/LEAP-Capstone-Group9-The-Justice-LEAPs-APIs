@@ -16,7 +16,6 @@ import main.repos.AccountsRepo;
 import main.repos.CurrentPriceRepo;
 import main.repos.OrdersRepo;
 import main.repos.PositionsRepo;
-import main.repos.TransactionsRepo;
 import main.services.calculation.OrderPriceCalculator;
 
 @Service
@@ -29,7 +28,6 @@ public class OrderProcessingService {
 
     private final OrdersRepo ordersRepo;
     private final AccountsRepo accountsRepo;
-    private final TransactionsRepo transactionsRepo;
     private final PositionsRepo positionsRepo;
     private final CurrentPriceRepo currentPriceRepo;
     private final HistoricalOrdersService historicalOrdersService;
@@ -37,14 +35,12 @@ public class OrderProcessingService {
 
     public OrderProcessingService(OrdersRepo ordersRepo,
                                   AccountsRepo accountsRepo,
-                                  TransactionsRepo transactionsRepo,
                                   PositionsRepo positionsRepo,
                                   CurrentPriceRepo currentPriceRepo,
                                   HistoricalOrdersService historicalOrdersService,
                                   Clock clock) {
         this.ordersRepo = ordersRepo;
         this.accountsRepo = accountsRepo;
-        this.transactionsRepo = transactionsRepo;
         this.positionsRepo = positionsRepo;
         this.currentPriceRepo = currentPriceRepo;
         this.historicalOrdersService = historicalOrdersService;
@@ -111,7 +107,7 @@ public class OrderProcessingService {
         LocalDateTime dayStart = easternDate.atStartOfDay();
         LocalDateTime nextDayStart = easternDate.plusDays(1).atStartOfDay();
 
-        BigDecimal dailyBuyTotal = transactionsRepo.sumExecutedBuys(account.getAccountId(), dayStart, nextDayStart);
+        BigDecimal dailyBuyTotal = ordersRepo.sumFilledBuys(account.getAccountId(), dayStart, nextDayStart);
 
         if (dailyBuyTotal.add(executionTotal).compareTo(MAX_DAILY_BUY) > 0) {
             decline(order, executionTotal, happenedAt);
@@ -153,10 +149,6 @@ public class OrderProcessingService {
                 null
             );
         }
-
-        transactionsRepo.insert(
-            executionTotal, "OUT", account.getAccountId(), "TRADE", happenedAt
-        );
 
         accountsRepo.updateBalance(account.getAccountId(), account.getBalance().subtract(executionTotal));
 
@@ -214,10 +206,6 @@ public class OrderProcessingService {
                 null
             );
         }
-
-        transactionsRepo.insert(
-            executionTotal, "IN", account.getAccountId(), "TRADE", happenedAt
-        );
 
         accountsRepo.updateBalance(account.getAccountId(), account.getBalance().add(executionTotal));
 

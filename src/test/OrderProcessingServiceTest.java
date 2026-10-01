@@ -20,7 +20,6 @@ import main.repos.AccountsRepo;
 import main.repos.CurrentPriceRepo;
 import main.repos.OrdersRepo;
 import main.repos.PositionsRepo;
-import main.repos.TransactionsRepo;
 import main.services.HistoricalOrdersService;
 import main.services.OrderProcessingService;
 import main.services.ScheduledOrdersCheck;
@@ -70,7 +69,6 @@ public class OrderProcessingServiceTest {
 
     @Autowired private OrdersRepo ordersRepo;
     @Autowired private AccountsRepo accountsRepo;
-    @Autowired private TransactionsRepo transactionsRepo;
     @Autowired private PositionsRepo positionsRepo;
     @Autowired private CurrentPriceRepo currentPriceRepo;
     @Autowired private HistoricalOrdersService historicalOrdersService;
@@ -182,11 +180,7 @@ public class OrderProcessingServiceTest {
         assertEquals(Timestamp.valueOf(FILL_TIME), positions.get(0).get("opened_at"));
         assertNull(positions.get(0).get("closed_at"));
         assertMoney("970", balance(ACCOUNT_ID));
-        List<Map<String, Object>> txns = transactions(ACCOUNT_ID);
-        assertEquals(1, txns.size());
-        assertMoney("30", txns.get(0).get("amount"));
-        assertEquals("OUT", txns.get(0).get("side"));
-        assertEquals("TRADE", txns.get(0).get("transaction_type"));
+        assertTrue(transactions(ACCOUNT_ID).isEmpty(), "trades are not recorded in transactions");
     }
 
     @Test
@@ -260,11 +254,7 @@ public class OrderProcessingServiceTest {
         assertMoney("24", positions.get(0).get("total_price"));
         assertNull(positions.get(0).get("closed_at"));
         assertMoney("1020", balance(ACCOUNT_ID));
-        List<Map<String, Object>> txns = transactions(ACCOUNT_ID);
-        assertEquals(1, txns.size());
-        assertMoney("20", txns.get(0).get("amount"));
-        assertEquals("IN", txns.get(0).get("side"));
-        assertEquals("TRADE", txns.get(0).get("transaction_type"));
+        assertTrue(transactions(ACCOUNT_ID).isEmpty(), "trades are not recorded in transactions");
     }
 
     @Test
@@ -318,7 +308,7 @@ public class OrderProcessingServiceTest {
 
         assertEquals("FILLED", orderStatus());
         assertMoney("970", balance(ACCOUNT_ID));
-        assertEquals(1, transactions(ACCOUNT_ID).size());
+        assertEquals(List.of("FILLED"), snapshotStatuses(ORDER_ID), "the fill must have run exactly once");
         assertEquals(3, positions().get(0).get("quantity"));
     }
 
@@ -366,7 +356,7 @@ public class OrderProcessingServiceTest {
         insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "BUY", 3);
         // 2024-09-28 is a Saturday; 16:00 UTC is 12:00 ET, inside weekday trading hours
         Clock saturdayNoon = Clock.fixed(Instant.parse("2024-09-28T16:00:00Z"), ZoneId.of("America/New_York"));
-        OrderProcessingService onSaturday = new OrderProcessingService(ordersRepo, accountsRepo, transactionsRepo,
+        OrderProcessingService onSaturday = new OrderProcessingService(ordersRepo, accountsRepo,
             positionsRepo, currentPriceRepo, historicalOrdersService, saturdayNoon);
 
         assertFalse(onSaturday.isMarketOpen());
@@ -375,5 +365,47 @@ public class OrderProcessingServiceTest {
         assertEquals("PENDING", orderStatus());
         assertMoney("1000", balance(ACCOUNT_ID));
         assertTrue(transactions(ACCOUNT_ID).isEmpty());
+    }
+
+    // ---- Daily buy limit: counted from FILLED BUY orders, since trades aren't written to transactions ----
+
+    private void insertOrder(int orderId, String side, String status, String totalPrice, String updatedAt) {
+        jdbcTemplate.update(
+            "INSERT INTO orders (order_id, side, account_id, instrument_id, status, quantity, total_price, created_at, updated_at) " +
+            "VALUES (?, ?, ?, ?, ?, 1, CAST(? AS NUMERIC(18,4)), CAST(? AS TIMESTAMP), CAST(? AS TIMESTAMP))",
+            orderId, side, ACCOUNT_ID, INSTRUMENT_ID, status, totalPrice, updatedAt, updatedAt);
+    }
+
+    @Test
+    void buysFilledEarlierTodayCountTowardsTheDailyLimit() {
+        insertOrder(900811, "BUY", "FILLED", "2999990.0000", "2024-09-24 10:00:00");
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "BUY", 3);
+
+        orderProcessingService.process(ORDER_ID);
+
+        assertEquals("DECLINED", orderStatus(), "30 on top of 2,999,990 already bought today exceeds 3,000,000");
+        assertMoney("1000", balance(ACCOUNT_ID));
+    }
+
+    @Test
+    void buysFilledOnAnEarlierDayDoNotCount() {
+        insertOrder(900811, "BUY", "FILLED", "2999990.0000", "2024-09-23 15:00:00");
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "BUY", 3);
+
+        orderProcessingService.process(ORDER_ID);
+
+        assertEquals("FILLED", orderStatus());
+    }
+
+    @Test
+    void onlyFilledBuysCountTowardsTheDailyLimit() {
+        insertOrder(900811, "SELL", "FILLED", "2999990.0000", "2024-09-24 10:00:00");
+        insertOrder(900812, "BUY", "DECLINED", "2999990.0000", "2024-09-24 10:00:00");
+        insertOrder(900813, "BUY", "PENDING", "2999990.0000", "2024-09-24 10:00:00");
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "BUY", 3);
+
+        orderProcessingService.process(ORDER_ID);
+
+        assertEquals("FILLED", orderStatus(), "sells, declined and pending buys must not use up the daily limit");
     }
 }

@@ -54,7 +54,8 @@ public class ApiDocsTest {
         Map.entry("post", "/user/resetpassword/reset"),
         Map.entry("patch", "/user/{id}/name"),
         Map.entry("patch", "/user/{id}/email"),
-        Map.entry("patch", "/user/{id}/address"));
+        Map.entry("patch", "/user/{id}/address"),
+        Map.entry("post", "/user/transactions/exchange"));
 
     @Autowired
     private MockMvc mockMvc;

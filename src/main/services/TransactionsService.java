@@ -1,6 +1,9 @@
 package main.services;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+
+
 import main.repos.TransactionsRepo;
 import main.entities.TransactionsEntity;
 import main.dto.response.TransactionHistoryResponse;
@@ -26,4 +29,6 @@ public class TransactionsService {
         accountResolver.resolve(accountId);
         return repo.getTransactionsByAccountId(accountId);
     }
+
+    
 }

@@ -1,12 +1,17 @@
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import main.services.UserService;
 import main.repos.UserRepo;
+import main.repos.AccountsRepo;
+import main.repos.CurrentPriceRepo;
+import main.repos.PositionsRepo;
+import main.repos.InstrumentRepo;
 import main.entities.UserEntity;
 import main.dto.request.UserRegistrationRequest;
 import main.dto.request.LoginRequest;
@@ -19,6 +24,7 @@ import java.util.Base64;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 @DisplayName("User Service Tests")
 public class UserServiceTest {
 
@@ -30,10 +36,24 @@ public class UserServiceTest {
     @Mock
     private PasswordEncoder mockPasswordEncoder;
 
+    @Mock
+    private AccountsRepo mockAccountsRepo;
+
+    @Mock
+    private CurrentPriceRepo mockCurrentPriceRepo;
+
+    @Mock
+    private PositionsRepo mockPositionsRepo;
+
+    @Mock
+    private InstrumentRepo mockInstrumentRepo;
+
     @BeforeEach
     public void setUp() {
-        MockitoAnnotations.openMocks(this);
-        service = new UserService(mockUserRepo, mockPasswordEncoder);
+        // Pass null for EmailService to avoid mocking issues; it's only used in welcome emails
+        service = new UserService(mockUserRepo, null, mockPasswordEncoder, 
+                                  mockAccountsRepo, mockCurrentPriceRepo, 
+                                  mockPositionsRepo, mockInstrumentRepo);
     }
 
     // Helper method to generate SHA-256 hash (matches service implementation)

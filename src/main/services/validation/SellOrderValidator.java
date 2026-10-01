@@ -1,12 +1,12 @@
-package main.services.validation;
+package services.validation;
 
 import org.springframework.stereotype.Component;
-import main.dto.request.CreateOrderRequest;
-import main.entities.AccountsEntity;
-import main.dto.InstrumentWithPrice;
-import main.entities.PositionsEntity;
-import main.exception.InvalidOrderException;
-import main.repos.PositionsRepo;
+import dto.request.CreateOrderRequest;
+import entities.AccountsEntity;
+import dto.InstrumentWithPrice;
+import entities.PositionsEntity;
+import exception.InvalidOrderException;
+import repos.PositionsRepo;
 import java.util.List;
 
 @Component

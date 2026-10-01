@@ -6,16 +6,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import main.services.UserService;
-import main.repos.UserRepo;
-import main.repos.AccountsRepo;
-import main.repos.CurrentPriceRepo;
-import main.repos.PositionsRepo;
-import main.repos.InstrumentRepo;
-import main.entities.UserEntity;
-import main.dto.request.UserRegistrationRequest;
-import main.dto.request.LoginRequest;
-import main.dto.response.UserResponse;
+import services.UserService;
+import repos.UserRepo;
+import repos.AccountsRepo;
+import repos.CurrentPriceRepo;
+import repos.PositionsRepo;
+import repos.InstrumentRepo;
+import entities.UserEntity;
+import dto.request.UserRegistrationRequest;
+import dto.request.LoginRequest;
+import dto.response.UserResponse;
 
 import java.time.LocalDate;
 import java.security.MessageDigest;

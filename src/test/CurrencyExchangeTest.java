@@ -18,16 +18,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.hamcrest.Matchers.*;
 //eeeeeeee
 import main.Application;
-import main.dto.request.TransactionRequest;
-import main.entities.AccountsEntity;
-import main.entities.InstrumentEntity;
-import main.entities.UserEntity;
-import main.entities.PortfolioSize;
-import main.repos.AccountsRepo;
-import main.repos.InstrumentRepo;
-import main.repos.CurrentPriceRepo;
-import main.repos.PositionsRepo;
-import main.repos.UserRepo;
+import dto.request.TransactionRequest;
+import entities.AccountsEntity;
+import entities.InstrumentEntity;
+import entities.UserEntity;
+import entities.PortfolioSize;
+import repos.AccountsRepo;
+import repos.InstrumentRepo;
+import repos.CurrentPriceRepo;
+import repos.PositionsRepo;
+import repos.UserRepo;
 import test.config.TestClockConfig;
 
 import java.math.BigDecimal;

@@ -1,5 +1,3 @@
-package test;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,13 +14,13 @@ import static org.mockito.Mockito.doThrow;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import main.Application;
-import main.repos.AccountsRepo;
-import main.repos.CurrentPriceRepo;
-import main.repos.OrdersRepo;
-import main.repos.PositionsRepo;
-import main.services.HistoricalOrdersService;
-import main.services.OrderProcessingService;
-import main.services.ScheduledOrdersCheck;
+import repos.AccountsRepo;
+import repos.CurrentPriceRepo;
+import repos.OrdersRepo;
+import repos.PositionsRepo;
+import services.HistoricalOrdersService;
+import services.OrderProcessingService;
+import services.ScheduledOrdersCheck;
 import test.config.TestClockConfig;
 
 import java.math.BigDecimal;

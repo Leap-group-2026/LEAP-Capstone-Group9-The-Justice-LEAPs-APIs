@@ -1,14 +1,13 @@
-package main.services;
+package services;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 
-import main.repos.TransactionsRepo;
-import main.entities.TransactionsEntity;
-import main.dto.response.TransactionHistoryResponse;
+import repos.TransactionsRepo;
+import entities.TransactionsEntity;
+import dto.response.TransactionHistoryResponse;
 import java.util.List;
-import main.services.resolver.AccountResolver;
+import services.resolver.AccountResolver;
 
 @Service 
 public class TransactionsService {

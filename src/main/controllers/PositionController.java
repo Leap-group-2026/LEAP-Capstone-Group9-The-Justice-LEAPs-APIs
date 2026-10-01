@@ -1,12 +1,12 @@
-package main.controllers;
+package controllers;
 
-import main.services.PositionService;
-import main.entities.PositionsEntity;
-import main.entities.AccountsEntity;
-import main.entities.InstrumentEntity;
-import main.dto.request.CreatePositionRequest;
-import main.dto.response.ValidationError;
-import main.dto.response.PositionResponse;
+import services.PositionService;
+import entities.PositionsEntity;
+import entities.AccountsEntity;
+import entities.InstrumentEntity;
+import dto.request.CreatePositionRequest;
+import dto.response.ValidationError;
+import dto.response.PositionResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 

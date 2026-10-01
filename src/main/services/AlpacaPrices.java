@@ -1,4 +1,4 @@
-package main.services;
+package services;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -12,17 +12,17 @@ import java.util.Map;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.github.cdimascio.dotenv.DotenvException;
 
-import main.dto.request.TradesResponse;
-import main.dto.request.CryptoTradesResponse;
-import main.dto.request.CryptoTradeData;
-import main.dto.request.ForexRatesResponse;
+import dto.request.TradesResponse;
+import dto.request.CryptoTradesResponse;
+import dto.request.CryptoTradeData;
+import dto.request.ForexRatesResponse;
 import org.springframework.scheduling.annotation.Scheduled;
-import main.repos.OrdersRepo;
-import main.repos.CurrentPriceRepo;
-import main.repos.InstrumentRepo;
-import main.entities.CurrentPriceEntity;
-import main.entities.OrderEntity;
-import main.dto.request.TradeData;
+import repos.OrdersRepo;
+import repos.CurrentPriceRepo;
+import repos.InstrumentRepo;
+import entities.CurrentPriceEntity;
+import entities.OrderEntity;
+import dto.request.TradeData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

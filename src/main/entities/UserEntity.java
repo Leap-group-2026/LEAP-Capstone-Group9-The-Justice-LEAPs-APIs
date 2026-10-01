@@ -1,11 +1,8 @@
-package main.entities;
+package entities;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 public class UserEntity {
     private Integer userId;

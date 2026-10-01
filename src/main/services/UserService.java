@@ -1,34 +1,32 @@
-package main.services;
+package services;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import main.entities.AccountsEntity;
-import main.dto.request.TransactionRequest;
+import entities.AccountsEntity;
+import dto.request.TransactionRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-import main.repos.UserRepo;
-import main.entities.UserEntity; 
-import main.dto.request.UserRegistrationRequest;
-import main.dto.request.LoginRequest;
-import main.dto.request.VerifyPasswordReset;
-import main.dto.request.UpdateNameRequest;
-import main.dto.request.TransactionRequest;
-import main.dto.request.UpdateEmailRequest;
-import main.dto.request.UpdateAddressRequest;
-import main.dto.response.UserResponse;
-import main.dto.response.UpdateNameResponse;
-import main.dto.response.UpdateEmailResponse;
-import main.repos.InstrumentRepo;
-import main.repos.AccountsRepo;
-import main.repos.PositionsRepo;
-import main.dto.response.UpdateAddressResponse;
-import main.services.EmailService;
-import main.repos.CurrentPriceRepo;
-import main.exception.ResourceNotFoundException;
+import repos.UserRepo;
+import entities.UserEntity; 
+import dto.request.UserRegistrationRequest;
+import dto.request.LoginRequest;
+import dto.request.VerifyPasswordReset;
+import dto.request.UpdateNameRequest;
+import dto.request.UpdateEmailRequest;
+import dto.request.UpdateAddressRequest;
+import dto.response.UserResponse;
+import dto.response.UpdateNameResponse;
+import dto.response.UpdateEmailResponse;
+import repos.InstrumentRepo;
+import repos.AccountsRepo;
+import repos.PositionsRepo;
+import dto.response.UpdateAddressResponse;
+import repos.CurrentPriceRepo;
+import exception.ResourceNotFoundException;
 
 import java.security.MessageDigest;
 import java.util.Base64;

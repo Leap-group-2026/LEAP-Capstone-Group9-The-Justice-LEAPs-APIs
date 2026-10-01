@@ -1,14 +1,12 @@
-package test;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import main.services.resolver.InstrumentResolver;
-import main.repos.InstrumentRepo;
-import main.dto.InstrumentWithPrice;
-import main.exception.ResourceNotFoundException;
+import services.resolver.InstrumentResolver;
+import repos.InstrumentRepo;
+import dto.InstrumentWithPrice;
+import exception.ResourceNotFoundException;
 
 import java.util.Optional;
 

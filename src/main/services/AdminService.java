@@ -1,12 +1,11 @@
-package main.services;
+package services;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import main.repos.AdminRepo;
-import main.dto.response.OrderAdminResponse;
-import main.entities.AdminEntity;
-import main.entities.OrderEntity;
+import repos.AdminRepo;
+import dto.response.OrderAdminResponse;
+import entities.AdminEntity;
 
 import java.time.LocalDateTime;
 import java.util.List;

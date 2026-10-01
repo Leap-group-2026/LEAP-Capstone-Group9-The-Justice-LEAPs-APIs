@@ -1,4 +1,4 @@
-package main.dto.response;
+package dto.response;
 
 import java.time.LocalDateTime;
 import io.swagger.v3.oas.annotations.media.Schema;

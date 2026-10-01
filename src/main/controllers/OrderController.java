@@ -1,15 +1,14 @@
-package main.controllers;
+package controllers;
 
 import org.springframework.web.bind.annotation.*;
-import main.dto.response.OrderHistoryResponse;
+import dto.response.OrderHistoryResponse;
 import java.util.List;
 
 import jakarta.validation.Valid;
-import main.dto.request.CreateOrderRequest;
-import main.dto.response.OrderSubmissionResponse;
-import main.services.OrderService;
-import main.entities.OrderEntity;
-import main.dto.response.ValidationError;
+import dto.request.CreateOrderRequest;
+import dto.response.OrderSubmissionResponse;
+import services.OrderService;
+import dto.response.ValidationError;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;

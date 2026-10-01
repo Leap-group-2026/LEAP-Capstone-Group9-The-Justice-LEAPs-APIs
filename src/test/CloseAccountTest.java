@@ -1,8 +1,9 @@
-import main.repos.AccountsRepo;
-import main.services.AccountService;
-import main.entities.AccountsEntity;
-import main.entities.UserEntity;
-import main.repos.UserRepo;
+import repos.AccountsRepo;
+import services.AccountService;
+import entities.AccountsEntity;
+import entities.UserEntity;
+import entities.PortfolioSize;
+import repos.UserRepo;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -44,7 +45,7 @@ public class CloseAccountTest {
         testAccount.setAccountId(1);
         testAccount.setBalance(BigDecimal.ZERO);
         testAccount.setUserId(testUser);
-        testAccount.setPortfolioSize(main.entities.PortfolioSize.BALANCED);
+        testAccount.setPortfolioSize(PortfolioSize.BALANCED);
         testAccount.setTradeType("Stock");
         testAccount.setCreatedAt(LocalDateTime.now());
         testAccount.setAccountActive(true);
@@ -145,7 +146,7 @@ public class CloseAccountTest {
         account2.setAccountId(2);
         account2.setBalance(BigDecimal.ZERO);
         account2.setUserId(testUser);  // Also belongs to User 1
-        account2.setPortfolioSize(main.entities.PortfolioSize.HIGH);
+        account2.setPortfolioSize(PortfolioSize.HIGH);
         account2.setTradeType("Options");
         account2.setCreatedAt(LocalDateTime.now());
         account2.setAccountActive(true);

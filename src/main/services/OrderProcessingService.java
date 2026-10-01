@@ -1,4 +1,4 @@
-package main.services;
+package services;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -10,15 +10,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import main.entities.AccountsEntity;
-import main.entities.CurrentPriceEntity;
-import main.entities.OrderEntity;
-import main.entities.PositionsEntity;
-import main.repos.AccountsRepo;
-import main.repos.CurrentPriceRepo;
-import main.repos.OrdersRepo;
-import main.repos.PositionsRepo;
-import main.services.calculation.OrderPriceCalculator;
+import entities.AccountsEntity;
+import entities.CurrentPriceEntity;
+import entities.OrderEntity;
+import entities.PositionsEntity;
+import repos.AccountsRepo;
+import repos.CurrentPriceRepo;
+import repos.OrdersRepo;
+import repos.PositionsRepo;
+import services.calculation.OrderPriceCalculator;
 
 @Service
 public class OrderProcessingService {

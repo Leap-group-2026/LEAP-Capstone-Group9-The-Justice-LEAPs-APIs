@@ -1,4 +1,4 @@
-package main.dto.response;
+package dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;

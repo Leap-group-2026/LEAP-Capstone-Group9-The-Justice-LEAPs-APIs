@@ -1,5 +1,3 @@
-package test;
-
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.OffsetSpec;
@@ -34,9 +32,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import main.Application;
-import main.entities.OrderEntity;
-import main.events.OrderSubmittedEvent;
-import main.services.HistoricalOrdersService;
+import entities.OrderEntity;
+import events.OrderSubmittedEvent;
+import services.HistoricalOrdersService;
 import test.config.TestClockConfig;
 
 import java.math.BigDecimal;
@@ -66,8 +64,8 @@ import java.util.UUID;
     "spring.kafka.consumer.key-deserializer=org.apache.kafka.common.serialization.StringDeserializer",
     "spring.kafka.consumer.value-deserializer=org.springframework.kafka.support.serializer.ErrorHandlingDeserializer",
     "spring.kafka.consumer.properties.spring.deserializer.value.delegate.class=org.springframework.kafka.support.serializer.JsonDeserializer",
-    "spring.kafka.consumer.properties.spring.json.value.default.type=main.events.OrderSubmittedEvent",
-    "spring.kafka.consumer.properties.spring.json.trusted.packages=main.events",
+    "spring.kafka.consumer.properties.spring.json.value.default.type=events.OrderSubmittedEvent",
+    "spring.kafka.consumer.properties.spring.json.trusted.packages=events",
     "spring.kafka.consumer.auto-offset-reset=earliest"
 })
 @EmbeddedKafka(partitions = 3, topics = {"order.submitted", "order.submitted.DLT"})

@@ -1,5 +1,3 @@
-package test;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,7 +9,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import static org.junit.jupiter.api.Assertions.*;
 
 import main.Application;
-import main.services.OrderProcessingService;
+import services.OrderProcessingService;
 import test.config.TestClockConfig;
 
 import java.math.BigDecimal;

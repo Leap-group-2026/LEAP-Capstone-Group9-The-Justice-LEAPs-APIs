@@ -1,14 +1,12 @@
-package main.services;
+package services;
 
 import org.springframework.stereotype.Service;
-import main.repos.PositionsRepo;
-import main.repos.AccountsRepo;
-import main.repos.InstrumentRepo;
-import main.entities.PositionsEntity;
-import main.services.resolver.AccountResolver;
-import main.dto.response.PositionResponse;
-import main.entities.AccountsEntity;
-import main.entities.InstrumentEntity;
+import repos.PositionsRepo;
+import repos.AccountsRepo;
+import repos.InstrumentRepo;
+import entities.PositionsEntity;
+import services.resolver.AccountResolver;
+import dto.response.PositionResponse;
 import java.util.List;
 import java.time.LocalDateTime;
 

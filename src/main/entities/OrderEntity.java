@@ -1,8 +1,6 @@
-package main.entities;
+package entities;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
 
@@ -54,7 +52,7 @@ public class OrderEntity {
     // DO NOT REMOVE: Setter is required for MyBatis to attach db-generated id to entities
     public void setOrderId(Integer orderId) { this.orderId = orderId; }
     
-    private void removeThisSetter() {}
+    
 
     public String getSide() { return side; }
 

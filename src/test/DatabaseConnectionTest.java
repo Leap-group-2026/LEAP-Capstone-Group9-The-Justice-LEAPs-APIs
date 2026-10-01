@@ -1,8 +1,8 @@
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.beans.factory.annotation.Autowired;
-import main.repos.AdminRepo;
-import main.entities.AdminEntity;
+import repos.AdminRepo;
+import entities.AdminEntity;
 import main.Application;
 import static org.junit.jupiter.api.Assertions.*;
 

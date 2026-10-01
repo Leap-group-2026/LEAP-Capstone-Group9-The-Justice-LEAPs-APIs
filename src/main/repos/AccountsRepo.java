@@ -1,4 +1,4 @@
-package main.repos;
+package repos;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -9,7 +9,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Result;
-import main.entities.AccountsEntity;
+import entities.AccountsEntity;
 import java.util.Optional;
 import java.util.List;
 import java.math.BigDecimal;

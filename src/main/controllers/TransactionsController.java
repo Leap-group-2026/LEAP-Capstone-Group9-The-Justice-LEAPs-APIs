@@ -1,13 +1,13 @@
-package main.controllers;
+package controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import main.services.TransactionsService;
+import services.TransactionsService;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-import main.dto.response.TransactionHistoryResponse;
+import dto.response.TransactionHistoryResponse;
 
 @Tag(name = "Transactions")  
 @RestController 

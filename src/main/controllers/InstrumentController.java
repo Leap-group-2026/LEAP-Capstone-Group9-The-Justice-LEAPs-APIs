@@ -1,4 +1,4 @@
-package main.controllers;
+package controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -7,9 +7,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-import main.services.InstrumentService;
-import main.dto.InstrumentWithPrice;
-import main.dto.response.ValidationError;
+import services.InstrumentService;
+import dto.InstrumentWithPrice;
+import dto.response.ValidationError;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 

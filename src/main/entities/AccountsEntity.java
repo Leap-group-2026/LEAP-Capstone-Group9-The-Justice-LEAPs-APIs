@@ -1,9 +1,7 @@
-package main.entities;
+package entities;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 

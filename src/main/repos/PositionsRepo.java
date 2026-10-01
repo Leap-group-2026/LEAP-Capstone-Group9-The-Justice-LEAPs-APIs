@@ -1,4 +1,4 @@
-package main.repos;
+package repos;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -8,8 +8,8 @@ import org.apache.ibatis.annotations.One;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Param;
-import main.entities.PositionsEntity;
-import main.dto.response.PositionResponse;
+import entities.PositionsEntity;
+import dto.response.PositionResponse;
 import java.util.Optional;
 import java.util.List;
 import java.math.BigDecimal;
@@ -28,7 +28,7 @@ public interface PositionsRepo {
         @Result(column = "position_id", property = "positionId"),
         @Result(column = "quantity", property = "quantity"),
         @Result(column = "instrument_id", property = "instrument", 
-                one = @One(select = "main.repos.InstrumentRepo.findEntityById")),
+                one = @One(select = "repos.InstrumentRepo.findEntityById")),
         @Result(column = "opened_at", property = "openedAt"),
         @Result(column = "closed_at", property = "closedAt"),
         @Result(column = "total_price", property = "totalPrice"),

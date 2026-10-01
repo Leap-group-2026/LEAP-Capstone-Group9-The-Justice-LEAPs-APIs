@@ -1,4 +1,4 @@
-package main.kafka;
+package kafka;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import main.events.OrderSubmittedEvent;
+import events.OrderSubmittedEvent;
 
 @Component
 @ConditionalOnProperty(name = "app.kafka.enabled", havingValue = "true")

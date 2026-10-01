@@ -1,12 +1,11 @@
-package main.services;
+package services;
 
 import org.springframework.stereotype.Service;
-import main.repos.AccountsRepo;
-import main.repos.UserRepo;
-import main.entities.AccountsEntity;
-import main.entities.UserEntity;
-import main.dto.response.AccountResponse;
-import main.exception.ResourceNotFoundException;
+import repos.AccountsRepo;
+import repos.UserRepo;
+import entities.AccountsEntity;
+import dto.response.AccountResponse;
+import exception.ResourceNotFoundException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;

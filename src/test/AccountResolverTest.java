@@ -1,14 +1,12 @@
-package test;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import main.services.resolver.AccountResolver;
-import main.repos.AccountsRepo;
-import main.entities.AccountsEntity;
-import main.exception.ResourceNotFoundException;
+import services.resolver.AccountResolver;
+import repos.AccountsRepo;
+import entities.AccountsEntity;
+import exception.ResourceNotFoundException;
 
 import java.util.Optional;
 

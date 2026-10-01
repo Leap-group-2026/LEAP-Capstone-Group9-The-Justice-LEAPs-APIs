@@ -13,18 +13,18 @@ import java.util.List;
 // The Java field is "email" and the database column is admin.email
 @Mapper
 public interface AdminRepo {
-    @Select("SELECT admin_id, email, pass_hash, created_at FROM admin WHERE admin_id = #{adminId}")
+    @Select("SELECT admin_id, email, pass_hash, created_at, role FROM admin WHERE admin_id = #{adminId}")
     Optional<AdminEntity> findById(Integer adminId);
 
-    @Select("SELECT admin_id, email, pass_hash, created_at FROM admin")
+    @Select("SELECT admin_id, email, pass_hash, created_at, role FROM admin")
     List<AdminEntity> findAll();
 
-    @Insert("INSERT INTO admin (email, pass_hash, created_at) " +
-            "VALUES (#{email}, #{passHash}, #{createdAt})")
+    @Insert("INSERT INTO admin (email, pass_hash, created_at, role) " +
+            "VALUES (#{email}, #{passHash}, #{createdAt}, #{role})")
     @Options(useGeneratedKeys = true, keyProperty = "adminId")
     void insert(AdminEntity admin);
 
-    @Update("UPDATE admin SET email=#{email}, pass_hash=#{passHash} WHERE admin_id=#{adminId}")
+    @Update("UPDATE admin SET email=#{email}, pass_hash=#{passHash}, role=#{role} WHERE admin_id=#{adminId}")
     void update(AdminEntity admin);
 
     @Delete("DELETE FROM admin WHERE admin_id = #{adminId}")
@@ -33,6 +33,6 @@ public interface AdminRepo {
     @Select("SELECT EXISTS(SELECT 1 FROM admin WHERE email = #{email})")
     boolean existsByEmail(String email);
 
-    @Select("SELECT admin_id, email, pass_hash, created_at FROM admin WHERE email = #{email}")
+    @Select("SELECT admin_id, email, pass_hash, created_at, role FROM admin WHERE email = #{email}")
     Optional<AdminEntity> findByEmail(String email);
 }

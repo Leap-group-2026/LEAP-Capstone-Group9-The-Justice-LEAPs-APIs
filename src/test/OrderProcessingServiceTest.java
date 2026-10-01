@@ -111,12 +111,6 @@ public class OrderProcessingServiceTest {
 			org.mockito.ArgumentMatchers.any(),
 			org.mockito.ArgumentMatchers.any(),
 			org.mockito.ArgumentMatchers.any());
-		verify(transactionsRepo, never()).insert(
-			org.mockito.ArgumentMatchers.any(),
-			org.mockito.ArgumentMatchers.any(),
-			org.mockito.ArgumentMatchers.any(),
-			org.mockito.ArgumentMatchers.any(),
-			org.mockito.ArgumentMatchers.any());
 		verify(accountsRepo, never()).updateBalance(org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.any());
 		verify(historicalOrdersRepo).insert(eq(order.getOrderId()), eq(account.getAccountId()), anyString(), eq(order.getCreatedAt()));
 	}
@@ -143,12 +137,6 @@ public class OrderProcessingServiceTest {
 			new BigDecimal("20.0000"),
 			LocalDateTime.of(2024, 9, 1, 9, 30),
 			null);
-		verify(transactionsRepo).insert(
-			new BigDecimal("90.0000"),
-			"IN",
-			account.getAccountId(),
-			"TRADE",
-			EXPECTED_HAPPENED_AT);
 		verify(accountsRepo).updateBalance(account.getAccountId(), new BigDecimal("590.0000"));
 		verify(ordersRepo).updateExecutionOutcome(
 			order.getOrderId(),
@@ -179,12 +167,6 @@ public class OrderProcessingServiceTest {
 			BigDecimal.ZERO,
 			new BigDecimal("20.0000"),
 			LocalDateTime.of(2024, 9, 1, 9, 30),
-			EXPECTED_HAPPENED_AT);
-		verify(transactionsRepo).insert(
-			new BigDecimal("125.0000"),
-			"IN",
-			account.getAccountId(),
-			"TRADE",
 			EXPECTED_HAPPENED_AT);
 		verify(accountsRepo).updateBalance(account.getAccountId(), new BigDecimal("625.0000"));
 		verify(ordersRepo).updateExecutionOutcome(

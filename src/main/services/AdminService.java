@@ -18,7 +18,7 @@ public class AdminService {
 
     public AdminEntity saveAdmin(AdminEntity entity){
         String email = entity.getEmail();
-        if (repo.existsByEmail(entity.getEmail())){
+        if (email == null || repo.existsByEmail(email)){
             throw new IllegalArgumentException("Email already exists");
         }
         // The insert binds created_at explicitly, so a null here would bypass the column default

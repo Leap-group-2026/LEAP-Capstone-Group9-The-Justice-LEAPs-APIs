@@ -45,4 +45,5 @@ public interface InstrumentRepo {
 
     @Select("SELECT instrument_id FROM instruments WHERE ticker = #{symbol}")
     Integer findIdBySymbol(String symbol);
+    
 }

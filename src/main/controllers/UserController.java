@@ -13,6 +13,7 @@ import main.dto.response.UpdateEmailResponse;
 import main.dto.response.UpdateAddressResponse;
 import main.entities.UserEntity;
 import main.dto.request.VerifyPasswordReset;
+import main.dto.request.TransactionRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +24,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @Tag(name = "Users")  // description and display order: OpenApiConfig
 @RestController 
@@ -127,5 +129,11 @@ public class UserController {
             @RequestBody UpdateAddressRequest request) {
         UpdateAddressResponse response = service.updateUserAddress(id, request);
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Currency exchange transaction")
+    @PostMapping("/transactions/exchange")
+    public ResponseEntity<String> currencyExchange(@Valid @RequestBody TransactionRequest transactionRequest){
+        return service.currencyExchange(transactionRequest);
     }
 }

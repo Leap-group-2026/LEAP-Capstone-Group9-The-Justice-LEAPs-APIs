@@ -9,6 +9,7 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Param;
 import main.entities.PositionsEntity;
+import main.dto.response.PositionResponse;
 import java.util.Optional;
 import java.util.List;
 import java.math.BigDecimal;
@@ -34,6 +35,15 @@ public interface PositionsRepo {
         @Result(column = "average_price", property = "averagePrice")
     })
     List<PositionsEntity> findByAccount(@Param("accountId") Integer accountId);
+
+    @Select("SELECT p.position_id, p.account_id, " +
+            "i.instrument_id, i.ticker, i.asset_name, i.asset_type, i.currency, " +
+            "p.quantity, p.average_price, p.total_price, p.opened_at " +
+            "FROM positions p " +
+            "JOIN instruments i ON p.instrument_id = i.instrument_id " +
+            "WHERE p.account_id = #{accountId} AND p.closed_at IS NULL " +
+            "ORDER BY p.opened_at DESC, p.position_id DESC")
+    List<PositionResponse> findOpenPositionsByAccountId(@Param("accountId") Integer accountId);
 
     @Select("SELECT * FROM positions WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} " +
             "AND closed_at IS NULL ORDER BY opened_at ASC, position_id ASC LIMIT 1 FOR UPDATE")

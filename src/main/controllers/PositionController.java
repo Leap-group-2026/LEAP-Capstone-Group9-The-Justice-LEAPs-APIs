@@ -6,7 +6,9 @@ import main.entities.AccountsEntity;
 import main.entities.InstrumentEntity;
 import main.dto.request.CreatePositionRequest;
 import main.dto.response.ValidationError;
+import main.dto.response.PositionResponse;
 import jakarta.validation.Valid;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -63,5 +65,17 @@ public class PositionController {
     public PositionsEntity getPositionById(@PathVariable Integer id) {
         return positionService.findById(id);
     }
-    
+
+    @Operation(summary = "Get all open positions for a specific account",
+        description = "Retrieves the open positions (closed_at not set) for the specified account, newest first, "
+            + "with the instrument details of each. A closed account returns the same 404 as a missing one.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Open positions for the account; an empty list if it holds none"),
+        @ApiResponse(responseCode = "404", description = "No active account with this id (missing or closed)",
+            content = @Content(schema = @Schema(implementation = ValidationError.class)))
+    })
+    @GetMapping("/account/{accountId}")
+    public List<PositionResponse> findOpenPositionsByAccountId(@PathVariable Integer accountId) {
+        return positionService.findOpenPositionsByAccountId(accountId);
+    }
 }

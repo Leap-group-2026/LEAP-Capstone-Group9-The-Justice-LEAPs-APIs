@@ -5,6 +5,8 @@ import main.repos.PositionsRepo;
 import main.repos.AccountsRepo;
 import main.repos.InstrumentRepo;
 import main.entities.PositionsEntity;
+import main.services.resolver.AccountResolver;
+import main.dto.response.PositionResponse;
 import main.entities.AccountsEntity;
 import main.entities.InstrumentEntity;
 import java.util.List;
@@ -15,11 +17,13 @@ public class PositionService {
     private PositionsRepo repo;
     private AccountsRepo accountsRepository;
     private InstrumentRepo instrumentRepository;
+    private AccountResolver accountResolver;
     
-    public PositionService(PositionsRepo repo, AccountsRepo accountsRepository, InstrumentRepo instrumentRepository) {
+    public PositionService(PositionsRepo repo, AccountsRepo accountsRepository, InstrumentRepo instrumentRepository, AccountResolver accountResolver) {
         this.repo = repo;
         this.accountsRepository = accountsRepository;
         this.instrumentRepository = instrumentRepository;
+        this.accountResolver = accountResolver;
     }
 
     public PositionsEntity findById(Integer id) {
@@ -39,5 +43,10 @@ public class PositionService {
                        entity.getAveragePrice(), openedAt, entity.getClosedAt());
         }
         return entity;
+    }
+
+    public List<PositionResponse> findOpenPositionsByAccountId(Integer accountId) {
+        accountResolver.resolve(accountId);
+        return repo.findOpenPositionsByAccountId(accountId);
     }
 }

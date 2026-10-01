@@ -3,6 +3,11 @@ package main.services;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import main.entities.AccountsEntity;
+import main.dto.request.TransactionRequest;
+
 import org.springframework.beans.factory.annotation.Autowired;
 
 import main.repos.UserRepo;
@@ -11,37 +16,49 @@ import main.dto.request.UserRegistrationRequest;
 import main.dto.request.LoginRequest;
 import main.dto.request.VerifyPasswordReset;
 import main.dto.request.UpdateNameRequest;
+import main.dto.request.TransactionRequest;
 import main.dto.request.UpdateEmailRequest;
 import main.dto.request.UpdateAddressRequest;
 import main.dto.response.UserResponse;
 import main.dto.response.UpdateNameResponse;
 import main.dto.response.UpdateEmailResponse;
+import main.repos.InstrumentRepo;
+import main.repos.AccountsRepo;
+import main.repos.PositionsRepo;
 import main.dto.response.UpdateAddressResponse;
 import main.services.EmailService;
+import main.repos.CurrentPriceRepo;
 import main.exception.ResourceNotFoundException;
 
 import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.Random;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
 
 @Service
 public class UserService {
     private UserRepo repo; 
     private EmailService emailService;
+    private CurrentPriceRepo currentPriceRepo;
     private PasswordEncoder passwordEncoder;
+    private AccountsRepo accountsRepo;
+    private PositionsRepo positionsRepo;
+    private InstrumentRepo instrumentRepo;
     private static final Random random = new Random();
     
-    public UserService(UserRepo repo, PasswordEncoder passwordEncoder){
-        this.repo = repo; 
-        this.passwordEncoder = passwordEncoder;
-        this.emailService = null;
-    }
-    
     @Autowired
-    public UserService(UserRepo repo, EmailService emailService, PasswordEncoder passwordEncoder){
+    public UserService(UserRepo repo, EmailService emailService, PasswordEncoder passwordEncoder, 
+                       AccountsRepo accountsRepo, CurrentPriceRepo currentPriceRepo, 
+                       PositionsRepo positionsRepo, InstrumentRepo instrumentRepo){
         this.repo = repo; 
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
+        this.accountsRepo = accountsRepo;
+        this.currentPriceRepo = currentPriceRepo;
+        this.positionsRepo = positionsRepo;
+        this.instrumentRepo = instrumentRepo;
     }
 
     public UserResponse registerUser(UserRegistrationRequest request){
@@ -273,5 +290,79 @@ public class UserService {
     private boolean isValidEmail(String email) {
         String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
         return email.matches(emailRegex) && email.length() <= 255;
+    }
+    @Transactional 
+    public ResponseEntity<String> currencyExchange(TransactionRequest transactionRequest){
+        if (transactionRequest.baseAndExchange() == null || transactionRequest.baseAndExchange().isBlank()) {
+            throw new IllegalArgumentException("Base and exchange currency pair is required");
+        }
+        
+        String baseAndExchange = transactionRequest.baseAndExchange();
+        String[] parts = baseAndExchange.split("/");
+        AccountsEntity account = accountsRepo.findById(transactionRequest.accountId()).orElseThrow(() -> new IllegalArgumentException("Account not found"));
+
+        if (parts.length < 2) throw new IllegalArgumentException("Invalid exchange rate format");
+        if (!parts[0].equals("USD")){
+            baseAndExchange = parts[1] + "/" + parts[0];
+            Integer instrumentId = instrumentRepo.findIdBySymbol(baseAndExchange);
+            if (instrumentId != null) {
+                var position = positionsRepo.findOpenForUpdate(transactionRequest.accountId(), instrumentId);
+                if (position.isPresent()) {
+                    if(position.get().getTotalPrice().compareTo(transactionRequest.amount()) < 0){
+                        return ResponseEntity.badRequest().body("You do not have enough currency in this exchange rate to make this exchange");
+                    }
+                }
+                else{
+                    return ResponseEntity.badRequest().body("You do not currently own any currency in this exchange rate");
+                }
+            }
+            else{
+                return ResponseEntity.badRequest().body("Foreign exchange chosen is not available for trade");
+            }
+            
+        }
+        else{
+            if (account.getBalance().compareTo(transactionRequest.amount()) < 0) {
+                return ResponseEntity.badRequest().body("You do not have enough balance in your account to make this exchange");
+            }
+        }
+        final String priceTicker = baseAndExchange;
+        BigDecimal price = currentPriceRepo.findPriceByTicker(priceTicker)
+            .orElseThrow(() -> new IllegalArgumentException("Price not found for " + priceTicker));
+        
+        if (!parts[0].equals("USD")) {
+            price = BigDecimal.ONE.divide(price, 10, RoundingMode.HALF_UP);
+            BigDecimal usd = account.getBalance().add(price.multiply(transactionRequest.amount()));
+            
+            Integer instrumentId = instrumentRepo.findIdBySymbol(baseAndExchange);
+            var position = positionsRepo.findOpenForUpdate(transactionRequest.accountId(), instrumentId);
+            BigDecimal newTotalPrice = position.get().getTotalPrice().subtract(transactionRequest.amount());
+            positionsRepo.update(position.get().getPositionId(), account.getAccountId(), instrumentId, position.get().getQuantity(), newTotalPrice, position.get().getAveragePrice(), position.get().getOpenedAt(), position.get().getClosedAt());
+            accountsRepo.update(account.getAccountId(), account.getOwnerUserId(), usd, account.getPortfolioSize().getValue(), account.getTradeType(), account.getAccountActive());
+        } else {
+            BigDecimal foreign = transactionRequest.amount().multiply(price);
+            BigDecimal usd = account.getBalance().subtract(transactionRequest.amount());
+            Integer instrumentId = instrumentRepo.findIdBySymbol(baseAndExchange);
+            var position = positionsRepo.findOpenForUpdate(transactionRequest.accountId(), instrumentId);
+            
+            if (position.isPresent()) {
+                BigDecimal newTotalPrice = position.get().getTotalPrice().add(foreign);
+                positionsRepo.update(position.get().getPositionId(), account.getAccountId(), instrumentId, position.get().getQuantity(), newTotalPrice, position.get().getAveragePrice(), position.get().getOpenedAt(), position.get().getClosedAt());
+            } else {
+                positionsRepo.insert(
+                    transactionRequest.accountId(),
+                    instrumentId,
+                    1, 
+                    foreign, 
+                    price, 
+                    LocalDateTime.now(), 
+                    null 
+                );
+            }
+            
+            accountsRepo.update(account.getAccountId(), account.getOwnerUserId(), usd, account.getPortfolioSize().getValue(), account.getTradeType(), account.getAccountActive());
+        }
+        
+        return ResponseEntity.ok("Transaction processed successfully");
     }
 }

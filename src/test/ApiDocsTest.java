@@ -29,17 +29,23 @@ public class ApiDocsTest {
 
     // The order Swagger UI shows the groups in (set in OpenApiConfig)
     private static final List<String> TAGS = List.of(
-        "Admin", "Users", "Accounts", "Orders", "Positions", "Order history");
+        "Users", "Transactions", "Orders", "Accounts", "Instruments", "Positions", "Order history", "Admin");
 
     // method -> path, one entry per endpoint found by scanning the controllers
     private static final List<Map.Entry<String, String>> ENDPOINTS = List.of(
         Map.entry("get", "/accounts/{id}"),
+        Map.entry("get", "/accounts/user/{userId}"),
         Map.entry("post", "/accounts/create"),
         Map.entry("post", "/accounts/close/{id}"),
         Map.entry("post", "/orders"),
+        Map.entry("get", "/orders/{orderId}"),
+        Map.entry("get", "/orders/account/{accountId}"),
         Map.entry("get", "/orders/{orderId}/history"),
+        Map.entry("get", "/transactions/account/{accountId}"),
+        Map.entry("get", "/instruments/{ticker}"),
         Map.entry("get", "/positions/{id}"),
         Map.entry("post", "/positions/create"),
+        Map.entry("get", "/positions/account/{accountId}"),
         Map.entry("post", "/admin/create"),
         Map.entry("post", "/admin/login"),
         Map.entry("post", "/user/create"),
@@ -48,7 +54,8 @@ public class ApiDocsTest {
         Map.entry("post", "/user/resetpassword/reset"),
         Map.entry("patch", "/user/{id}/name"),
         Map.entry("patch", "/user/{id}/email"),
-        Map.entry("patch", "/user/{id}/address"));
+        Map.entry("patch", "/user/{id}/address"),
+        Map.entry("post", "/user/transactions/exchange"));
 
     @Autowired
     private MockMvc mockMvc;

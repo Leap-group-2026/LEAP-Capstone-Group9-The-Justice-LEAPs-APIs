@@ -43,7 +43,7 @@ public class AdminRouteTest {
         
         mockMvc.perform(post("/admin/login")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"email\":\"aryann\",\"password\":\"secret\"}"))
+            .content("{\"username\":\"aryann\",\"password\":\"secret\"}"))
             .andExpect(status().isOk());
     }
     
@@ -68,7 +68,7 @@ public class AdminRouteTest {
         // Failed on every call before created_at was defaulted in AdminService
         mockMvc.perform(post("/admin/create")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"email\":\"admin@example.com\",\"password\":\"secret\"}"))
+            .content("{\"username\":\"admin@example.com\",\"password\":\"secret\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.email").value("admin@example.com"))
             .andExpect(jsonPath("$.created_at", notNullValue()));

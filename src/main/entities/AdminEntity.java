@@ -11,6 +11,7 @@ public class AdminEntity {
     private String passHash;
     @JsonProperty("created_at")
     private LocalDateTime createdAt;
+    private String role;
 
     // Getters and Setters
     public Integer getAdminId() {
@@ -43,5 +44,13 @@ public class AdminEntity {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }

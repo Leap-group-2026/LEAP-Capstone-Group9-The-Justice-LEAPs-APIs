@@ -42,7 +42,7 @@ public class AdminRouteTest {
         
         mockMvc.perform(post("/admin/login")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"username\":\"aryann\",\"password\":\"secret\"}"))
+            .content("{\"email\":\"aryann\",\"password\":\"secret\"}"))
             .andExpect(status().isOk());
     }
     
@@ -50,7 +50,7 @@ public class AdminRouteTest {
     public void wrongUsername() throws Exception{
         mockMvc.perform(post("/admin/login")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"username\":\"arya\",\"password\":\"gg\"}"))
+            .content("{\"email\":\"arya\",\"password\":\"gg\"}"))
             .andExpect(status().isBadRequest());
     }
 
@@ -58,7 +58,7 @@ public class AdminRouteTest {
     public void wrongPassword() throws Exception{
         mockMvc.perform(post("/admin/login")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"username\":\"aryan\",\"password\":\"gg\"}"))
+            .content("{\"email\":\"aryan\",\"password\":\"gg\"}"))
             .andExpect(status().isBadRequest());
     }
 
@@ -67,7 +67,7 @@ public class AdminRouteTest {
         // Failed on every call before created_at was defaulted in AdminService
         mockMvc.perform(post("/admin/create")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"username\":\"new.admin@example.com\",\"password\":\"secret\"}"))
+            .content("{\"email\":\"new.admin@example.com\",\"password\":\"secret\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.email").value("new.admin@example.com"))
             .andExpect(jsonPath("$.created_at", notNullValue()));

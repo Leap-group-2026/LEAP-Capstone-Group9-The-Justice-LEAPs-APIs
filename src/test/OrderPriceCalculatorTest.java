@@ -1,13 +1,10 @@
-package test;
-
 import org.junit.jupiter.api.Test;
 
-import main.services.calculation.OrderPriceCalculator;
-import main.dto.InstrumentWithPrice;
-import main.exception.InvalidOrderException;
+import services.calculation.OrderPriceCalculator;
+import dto.InstrumentWithPrice;
+import exception.InvalidOrderException;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 

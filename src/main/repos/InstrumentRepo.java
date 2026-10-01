@@ -1,4 +1,4 @@
-package main.repos;
+package repos;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -6,8 +6,8 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Options;
-import main.entities.InstrumentEntity;
-import main.dto.InstrumentWithPrice;
+import entities.InstrumentEntity;
+import dto.InstrumentWithPrice;
 import java.util.Optional;
 import java.util.List;
 

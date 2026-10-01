@@ -13,8 +13,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.mockito.Mockito.when;
 
 import main.Application;
-import main.dto.InstrumentWithPrice;
-import main.repos.InstrumentRepo;
+import dto.InstrumentWithPrice;
+import repos.InstrumentRepo;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.Arrays;

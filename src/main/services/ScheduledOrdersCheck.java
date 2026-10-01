@@ -1,4 +1,4 @@
-package main.services;
+package services;
 
 import java.util.List;
 
@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import main.repos.OrdersRepo;
+import repos.OrdersRepo;
 
 // The safety net behind Kafka: fills orders placed outside market hours and any whose event was lost
 @Service

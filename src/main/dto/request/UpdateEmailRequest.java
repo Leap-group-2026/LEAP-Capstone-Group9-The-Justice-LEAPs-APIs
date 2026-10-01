@@ -1,4 +1,4 @@
-package main.dto.request;
+package dto.request;
 
 public record UpdateEmailRequest(
     String email

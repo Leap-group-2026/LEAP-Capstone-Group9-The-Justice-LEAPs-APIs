@@ -1,5 +1,3 @@
-package test;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -14,10 +12,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.hamcrest.Matchers.notNullValue;
 
-import main.controllers.AdminController;
+import controllers.AdminController;
 import main.Application;
-import main.entities.AdminEntity;
-import main.repos.AdminRepo;
+import entities.AdminEntity;
+import repos.AdminRepo;
 
 import java.time.LocalDateTime;
 

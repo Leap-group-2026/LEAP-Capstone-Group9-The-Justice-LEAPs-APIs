@@ -1,19 +1,16 @@
-package main.controllers;
+package controllers;
 
-import main.services.OrderService;
-import main.entities.HistoricalOrdersEntity;
-import main.dto.response.HistoricalOrderResponse;
-import main.dto.OrderSnapshot;
-import main.repos.HistoricalOrdersRepo;
+import services.OrderService;
+import entities.HistoricalOrdersEntity;
+import dto.response.HistoricalOrderResponse;
+import dto.OrderSnapshot;
+import repos.HistoricalOrdersRepo;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;

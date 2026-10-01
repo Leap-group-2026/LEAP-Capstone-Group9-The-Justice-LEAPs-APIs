@@ -1,9 +1,9 @@
-package main.repos;
+package repos;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Insert;
-import main.entities.CurrentPriceEntity;
+import entities.CurrentPriceEntity;
 import java.math.BigDecimal;
 import java.util.Optional;
 

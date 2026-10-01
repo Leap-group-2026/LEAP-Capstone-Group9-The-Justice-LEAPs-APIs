@@ -1,8 +1,8 @@
-package main.services.calculation;
+package services.calculation;
 
 import org.springframework.stereotype.Service;
-import main.dto.InstrumentWithPrice;
-import main.exception.InvalidOrderException;
+import dto.InstrumentWithPrice;
+import exception.InvalidOrderException;
 import java.math.BigDecimal;
 
 @Service

@@ -1,4 +1,4 @@
-package main.dto.response;
+package dto.response;
 
 public record UpdateNameResponse(
     Integer userId,

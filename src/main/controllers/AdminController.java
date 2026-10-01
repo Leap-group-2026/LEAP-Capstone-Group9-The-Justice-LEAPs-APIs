@@ -1,11 +1,10 @@
-package main.controllers;
+package controllers;
 
-import main.services.AdminService;
-import main.services.EmailService;
-import main.entities.AdminEntity;
-import main.dto.request.AdminCreation;
-import main.dto.response.OrderAdminResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+import services.AdminService;
+import services.EmailService;
+import entities.AdminEntity;
+import dto.request.AdminCreation;
+import dto.response.OrderAdminResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;

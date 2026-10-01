@@ -13,8 +13,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.mockito.Mockito.when;
 
 import main.Application;
-import main.dto.response.OrderAdminResponse;
-import main.repos.AdminRepo;
+import dto.response.OrderAdminResponse;
+import repos.AdminRepo;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;

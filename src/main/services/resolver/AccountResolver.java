@@ -1,9 +1,9 @@
-package main.services.resolver;
+package services.resolver;
 
 import org.springframework.stereotype.Component;
-import main.entities.AccountsEntity;
-import main.exception.ResourceNotFoundException;
-import main.repos.AccountsRepo;
+import entities.AccountsEntity;
+import exception.ResourceNotFoundException;
+import repos.AccountsRepo;
 
 @Component
 public class AccountResolver {

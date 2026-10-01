@@ -1,4 +1,4 @@
-package main.repos;
+package repos;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -6,15 +6,11 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Options;
-import org.apache.ibatis.annotations.Result;
-import org.apache.ibatis.annotations.Results;
 
-import main.dto.response.OrderAdminResponse;
-import main.entities.AdminEntity;
-import main.entities.OrderEntity;
+import dto.response.OrderAdminResponse;
+import entities.AdminEntity;
 import java.util.Optional;
 import java.util.List;
-import main.dto.response.OrderAdminResponse;
 
 // The Java field is "email" and the database column is admin.email
 @Mapper

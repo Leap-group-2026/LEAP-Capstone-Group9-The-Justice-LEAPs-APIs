@@ -1,16 +1,14 @@
-package main.services;
+package services;
 
 import org.springframework.stereotype.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import main.entities.OrderEntity;
-import main.repos.HistoricalOrdersRepo;
-import main.repos.OrdersRepo;
-import main.entities.HistoricalOrdersEntity;
-import main.dto.OrderSnapshot;
+import entities.OrderEntity;
+import repos.HistoricalOrdersRepo;
+import repos.OrdersRepo;
+import entities.HistoricalOrdersEntity;
+import dto.OrderSnapshot;
 
 import java.time.LocalDateTime;
 import java.util.List;

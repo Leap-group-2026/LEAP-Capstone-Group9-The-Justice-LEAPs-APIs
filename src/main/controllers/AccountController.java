@@ -1,19 +1,19 @@
-package main.controllers;
+package controllers;
 
 import java.util.List;
-import main.services.AccountService;
-import main.entities.AccountsEntity;
-import main.entities.UserEntity;
-import main.dto.request.CreateAccountRequest;
-import main.dto.request.CloseAccountRequest;
-import main.dto.response.AccountResponse;
+import services.AccountService;
+import entities.AccountsEntity;
+import entities.UserEntity;
+import dto.request.CreateAccountRequest;
+import dto.request.CloseAccountRequest;
+import dto.response.AccountResponse;
 import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import main.dto.response.ValidationError;
+import dto.response.ValidationError;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;

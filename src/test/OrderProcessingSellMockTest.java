@@ -20,18 +20,18 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import main.entities.AccountsEntity;
-import main.entities.CurrentPriceEntity;
-import main.entities.InstrumentEntity;
-import main.entities.OrderEntity;
-import main.entities.PositionsEntity;
-import main.repos.AccountsRepo;
-import main.repos.CurrentPriceRepo;
-import main.repos.HistoricalOrdersRepo;
-import main.repos.OrdersRepo;
-import main.repos.PositionsRepo;
-import main.services.HistoricalOrdersService;
-import main.services.OrderProcessingService;
+import entities.AccountsEntity;
+import entities.CurrentPriceEntity;
+import entities.InstrumentEntity;
+import entities.OrderEntity;
+import entities.PositionsEntity;
+import repos.AccountsRepo;
+import repos.CurrentPriceRepo;
+import repos.HistoricalOrdersRepo;
+import repos.OrdersRepo;
+import repos.PositionsRepo;
+import services.HistoricalOrdersService;
+import services.OrderProcessingService;
 
 @ExtendWith(MockitoExtension.class)
 public class OrderProcessingSellMockTest {

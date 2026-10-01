@@ -1,26 +1,27 @@
-package main.services;
+package services;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import main.dto.request.CreateOrderRequest;
-import main.dto.response.OrderSubmissionResponse;
-import main.entities.OrderEntity;
-import main.entities.AccountsEntity;
-import main.entities.InstrumentEntity;
-import main.dto.InstrumentWithPrice;
-import main.repos.OrdersRepo;
-import main.repos.AccountsRepo;
-import main.repos.InstrumentRepo;
-import main.dto.response.OrderHistoryResponse;
-import main.events.OrderSubmittedEvent;
-import main.services.validation.BuyOrderValidator;
-import main.services.validation.SellOrderValidator;
-import main.services.calculation.OrderPriceCalculator;
-import main.services.resolver.AccountResolver;
-import main.services.resolver.InstrumentResolver;
-import main.exception.ResourceNotFoundException;
+import dto.request.CreateOrderRequest;
+import dto.response.OrderSubmissionResponse;
+import entities.OrderEntity;
+import entities.AccountsEntity;
+import entities.InstrumentEntity;
+import entities.HistoricalOrdersEntity;
+import dto.InstrumentWithPrice;
+import repos.OrdersRepo;
+import repos.AccountsRepo;
+import repos.InstrumentRepo;
+import dto.response.OrderHistoryResponse;
+import events.OrderSubmittedEvent;
+import services.validation.BuyOrderValidator;
+import services.validation.SellOrderValidator;
+import services.calculation.OrderPriceCalculator;
+import services.resolver.AccountResolver;
+import services.resolver.InstrumentResolver;
+import exception.ResourceNotFoundException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.Clock;
@@ -114,7 +115,7 @@ public class OrderService {
     }
 
 
-    public List<main.entities.HistoricalOrdersEntity> getHistoricalOrders(Integer orderId) {
+    public List<HistoricalOrdersEntity> getHistoricalOrders(Integer orderId) {
         return historicalOrdersService.getHistoricalOrders(orderId);
     }
 

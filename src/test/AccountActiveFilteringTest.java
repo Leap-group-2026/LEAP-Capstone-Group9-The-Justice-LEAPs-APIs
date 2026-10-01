@@ -1,5 +1,3 @@
-package test;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,10 +19,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import main.Application;
-import main.dto.InstrumentWithPrice;
-import main.entities.AccountsEntity;
-import main.repos.AccountsRepo;
-import main.repos.InstrumentRepo;
+import dto.InstrumentWithPrice;
+import entities.AccountsEntity;
+import repos.AccountsRepo;
+import repos.InstrumentRepo;
 import test.config.TestClockConfig;
 
 import java.util.List;

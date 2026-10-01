@@ -1,10 +1,10 @@
-package main.dto.request;
+package dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
-import main.entities.PortfolioSize;
+import entities.PortfolioSize;
 import java.math.BigDecimal;
 
 public record CreateAccountRequest(

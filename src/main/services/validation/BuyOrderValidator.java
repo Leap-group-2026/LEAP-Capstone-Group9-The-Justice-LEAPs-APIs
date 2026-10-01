@@ -1,11 +1,11 @@
-package main.services.validation;
+package services.validation;
 
 import org.springframework.stereotype.Component;
-import main.dto.request.CreateOrderRequest;
-import main.entities.AccountsEntity;
-import main.dto.InstrumentWithPrice;
-import main.exception.InvalidOrderException;
-import main.services.calculation.OrderPriceCalculator;
+import dto.request.CreateOrderRequest;
+import entities.AccountsEntity;
+import dto.InstrumentWithPrice;
+import exception.InvalidOrderException;
+import services.calculation.OrderPriceCalculator;
 import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;

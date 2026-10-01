@@ -1,5 +1,3 @@
-package test;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,7 +17,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import main.Application;
-import main.repos.HistoricalOrdersRepo;
+import repos.HistoricalOrdersRepo;
 import test.config.TestClockConfig;
 
 /**

@@ -1,5 +1,3 @@
-package test;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,19 +18,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import static org.hamcrest.Matchers.*;
 
 import main.Application;
-import main.dto.request.CreateOrderRequest;
-import main.entities.OrderEntity;
-import main.entities.AccountsEntity;
-import main.entities.InstrumentEntity;
-import main.entities.UserEntity;
-import main.entities.PortfolioSize;
-import main.repos.OrdersRepo;
-import main.repos.AccountsRepo;
-import main.repos.InstrumentRepo;
-import main.repos.UserRepo;
-import main.repos.HistoricalOrdersRepo;
-import main.services.OrderService;
-import main.entities.HistoricalOrdersEntity;
+import dto.request.CreateOrderRequest;
+import entities.OrderEntity;
+import entities.AccountsEntity;
+import entities.InstrumentEntity;
+import entities.UserEntity;
+import entities.PortfolioSize;
+import repos.OrdersRepo;
+import repos.AccountsRepo;
+import repos.InstrumentRepo;
+import repos.UserRepo;
+import repos.HistoricalOrdersRepo;
+import services.OrderService;
+import entities.HistoricalOrdersEntity;
 import test.config.TestClockConfig;
 
 import java.math.BigDecimal;

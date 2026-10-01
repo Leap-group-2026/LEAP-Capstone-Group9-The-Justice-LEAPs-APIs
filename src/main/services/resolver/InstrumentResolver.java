@@ -1,9 +1,9 @@
-package main.services.resolver;
+package services.resolver;
 
 import org.springframework.stereotype.Component;
-import main.dto.InstrumentWithPrice;
-import main.exception.ResourceNotFoundException;
-import main.repos.InstrumentRepo;
+import dto.InstrumentWithPrice;
+import exception.ResourceNotFoundException;
+import repos.InstrumentRepo;
 
 @Component
 public class InstrumentResolver {

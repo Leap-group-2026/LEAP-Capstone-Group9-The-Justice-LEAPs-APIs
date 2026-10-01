@@ -1,4 +1,4 @@
-package main.exception;
+package exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.validation.FieldError;
 
-import main.dto.response.ValidationError;
+import dto.response.ValidationError;
 import java.time.LocalDateTime;
 
 @RestControllerAdvice

@@ -1,9 +1,8 @@
-package main.dto.request;
+package dto.request;
 
 import java.math.BigDecimal;
 
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 
 public record TransactionRequest(
     @NotNull 

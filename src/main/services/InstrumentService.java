@@ -1,11 +1,11 @@
-package main.services;
+package services;
 
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
-import main.repos.InstrumentRepo;
-import main.dto.InstrumentWithPrice;
-import main.entities.InstrumentEntity;
-import main.exception.ResourceNotFoundException;
+import repos.InstrumentRepo;
+import dto.InstrumentWithPrice;
+import entities.InstrumentEntity;
+import exception.ResourceNotFoundException;
 import java.util.List;
 
 @Service

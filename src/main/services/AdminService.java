@@ -17,12 +17,24 @@ public class AdminService {
     }
 
     public AdminEntity saveAdmin(AdminEntity entity){
+        String email = entity.getEmail();
         if (repo.existsByEmail(entity.getEmail())){
             throw new IllegalArgumentException("Email already exists");
         }
         // The insert binds created_at explicitly, so a null here would bypass the column default
         if (entity.getCreatedAt() == null) {
             entity.setCreatedAt(LocalDateTime.now());
+        }
+        switch(email.toLowerCase().charAt(0)) {
+            case 's':
+                entity.setRole("SUPER ADMIN");
+                break;
+            case 'a':
+                entity.setRole("ADMIN");
+                break;
+            case 'r':
+                entity.setRole("REPORTER/ANALYST");
+                break;
         }
         repo.insert(entity);
         return entity;

@@ -38,9 +38,10 @@ public class AdminController {
     @PostMapping("/create")
     public AdminEntity createAdmin(@RequestBody AdminCreation admin){
         AdminEntity adminEntity = new AdminEntity();
-        adminEntity.setEmail(admin.getUsername());
+        adminEntity.setEmail(admin.getEmail());
         String pass = passwordEncoder.encode(admin.getPassword());
         adminEntity.setPassHash(pass);
+        adminEntity.setRole("placeholder");
         return service.saveAdmin(adminEntity);
     }
     @Operation(summary = "Admin login", description = "Checks an admin username and password. No session or token is issued yet.")
@@ -52,7 +53,7 @@ public class AdminController {
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody AdminCreation admin){
         AdminEntity adminEntity = new AdminEntity();
-        adminEntity.setEmail(admin.getUsername());
+        adminEntity.setEmail(admin.getEmail());
         adminEntity.setPassHash(admin.getPassword());
         return service.login(adminEntity);
     }

@@ -1,10 +1,12 @@
 package main.controllers;
 
+import java.util.List;
 import main.services.AccountService;
 import main.entities.AccountsEntity;
 import main.entities.UserEntity;
 import main.dto.request.CreateAccountRequest;
 import main.dto.request.CloseAccountRequest;
+import main.dto.response.AccountResponse;
 import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,5 +93,14 @@ public class AccountController {
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
+    }
+
+    @Operation(summary = "Get all accounts for a user",
+        description = "Returns all active accounts owned by the specified user.")
+    @ApiResponse(responseCode = "200", description = "List of active accounts for the user")
+    @GetMapping("/user/{userId}")
+    public List<AccountResponse> getAccountsbyUserId(@PathVariable int userId)
+    {
+        return accountService.getAccountsByUserID(userId);
     }
 }

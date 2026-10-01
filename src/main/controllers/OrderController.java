@@ -1,11 +1,14 @@
 package main.controllers;
 
 import org.springframework.web.bind.annotation.*;
+import main.dto.response.OrderHistoryResponse;
+import java.util.List;
 
 import jakarta.validation.Valid;
 import main.dto.request.CreateOrderRequest;
 import main.dto.response.OrderSubmissionResponse;
 import main.services.OrderService;
+import main.entities.OrderEntity;
 import main.dto.response.ValidationError;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -45,5 +48,30 @@ public class OrderController {
     @PostMapping
     public OrderSubmissionResponse createOrder(@RequestBody @Valid CreateOrderRequest request) {
         return orderService.createOrder(request);
+    }
+
+    @Operation(summary = "Get order history for an account",
+        description = "Retrieves the list of orders for the specified account.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Order history retrieved successfully"),
+        @ApiResponse(responseCode = "404", description = "Account not found",
+            content = @Content(schema = @Schema(implementation = ValidationError.class)))
+    })
+    @GetMapping("/account/{accountId}")
+    public List<OrderHistoryResponse> getOrderHistory(@PathVariable Integer accountId) {
+        return orderService.getOrderHistory(accountId);
+    }
+
+    @Operation(summary = "Get order details",
+        description = "Returns the details of a specific order by its order ID.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Order found"),
+        @ApiResponse(responseCode = "404", description = "Order not found", 
+            content = @Content(schema = @Schema(implementation = ValidationError.class)))
+    })
+    @GetMapping("/{orderId}")
+    public OrderHistoryResponse getByOrderId(@PathVariable Integer orderId)
+    {
+        return orderService.getByOrderId(orderId);
     }
 }

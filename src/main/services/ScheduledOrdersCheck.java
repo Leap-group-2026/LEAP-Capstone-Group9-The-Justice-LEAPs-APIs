@@ -1,27 +1,26 @@
 package main.services;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import main.entities.OrderEntity;
-import main.exception.TransactionProcessingException;
 import main.repos.OrdersRepo;
 
+// The safety net behind Kafka: fills orders placed outside market hours and any whose event was lost
 @Service
 public class ScheduledOrdersCheck {
+    private static final Logger logger = LoggerFactory.getLogger(ScheduledOrdersCheck.class);
+
     private final OrdersRepo ordersRepo;
     private final OrderProcessingService orderProcessingService;
-    private final HistoricalOrdersService historicalOrdersService;
 
     public ScheduledOrdersCheck(OrdersRepo ordersRepo,
-                                OrderProcessingService orderProcessingService,
-                                HistoricalOrdersService historicalOrdersService) {
+                                OrderProcessingService orderProcessingService) {
         this.ordersRepo = ordersRepo;
         this.orderProcessingService = orderProcessingService;
-        this.historicalOrdersService = historicalOrdersService;
     }
 
     @Scheduled(fixedRate = 300000)
@@ -32,35 +31,10 @@ public class ScheduledOrdersCheck {
             try {
                 orderProcessingService.process(orderId);
             } catch (RuntimeException ex) {
-                failOrderWithSnapshot(orderId);
-
-                String reason = ex.getMessage() == null
-                    ? "Unexpected runtime exception during scheduled order processing"
-                    : ex.getMessage();
-
-                throw new TransactionProcessingException(orderId, reason, ex);
+                // One bad order must not stop the rest of the run
+                logger.error("Order {} failed during scheduled processing; marking it FAILED", orderId, ex);
+                orderProcessingService.markFailed(orderId);
             }
         }
-    }
-
-    private void failOrderWithSnapshot(Integer orderId) {
-        OrderEntity order = ordersRepo.findByIdForUpdate(orderId).orElse(null);
-
-        if (order == null) {
-            return;
-        }
-
-        LocalDateTime failedAt = LocalDateTime.now();
-        order.setStatus("FAILED");
-        order.setUpdatedAt(failedAt);
-
-        ordersRepo.updateExecutionOutcome(
-            orderId,
-            order.getTotalPrice(),
-            "FAILED",
-            failedAt
-        );
-
-        historicalOrdersService.captureOrderSnapshot(order, failedAt);
     }
 }

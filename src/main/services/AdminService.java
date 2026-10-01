@@ -4,8 +4,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import main.repos.AdminRepo;
+import main.dto.response.OrderAdminResponse;
 import main.entities.AdminEntity;
+import main.entities.OrderEntity;
+
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class AdminService {
@@ -52,5 +56,8 @@ public class AdminService {
         else{
             return ResponseEntity.ok("Login successful");
         }
+    }
+    public List<OrderAdminResponse> getAllOrders() {
+        return repo.getAllOrders();
     }
 }

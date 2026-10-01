@@ -6,9 +6,15 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Result;
+import org.apache.ibatis.annotations.Results;
+
+import main.dto.response.OrderAdminResponse;
 import main.entities.AdminEntity;
+import main.entities.OrderEntity;
 import java.util.Optional;
 import java.util.List;
+import main.dto.response.OrderAdminResponse;
 
 // The Java field is "email" and the database column is admin.email
 @Mapper
@@ -35,4 +41,7 @@ public interface AdminRepo {
 
     @Select("SELECT admin_id, email, pass_hash, created_at, role FROM admin WHERE email = #{email}")
     Optional<AdminEntity> findByEmail(String email);
+
+    @Select("SELECT * FROM orders")
+    List<OrderAdminResponse> getAllOrders();
 }

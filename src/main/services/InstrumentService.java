@@ -4,6 +4,9 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import main.repos.InstrumentRepo;
 import main.entities.InstrumentEntity;
+import main.dto.InstrumentWithPrice;
+import main.exception.ResourceNotFoundException;
+import java.util.Optional;
 
 @Service
 public class InstrumentService {
@@ -22,5 +25,10 @@ public class InstrumentService {
             throw new IllegalArgumentException("Ticker already exists");
         }
         return entity;
+    }
+
+    public InstrumentWithPrice getTickerPrice(String ticker)
+    {
+        return repo.findByTicker(ticker).orElseThrow(() -> new ResourceNotFoundException("Instrument", ticker));
     }
 }

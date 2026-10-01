@@ -61,9 +61,9 @@ public class OrderProcessingService {
 
     @Transactional
     public void process(Integer orderId) {
-        if (!isMarketOpen()) {
-            return;
-        }
+        // if (!isMarketOpen()) {
+        //     return;
+        // }
 
         OrderEntity order = ordersRepo.findByIdForUpdate(orderId).orElse(null);
 
@@ -151,10 +151,6 @@ public class OrderProcessingService {
             );
         }
 
-        transactionsRepo.insert(
-            executionTotal, "OUT", account.getAccountId(), "TRADE", happenedAt
-        );
-
         accountsRepo.updateBalance(account.getAccountId(), account.getBalance().subtract(executionTotal));
 
         fill(order, executionTotal, happenedAt);
@@ -212,9 +208,6 @@ public class OrderProcessingService {
             );
         }
 
-        transactionsRepo.insert(
-            executionTotal, "IN", account.getAccountId(), "TRADE", happenedAt
-        );
 
         accountsRepo.updateBalance(account.getAccountId(), account.getBalance().add(executionTotal));
 

@@ -45,5 +45,11 @@ public interface InstrumentRepo {
 
     @Select("SELECT instrument_id FROM instruments WHERE ticker = #{symbol}")
     Integer findIdBySymbol(String symbol);
-    
+
+    @Select("SELECT i.instrument_id, i.ticker, i.asset_type, i.asset_name, i.currency, " +
+            "cp.price, cp.quote_time " +
+            "FROM instruments i " +
+            "LEFT JOIN current_prices cp USING (instrument_id) " +
+            "WHERE i.ticker = #{ticker}")
+    Optional<InstrumentWithPrice> findByTicker(String ticker);
 }

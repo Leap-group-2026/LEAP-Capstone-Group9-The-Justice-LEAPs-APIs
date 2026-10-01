@@ -77,7 +77,7 @@ public class GetInstrumentByTickerTest {
     void returnInstrumentWithPrice() throws Exception {
         mockMvc.perform(get("/instruments/AAPL"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.instrumentId").value(AAPL_INSTRUMENT_ID))
+            .andExpect(jsonPath("$.instrument_id").value(AAPL_INSTRUMENT_ID))
             .andExpect(jsonPath("$.ticker").value("AAPL"))
             .andExpect(jsonPath("$.asset_type").value("STOCK"))
             .andExpect(jsonPath("$.asset_name").value("Apple Inc."))
@@ -90,7 +90,7 @@ public class GetInstrumentByTickerTest {
     void returnCorrectInstrumentForTicker() throws Exception {
         mockMvc.perform(get("/instruments/MSFT"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.instrumentId").value(MSFT_INSTRUMENT_ID))
+            .andExpect(jsonPath("$.instrument_id").value(MSFT_INSTRUMENT_ID))
             .andExpect(jsonPath("$.ticker").value("MSFT"))
             .andExpect(jsonPath("$.asset_name").value("Microsoft Corporation"))
             .andExpect(jsonPath("$.price").value(425.25));
@@ -109,7 +109,7 @@ public class GetInstrumentByTickerTest {
     void includesAllRequiredFields() throws Exception {
         mockMvc.perform(get("/instruments/AAPL"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.instrumentId").exists())
+            .andExpect(jsonPath("$.instrument_id").exists())
             .andExpect(jsonPath("$.ticker").exists())
             .andExpect(jsonPath("$.asset_type").exists())
             .andExpect(jsonPath("$.asset_name").exists())
@@ -122,7 +122,7 @@ public class GetInstrumentByTickerTest {
     void correctFieldTypes() throws Exception {
         mockMvc.perform(get("/instruments/AAPL"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.instrumentId").isNumber())
+            .andExpect(jsonPath("$.instrument_id").isNumber())
             .andExpect(jsonPath("$.ticker").isString())
             .andExpect(jsonPath("$.asset_type").isString())
             .andExpect(jsonPath("$.asset_name").isString())
@@ -143,7 +143,7 @@ public class GetInstrumentByTickerTest {
     void returnNullPriceForUnpricedInstrument() throws Exception {
         mockMvc.perform(get("/instruments/UNKNOWN"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.instrumentId").value(UNPRICED_INSTRUMENT_ID))
+            .andExpect(jsonPath("$.instrument_id").value(UNPRICED_INSTRUMENT_ID))
             .andExpect(jsonPath("$.ticker").value("UNKNOWN"))
             .andExpect(jsonPath("$.price").value(nullValue()));
     }

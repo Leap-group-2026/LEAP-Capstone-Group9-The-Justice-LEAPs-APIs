@@ -11,6 +11,7 @@ import java.time.OffsetDateTime;
  * Price and quoteTime may be null if no current price exists.
  */
 public class InstrumentWithPrice {
+    @JsonProperty("instrument_id")
     private Integer instrumentId;
     @JsonProperty("ticker")
     private String ticker;

@@ -3,10 +3,10 @@ package main.services;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import main.repos.InstrumentRepo;
-import main.entities.InstrumentEntity;
 import main.dto.InstrumentWithPrice;
+import main.entities.InstrumentEntity;
 import main.exception.ResourceNotFoundException;
-import java.util.Optional;
+import java.util.List;
 
 @Service
 public class InstrumentService {
@@ -27,8 +27,11 @@ public class InstrumentService {
         return entity;
     }
 
-    public InstrumentWithPrice getTickerPrice(String ticker)
-    {
+    public InstrumentWithPrice getTickerPrice(String ticker) {
         return repo.findByTicker(ticker).orElseThrow(() -> new ResourceNotFoundException("Instrument", ticker));
+    }
+
+    public List<InstrumentWithPrice> getAllInstruments() {
+        return repo.findAll();
     }
 }

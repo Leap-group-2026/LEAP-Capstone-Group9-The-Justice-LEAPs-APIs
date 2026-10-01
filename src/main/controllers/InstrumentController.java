@@ -1,16 +1,17 @@
 package main.controllers;
 
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import main.services.InstrumentService;
 import main.dto.InstrumentWithPrice;
 import main.dto.response.ValidationError;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @Tag(name = "Instruments", description = "Tradable instruments (reference data)")
 @RestController
@@ -29,9 +30,18 @@ public class InstrumentController {
             content = @Content(schema = @Schema(implementation = ValidationError.class)))
     })
     @GetMapping("/{ticker}")
-    public InstrumentWithPrice getByTicker(@PathVariable String ticker)
-    {
+    public InstrumentWithPrice getByTicker(@PathVariable String ticker) {
         return service.getTickerPrice(ticker);
+    }
+
+    @Operation(summary = "Retrieve all available instruments", 
+               description = "Returns a list of all tradable instruments with their current prices")
+    @ApiResponse(responseCode = "200", 
+                 description = "Successfully retrieved all instruments",
+                 content = @Content(mediaType = "application/json"))
+    @GetMapping("/all")
+    public List<InstrumentWithPrice> getAllInstruments() {
+        return service.getAllInstruments();
     }
 }
 

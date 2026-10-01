@@ -4,6 +4,7 @@ import main.services.AdminService;
 import main.services.EmailService;
 import main.entities.AdminEntity;
 import main.dto.request.AdminCreation;
+import main.dto.response.OrderAdminResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import java.util.List;
 
 @Tag(name = "Admin")  // description and display order: OpenApiConfig
 @RestController
@@ -57,5 +59,11 @@ public class AdminController {
         adminEntity.setPassHash(admin.getPassword());
         return service.login(adminEntity);
     }
-
+    @Operation(summary = "Retrieve all orders across all users and accounts", 
+           description = "Returns a list of all orders for admin monitoring and auditing")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved all orders")
+    @GetMapping("/orders")
+    public List<OrderAdminResponse> gettAllOrders() {
+        return service.getAllOrders();
+    }
 }

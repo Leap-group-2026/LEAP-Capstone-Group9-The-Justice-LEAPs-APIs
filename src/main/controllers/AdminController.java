@@ -36,7 +36,7 @@ public class AdminController {
         @ApiResponse(responseCode = "400", description = "Username already taken",
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Username already exists")))
     })
-    @PostMapping("/create")
+    @PostMapping
     public AdminEntity createAdmin(@RequestBody AdminCreation admin){
         AdminEntity adminEntity = new AdminEntity();
         adminEntity.setEmail(admin.getEmail());

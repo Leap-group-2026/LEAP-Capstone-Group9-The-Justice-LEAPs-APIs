@@ -43,7 +43,7 @@ public class AccountController {
                 examples = @ExampleObject(value = "{\"status\":400,\"message\":\"Validation failed\",\"timestamp\":\"2026-09-28T20:35:41.21\",\"fieldName\":\"userId\",\"rejectedValue\":null,\"fieldMessage\":\"must not be null\"}"))),
         @ApiResponse(responseCode = "500", description = "userId is not an existing user (database foreign key)", content = @Content)
     })
-    @PostMapping("/create")
+    @PostMapping
     public AccountsEntity saveAccount(@RequestBody @Valid CreateAccountRequest request) {
         UserEntity owner = new UserEntity();
         owner.setUserId(request.userId());

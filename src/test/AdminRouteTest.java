@@ -64,7 +64,7 @@ public class AdminRouteTest {
     @Test
     public void createAdminSucceeds() throws Exception {
         // Failed on every call before created_at was defaulted in AdminService
-        mockMvc.perform(post("/admin/create")
+        mockMvc.perform(post("/admin")
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"email\":\"admin@example.com\",\"password\":\"secret\"}"))
             .andExpect(status().isOk())

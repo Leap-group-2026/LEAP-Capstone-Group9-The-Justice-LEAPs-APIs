@@ -12,6 +12,10 @@ import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.math.BigDecimal;
+import static org.junit.jupiter.api.Assertions.*;
 import main.Application;
 import test.config.TestClockConfig;
 
@@ -47,6 +51,9 @@ public class PositionsByAccountTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
@@ -164,6 +171,31 @@ public class PositionsByAccountTest {
     @Test
     void closedAccountIsNotFoundEvenWithPositions() throws Exception {
         mockMvc.perform(get("/positions/account/" + CLOSED_ACCOUNT_ID))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.status").value(404));
+    }
+
+    // ---- GET /positions/{id} ----
+
+    @Test
+    void positionByIdIncludesItsAccountAndInstrument() throws Exception {
+        String body = mockMvc.perform(get("/positions/" + OLDER_OPEN_POSITION_ID))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+
+        JsonNode position = objectMapper.readTree(body);
+        assertEquals(OLDER_OPEN_POSITION_ID, position.path("positionId").asInt(), body);
+        assertEquals(ACCOUNT_ID, position.path("account").path("accountId").asInt(), "account id missing: " + body);
+        assertEquals(ALPHA_INSTRUMENT_ID, position.path("instrument").path("instrumentId").asInt(), "instrument id missing: " + body);
+        assertEquals(10, position.path("quantity").asInt(), body);
+        assertEquals(0, new BigDecimal("12.5").compareTo(position.path("average_price").decimalValue()), body);
+        assertEquals(0, new BigDecimal("125").compareTo(position.path("total_price").decimalValue()), body);
+        assertEquals("2026-01-01T10:00:00", position.path("opened_at").asText(), body);
+    }
+
+    @Test
+    void unknownPositionIdIsNotFound() throws Exception {
+        mockMvc.perform(get("/positions/" + 999995))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.status").value(404));
     }

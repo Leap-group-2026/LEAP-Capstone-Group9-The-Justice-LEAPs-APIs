@@ -42,7 +42,7 @@ public class UserController {
             + "\"SSN already exists.\") or password rule broken (e.g. \"Password must be a minimum of 12 characters.\")",
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Email already exists.")))
     })
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<UserResponse> createUser(@RequestBody UserRegistrationRequest request){
         //return service.saveUser(user);
         UserResponse response = service.registerUser(request);

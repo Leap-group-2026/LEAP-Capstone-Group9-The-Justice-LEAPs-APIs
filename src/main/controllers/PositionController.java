@@ -38,7 +38,7 @@ public class PositionController {
             content = @Content(schema = @Schema(implementation = ValidationError.class))),
         @ApiResponse(responseCode = "500", description = "accountId or instrumentId doesn't exist (database foreign key)", content = @Content)
     })
-    @PostMapping("/create")
+    @PostMapping
     public PositionsEntity savePosition(@RequestBody @Valid CreatePositionRequest request) {
         AccountsEntity account = new AccountsEntity();
         account.setAccountId(request.accountId());
@@ -56,10 +56,11 @@ public class PositionController {
         return positionService.savePosition(position);
     }
     @Operation(summary = "Get a position",
-        description = "Returns a position by id. Known issue: account, instrument and their ids come back null, "
-            + "and an unknown id returns 200 with an empty body rather than 404.")
+        description = "Returns a position by id, open or closed, with the ids of its account and instrument.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "The position, or an empty body if the id doesn't exist")
+        @ApiResponse(responseCode = "200", description = "The position"),
+        @ApiResponse(responseCode = "404", description = "No position with this id",
+            content = @Content(schema = @Schema(implementation = ValidationError.class)))
     })
     @GetMapping("/{id}")
     public PositionsEntity getPositionById(@PathVariable Integer id) {

@@ -17,7 +17,18 @@ import java.time.LocalDateTime;
 
 @Mapper
 public interface PositionsRepo {
-    @Select("SELECT * FROM positions WHERE position_id = #{positionId}")
+    @Select("SELECT position_id, account_id, instrument_id, quantity, opened_at, closed_at, total_price, average_price " +
+            "FROM positions WHERE position_id = #{positionId}")
+    @Results({
+            @Result(column = "position_id", property = "positionId"),
+            @Result(column = "account_id", property = "account.accountId"),
+            @Result(column = "instrument_id", property = "instrument.instrumentId"),
+            @Result(column = "quantity", property = "quantity"),
+            @Result(column = "opened_at", property = "openedAt"),
+            @Result(column = "closed_at", property = "closedAt"),
+            @Result(column = "total_price", property = "totalPrice"),
+            @Result(column = "average_price", property = "averagePrice")
+    })
     Optional<PositionsEntity> findById(Integer positionId);
 
     @Select("SELECT * FROM positions")

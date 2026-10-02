@@ -16,7 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.stream.Collectors;
 
-@Tag(name = "Order history")  // description and display order: OpenApiConfig
+@Tag(name = "Orders")  // description and display order: OpenApiConfig
 @RestController
 @RequestMapping("/orders")
 public class HistoricalOrdersController {

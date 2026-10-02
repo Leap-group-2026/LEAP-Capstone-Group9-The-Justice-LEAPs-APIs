@@ -44,7 +44,7 @@ public class GetAllInstrumentsTest {
         
         when(instrumentRepo.findAll()).thenReturn(mockInstruments);
         
-        String body = mockMvc.perform(get("/instruments/all"))
+        String body = mockMvc.perform(get("/instruments"))
             .andExpect(status().isOk())
             .andReturn().getResponse().getContentAsString();
         

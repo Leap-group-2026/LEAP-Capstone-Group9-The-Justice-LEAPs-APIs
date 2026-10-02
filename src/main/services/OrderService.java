@@ -21,10 +21,12 @@ import services.validation.SellOrderValidator;
 import services.calculation.OrderPriceCalculator;
 import services.resolver.AccountResolver;
 import services.resolver.InstrumentResolver;
+import exception.InvalidOrderException;
 import exception.ResourceNotFoundException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.Clock;
+import java.time.ZoneId;
 
 import java.util.List;
 import java.util.UUID;
@@ -33,6 +35,8 @@ import java.time.ZonedDateTime;
 
 @Service
 public class OrderService {
+    private static final ZoneId EASTERN_ZONE = ZoneId.of("America/New_York");
+
     private final OrdersRepo ordersRepo;
     private final HistoricalOrdersService historicalOrdersService;
     private final BuyOrderValidator buyOrderValidator;
@@ -135,5 +139,24 @@ public class OrderService {
             response.setExecutedAt(order.getUpdatedAt());
         }
         return response;
+    }
+
+
+    @Transactional
+    public OrderHistoryResponse cancelOrder(Integer orderId) {
+        OrderEntity order = ordersRepo.findByIdForUpdate(orderId).orElseThrow(() -> new ResourceNotFoundException("Order", orderId.toString()));
+
+        if (!"PENDING".equals(order.getStatus())) {
+            throw new InvalidOrderException("status", "Only PENDING orders can be canceled; order " + orderId + " is " + order.getStatus());
+        }
+
+        LocalDateTime canceledAt = ZonedDateTime.now(clock).withZoneSameInstant(EASTERN_ZONE).toLocalDateTime();
+        ordersRepo.cancelOrder(orderId, canceledAt);
+
+        order.setStatus("CANCELED");
+        order.setUpdatedAt(canceledAt);
+        historicalOrdersService.captureOrderSnapshot(order, canceledAt);
+
+        return getByOrderId(orderId);
     }
 }

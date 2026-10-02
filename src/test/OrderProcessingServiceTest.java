@@ -199,6 +199,32 @@ public class OrderProcessingServiceTest {
         assertMoney("970", balance(ACCOUNT_ID));
     }
 
+    // ---- Snapshot timestamps: every snapshot was stamped with the order's created_at ----
+
+    private List<Timestamp> snapshotTimes(int orderId) {
+        return jdbcTemplate.queryForList(
+            "SELECT created_at FROM historical_orders WHERE order_id = ? ORDER BY historical_order_id",
+            Timestamp.class, orderId);
+    }
+
+    @Test
+    void fillSnapshotIsStampedWithTheFillTimeNotTheOrderCreationTime() {
+        insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "BUY", 3);
+
+        orderProcessingService.process(ORDER_ID);
+
+        assertEquals(List.of(Timestamp.valueOf(FILL_TIME)), snapshotTimes(ORDER_ID));
+    }
+
+    @Test
+    void declineSnapshotIsStampedWithTheDeclineTimeNotTheOrderCreationTime() {
+        insertPendingOrder(ACCOUNT_ID, UNPRICED_INSTRUMENT_ID, "BUY", 3);
+
+        orderProcessingService.process(ORDER_ID);
+
+        assertEquals(List.of(Timestamp.valueOf(FILL_TIME)), snapshotTimes(ORDER_ID));
+    }
+
     // ---- Bug 2: decline carried on instead of returning ----
 
     @Test

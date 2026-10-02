@@ -26,13 +26,13 @@ import java.util.Map;
 public class ApiDocsTest {
 
     // The order Swagger UI shows the groups in (set in OpenApiConfig)
-    private static final List<String> TAGS = List.of("Users", "Transactions", "Orders", "Accounts", "Instruments", "Positions", "Order history", "Admin");
+    private static final List<String> TAGS = List.of("Users", "Transactions", "Orders", "Accounts", "Instruments", "Positions", "Admin");
 
     // method -> path, one entry per endpoint found by scanning the controllers
     private static final List<Map.Entry<String, String>> ENDPOINTS = List.of(
         Map.entry("get", "/accounts/{id}"),
         Map.entry("get", "/accounts/user/{userId}"),
-        Map.entry("post", "/accounts/create"),
+        Map.entry("post", "/accounts"),
         Map.entry("post", "/accounts/close/{id}"),
         Map.entry("post", "/orders"),
         Map.entry("get", "/orders/{orderId}"),
@@ -42,12 +42,12 @@ public class ApiDocsTest {
         Map.entry("get", "/instruments/{ticker}"),
         Map.entry("get", "/instruments"),
         Map.entry("get", "/positions/{id}"),
-        Map.entry("post", "/positions/create"),
+        Map.entry("post", "/positions"),
         Map.entry("get", "/positions/account/{accountId}"),
-        Map.entry("post", "/admin/create"),
+        Map.entry("post", "/admin"),
         Map.entry("post", "/admin/login"),
         Map.entry("get", "/admin/orders"),
-        Map.entry("post", "/user/create"),
+        Map.entry("post", "/user"),
         Map.entry("post", "/user/login"),
         Map.entry("post", "/user/resetpassword"),
         Map.entry("post", "/user/resetpassword/reset"),

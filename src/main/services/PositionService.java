@@ -2,6 +2,7 @@ package services;
 
 import org.springframework.stereotype.Service;
 import repos.PositionsRepo;
+import exception.ResourceNotFoundException;
 import repos.AccountsRepo;
 import repos.InstrumentRepo;
 import entities.PositionsEntity;
@@ -25,7 +26,8 @@ public class PositionService {
     }
 
     public PositionsEntity findById(Integer id) {
-        return repo.findById(id).orElse(null);
+        return repo.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Position", String.valueOf(id)));
     }
 
     public PositionsEntity savePosition(PositionsEntity entity) {

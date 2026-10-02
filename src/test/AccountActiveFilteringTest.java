@@ -186,7 +186,7 @@ public class AccountActiveFilteringTest {
         String body = "{\"userId\":" + USER_ID + ",\"balance\":250.5,"
             + "\"portfolioSize\":\"LOW\",\"tradeType\":\"Active\"}";
 
-        MvcResult result = mockMvc.perform(post("/accounts/create").contentType(MediaType.APPLICATION_JSON).content(body))
+        MvcResult result = mockMvc.perform(post("/accounts").contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.accountId", notNullValue()))
             .andReturn();
@@ -201,7 +201,7 @@ public class AccountActiveFilteringTest {
     void createWithoutUserIdIsRejectedAndNothingIsWritten() throws Exception {
         Integer before = jdbcTemplate.queryForObject("SELECT count(*) FROM accounts", Integer.class);
 
-        mockMvc.perform(post("/accounts/create").contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(post("/accounts").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"balance\":10,\"portfolioSize\":\"LOW\",\"tradeType\":\"Active\"}"))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.message").value("Validation failed"))
@@ -228,7 +228,7 @@ public class AccountActiveFilteringTest {
         String body = "{\"accountId\":" + ACTIVE_ACCOUNT_ID + ",\"instrumentId\":" + PRICED_INSTRUMENT_ID
             + ",\"quantity\":7,\"totalPrice\":70.00,\"averagePrice\":10.00}";
 
-        mockMvc.perform(post("/positions/create").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post("/positions").contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isOk());
 
         Integer quantity = jdbcTemplate.queryForObject(
@@ -241,7 +241,7 @@ public class AccountActiveFilteringTest {
     void createPositionWithoutAccountIdIsRejectedAndNothingIsWritten() throws Exception {
         String body = "{\"instrumentId\":" + PRICED_INSTRUMENT_ID + ",\"quantity\":7,\"totalPrice\":70.00,\"averagePrice\":10.00}";
 
-        mockMvc.perform(post("/positions/create").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post("/positions").contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.fieldName").value("accountId"));
 

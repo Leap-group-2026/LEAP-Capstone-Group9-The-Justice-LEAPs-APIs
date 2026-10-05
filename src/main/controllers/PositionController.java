@@ -55,17 +55,6 @@ public class PositionController {
         position.setClosedAt(request.closedAt());
         return positionService.savePosition(position);
     }
-    @Operation(summary = "Get a position",
-        description = "Returns a position by id, open or closed, with the ids of its account and instrument.")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "The position"),
-        @ApiResponse(responseCode = "404", description = "No position with this id",
-            content = @Content(schema = @Schema(implementation = ValidationError.class)))
-    })
-    @GetMapping("/{id}")
-    public PositionsEntity getPositionById(@PathVariable Integer id) {
-        return positionService.findById(id);
-    }
 
     @Operation(summary = "Get all open positions for a specific account",
         description = "Retrieves the open positions (closed_at not set) for the specified account, newest first, "
@@ -79,4 +68,17 @@ public class PositionController {
     public List<PositionResponse> findOpenPositionsByAccountId(@PathVariable Integer accountId) {
         return positionService.findOpenPositionsByAccountId(accountId);
     }
+    
+    @Operation(summary = "Get a position",
+        description = "Returns a position by id, open or closed, with the ids of its account and instrument.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "The position"),
+        @ApiResponse(responseCode = "404", description = "No position with this id",
+            content = @Content(schema = @Schema(implementation = ValidationError.class)))
+    })
+    @GetMapping("/{id}")
+    public PositionsEntity getPositionById(@PathVariable Integer id) {
+        return positionService.findById(id);
+    }
+
 }

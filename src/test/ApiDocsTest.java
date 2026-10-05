@@ -33,7 +33,7 @@ public class ApiDocsTest {
         Map.entry("get", "/accounts/{id}"),
         Map.entry("get", "/accounts/user/{userId}"),
         Map.entry("post", "/accounts"),
-        Map.entry("post", "/accounts/close/{id}"),
+        Map.entry("patch", "/accounts/close/{id}"),
         Map.entry("post", "/orders"),
         Map.entry("get", "/orders/{orderId}"),
         Map.entry("post", "/orders/{orderId}/cancel"),
@@ -48,13 +48,13 @@ public class ApiDocsTest {
         Map.entry("post", "/admin"),
         Map.entry("post", "/admin/login"),
         Map.entry("get", "/admin/orders"),
+        Map.entry("get", "/admin/accounts"),
+        Map.entry("get", "/admin/accounts/{userId}"),
         Map.entry("post", "/user"),
         Map.entry("post", "/user/login"),
         Map.entry("post", "/user/resetpassword"),
         Map.entry("post", "/user/resetpassword/reset"),
-        Map.entry("patch", "/user/{id}/name"),
-        Map.entry("patch", "/user/{id}/email"),
-        Map.entry("patch", "/user/{id}/address"),
+        Map.entry("patch", "/user/{id}"),
         Map.entry("post", "/user/transactions/exchange"));
 
     @Autowired

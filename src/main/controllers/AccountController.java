@@ -55,20 +55,6 @@ public class AccountController {
         account.setTradeType(request.tradeType());
         return accountService.saveAccount(account);
     }
-    @Operation(summary = "Get an account",
-        description = "Returns an active account with its owning user. A closed account returns exactly the same 404 "
-            + "as an id that never existed. This is deliberate: the service can't yet verify who is asking, "
-            + "so revealing that a closed account exists would leak information.")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Active account"),
-        @ApiResponse(responseCode = "404", description = "No active account with this id (missing or closed)",
-            content = @Content(schema = @Schema(implementation = ValidationError.class),
-                examples = @ExampleObject(value = "{\"status\":404,\"message\":\"Account with ID 34 not found\",\"timestamp\":\"2026-09-28T16:43:33.77\",\"fieldName\":\"Account\",\"rejectedValue\":\"34\",\"fieldMessage\":\"Resource not found\"}")))
-    })
-    @GetMapping ("/{id}")
-    public AccountsEntity getAccountById(@PathVariable Integer id) {
-        return accountService.findById(id);
-    }
     @Operation(summary = "Close an account",
         description = "Soft-deletes the account (account_active = false). The body names the owner: {\"userId\": N}. "
             + "The balance must be exactly 0. Closing an account that is already closed is rejected "
@@ -85,7 +71,7 @@ public class AccountController {
                 @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationError.class))
             })
     })
-    @PostMapping("/close/{id}")
+    @PatchMapping("/close/{id}")
     public ResponseEntity<String> closeAccount(@PathVariable Integer id, @RequestBody @Valid CloseAccountRequest request) {
         try {
             String result = accountService.closeAccount(id, request.userId());
@@ -103,4 +89,19 @@ public class AccountController {
     {
         return accountService.getAccountsByUserID(userId);
     }
+    @Operation(summary = "Get an account",
+        description = "Returns an active account with its owning user. A closed account returns exactly the same 404 "
+            + "as an id that never existed. This is deliberate: the service can't yet verify who is asking, "
+            + "so revealing that a closed account exists would leak information.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Active account"),
+        @ApiResponse(responseCode = "404", description = "No active account with this id (missing or closed)",
+            content = @Content(schema = @Schema(implementation = ValidationError.class),
+                examples = @ExampleObject(value = "{\"status\":404,\"message\":\"Account with ID 34 not found\",\"timestamp\":\"2026-09-28T16:43:33.77\",\"fieldName\":\"Account\",\"rejectedValue\":\"34\",\"fieldMessage\":\"Resource not found\"}")))
+    })
+    @GetMapping ("/{id}")
+    public AccountsEntity getAccountById(@PathVariable Integer id) {
+        return accountService.findById(id);
+    }
+
 }

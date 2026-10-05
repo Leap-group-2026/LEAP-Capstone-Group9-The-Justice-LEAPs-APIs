@@ -2,9 +2,11 @@ package controllers;
 
 import services.AdminService;
 import services.EmailService;
+import services.AccountService;
 import entities.AdminEntity;
 import dto.request.AdminCreation;
 import dto.response.OrderAdminResponse;
+import dto.response.AccountResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,10 +25,12 @@ public class AdminController {
     private AdminService service;
     private PasswordEncoder passwordEncoder;
     private EmailService emailService;
-    public AdminController(AdminService service, PasswordEncoder passwordEncoder, EmailService emailService){
+    private AccountService accountService;
+    public AdminController(AdminService service, PasswordEncoder passwordEncoder, EmailService emailService, AccountService accountService){
         this.service = service;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
+        this.accountService = accountService;
     }
     @Operation(summary = "Create an admin",
         description = "Creates an administrator with a bcrypt-hashed password. The username must be unique "
@@ -64,5 +68,21 @@ public class AdminController {
     @GetMapping("/orders")
     public List<OrderAdminResponse> gettAllOrders() {
         return service.getAllOrders();
+    }
+
+    @Operation(summary = "Retrieve all accounts across all users",
+        description = "Returns a list of all active accounts for admin monitoring and auditing")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved all accounts")
+    @GetMapping("/accounts")
+    public List<AccountResponse> getAllAccounts() {
+        return accountService.getAllAccounts();
+    }
+
+    @Operation(summary = "Retrieve all accounts for a specific user",
+        description = "Returns a list of all active accounts owned by the specified user")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved user's accounts")
+    @GetMapping("/accounts/{userId}")
+    public List<AccountResponse> getUserAccounts(@PathVariable Integer userId) {
+        return accountService.getAccountsByUserID(userId);
     }
 }

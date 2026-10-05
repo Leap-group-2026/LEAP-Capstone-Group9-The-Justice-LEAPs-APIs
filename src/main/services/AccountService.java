@@ -80,4 +80,18 @@ public class AccountService {
             ))
             .collect(Collectors.toList());
     }
+
+    public List<AccountResponse> getAllAccounts() {
+        return repo.findAll().stream()
+            .map(account -> new AccountResponse(
+                account.getAccountId(),
+                account.getUserId().getUserId(),
+                account.getBalance(),
+                account.getPortfolioSize().getValue(),
+                account.getTradeType(),
+                account.getCreatedAt(),
+                account.getAccountActive()
+            ))
+            .collect(Collectors.toList());
+    }
 }

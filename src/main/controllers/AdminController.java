@@ -4,6 +4,7 @@ import services.AdminService;
 import services.EmailService;
 import services.AccountService;
 import entities.AdminEntity;
+import entities.UserEntity;
 import dto.request.AdminCreation;
 import dto.response.OrderAdminResponse;
 import dto.response.AccountResponse;
@@ -84,5 +85,13 @@ public class AdminController {
     @GetMapping("/accounts/{userId}")
     public List<AccountResponse> getUserAccounts(@PathVariable Integer userId) {
         return accountService.getAccountsByUserID(userId);
+    }
+
+    @Operation(summary = "Retrieve all users",
+        description = "Returns a list of all users")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved users")
+    @GetMapping("/users")
+    public List<UserEntity> getAllUsers() {
+        return service.getAllUsers();
     }
 }

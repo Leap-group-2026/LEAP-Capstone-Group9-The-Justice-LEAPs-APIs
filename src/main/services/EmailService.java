@@ -1,6 +1,7 @@
 package services;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -13,11 +14,22 @@ public class EmailService {
     
     @Autowired 
     private JavaMailSender mailSender;
+    
+    @Value("${app.mail.dev-mode:false}")
+    private boolean devMode;
+    
+    @Value("${spring.mail.username}")
+    private String fromEmail;
 
     public void sendEmail(String to, String subject, String body){
         try {
+            if (devMode) {
+                logger.info("[DEV MODE] Email NOT sent. To: {}, Subject: {}, Body: {}", to, subject, body);
+                return;
+            }
+            
             SimpleMailMessage msg = new SimpleMailMessage();
-            msg.setFrom("ribbittrade@gmail.com"); 
+            msg.setFrom(fromEmail); 
             msg.setTo(to);
             msg.setSubject(subject);
             msg.setText(body);

@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import main.Application;
@@ -166,7 +167,7 @@ public class AccountActiveFilteringTest {
     void closingTwiceGivesExplicitErrorSecondTime() throws Exception {
         String body = "{\"userId\":" + USER_ID + "}";
 
-        mockMvc.perform(post("/accounts/close/" + ZERO_BALANCE_ACCOUNT_ID).contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(patch("/accounts/close/" + ZERO_BALANCE_ACCOUNT_ID).contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isOk())
             .andExpect(content().string("Success"));
 
@@ -174,7 +175,7 @@ public class AccountActiveFilteringTest {
             "SELECT account_active FROM accounts WHERE account_id = ?", Boolean.class, ZERO_BALANCE_ACCOUNT_ID);
         assertFalse(active);
 
-        mockMvc.perform(post("/accounts/close/" + ZERO_BALANCE_ACCOUNT_ID).contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(patch("/accounts/close/" + ZERO_BALANCE_ACCOUNT_ID).contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isBadRequest())
             .andExpect(content().string("Account is already closed"));
     }
@@ -212,7 +213,7 @@ public class AccountActiveFilteringTest {
 
     @Test
     void closeWithoutUserIdIsRejected() throws Exception {
-        mockMvc.perform(post("/accounts/close/" + ZERO_BALANCE_ACCOUNT_ID).contentType(MediaType.APPLICATION_JSON).content("{}"))
+        mockMvc.perform(patch("/accounts/close/" + ZERO_BALANCE_ACCOUNT_ID).contentType(MediaType.APPLICATION_JSON).content("{}"))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.fieldName").value("userId"));
 

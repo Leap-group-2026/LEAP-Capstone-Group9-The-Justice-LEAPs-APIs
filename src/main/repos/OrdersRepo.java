@@ -54,6 +54,10 @@ public interface OrdersRepo {
             "ORDER BY o.created_at DESC, o.order_id DESC")
     List<OrderHistoryResponse> findOrdersByAccountId(@Param("accountId") Integer accountId);
 
+    @Select("SELECT * FROM orders WHERE account_id = #{accountId}")
+    @ResultMap("orderResult")
+    List<OrderEntity> findAllByAccountId(@Param("accountId") Integer accountId);
+
     @Select("SELECT COALESCE(SUM(total_price), 0) FROM orders " +
             "WHERE account_id = #{accountId} AND side = 'BUY' AND status = 'FILLED' " +
             "AND updated_at >= #{startInclusive} AND updated_at < #{endExclusive}")

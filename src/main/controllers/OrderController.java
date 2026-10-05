@@ -74,6 +74,22 @@ public class OrderController {
         return orderService.getByOrderId(orderId);
     }
 
+    @Operation(summary = "Cancel an order",
+        description = "Sets a PENDING order's status to CANCELED and records a historical snapshot. "
+            + "The order row is kept for the audit trail, not deleted. Orders that are already "
+            + "FILLED, DECLINED, FAILED or CANCELED cannot be canceled.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Order canceled; returns the updated order"),
+        @ApiResponse(responseCode = "400", description = "Order is not PENDING (fieldName \"status\")",
+            content = @Content(schema = @Schema(implementation = ValidationError.class))),
+        @ApiResponse(responseCode = "404", description = "Order not found",
+            content = @Content(schema = @Schema(implementation = ValidationError.class)))
+    })
+    @PostMapping("/{orderId}/cancel")
+    public OrderHistoryResponse cancelOrder(@PathVariable Integer orderId) {
+        return orderService.cancelOrder(orderId);
+    }
+
     
     
 }

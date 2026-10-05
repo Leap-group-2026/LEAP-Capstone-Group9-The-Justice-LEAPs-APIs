@@ -75,4 +75,10 @@ public interface OrdersRepo {
                                 @Param("totalPrice") BigDecimal totalPrice,
                                 @Param("status") String status,
                                 @Param("updatedAt") LocalDateTime updatedAt);
+
+
+    @Update("UPDATE orders SET status = 'CANCELED', updated_at = #{updatedAt} " +
+            "WHERE order_id = #{orderId} and status = 'PENDING'")
+    int cancelOrder(@Param("orderId") Integer orderId,
+                     @Param("updatedAt") LocalDateTime updatedAt);
 }

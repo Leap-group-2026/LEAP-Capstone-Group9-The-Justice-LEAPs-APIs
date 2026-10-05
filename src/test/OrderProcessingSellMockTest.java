@@ -107,7 +107,7 @@ public class OrderProcessingSellMockTest {
 			org.mockito.ArgumentMatchers.any(),
 			org.mockito.ArgumentMatchers.any());
 		verify(accountsRepo, never()).updateBalance(org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.any());
-		verify(historicalOrdersRepo).insert(eq(order.getOrderId()), eq(account.getAccountId()), anyString(), eq(order.getCreatedAt()));
+		verify(historicalOrdersRepo).insert(eq(order.getOrderId()), eq(account.getAccountId()), anyString(), eq(EXPECTED_HAPPENED_AT));
 	}
 
 	@Test
@@ -138,7 +138,7 @@ public class OrderProcessingSellMockTest {
 			new BigDecimal("90.0000"),
 			"FILLED",
 			EXPECTED_HAPPENED_AT);
-		verify(historicalOrdersRepo).insert(eq(order.getOrderId()), eq(account.getAccountId()), anyString(), eq(order.getCreatedAt()));
+		verify(historicalOrdersRepo).insert(eq(order.getOrderId()), eq(account.getAccountId()), anyString(), eq(EXPECTED_HAPPENED_AT));
 	}
 
 	@Test
@@ -169,7 +169,7 @@ public class OrderProcessingSellMockTest {
 			new BigDecimal("125.0000"),
 			"FILLED",
 			EXPECTED_HAPPENED_AT);
-		verify(historicalOrdersRepo).insert(eq(order.getOrderId()), eq(account.getAccountId()), anyString(), eq(order.getCreatedAt()));
+		verify(historicalOrdersRepo).insert(eq(order.getOrderId()), eq(account.getAccountId()), anyString(), eq(EXPECTED_HAPPENED_AT));
 	}
 
 	private OrderEntity insertSellOrder(int quantity) {

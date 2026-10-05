@@ -48,6 +48,8 @@ public class ApiDocsTest {
         Map.entry("post", "/admin"),
         Map.entry("post", "/admin/login"),
         Map.entry("get", "/admin/orders"),
+        Map.entry("get", "/admin/orders/{userId}"),
+        Map.entry("get", "/admin/orders/{userId}/cancelled"),
         Map.entry("get", "/admin/accounts"),
         Map.entry("get", "/admin/accounts/{userId}"),
         Map.entry("post", "/user"),

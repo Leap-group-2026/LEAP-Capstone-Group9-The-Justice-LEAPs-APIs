@@ -7,6 +7,8 @@ import entities.UserEntity;
 import dto.request.CreateAccountRequest;
 import dto.request.CloseAccountRequest;
 import dto.response.AccountResponse;
+import dto.response.OrderAdminResponse;
+import dto.response.OrderAccountResponse;
 import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +57,7 @@ public class AccountController {
         account.setTradeType(request.tradeType());
         return accountService.saveAccount(account);
     }
+    
     @Operation(summary = "Close an account",
         description = "Soft-deletes the account (account_active = false). The body names the owner: {\"userId\": N}. "
             + "The balance must be exactly 0. Closing an account that is already closed is rejected "
@@ -89,6 +92,15 @@ public class AccountController {
     {
         return accountService.getAccountsByUserID(userId);
     }
+
+    @Operation(summary = "Retrieve all orders from a specific account", 
+           description = "Returns a list of all orders for a specified account")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved all orders from account specified")
+    @GetMapping("/orders/{accountId}")
+    public List<OrderAccountResponse> getAllOrdersById(@PathVariable Integer accountId) {
+        return accountService.getAllOrdersById(accountId);
+    }
+
     @Operation(summary = "Get an account",
         description = "Returns an active account with its owning user. A closed account returns exactly the same 404 "
             + "as an id that never existed. This is deliberate: the service can't yet verify who is asking, "
@@ -103,5 +115,4 @@ public class AccountController {
     public AccountsEntity getAccountById(@PathVariable Integer id) {
         return accountService.findById(id);
     }
-
 }

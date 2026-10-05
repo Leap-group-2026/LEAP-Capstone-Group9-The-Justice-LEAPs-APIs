@@ -32,6 +32,7 @@ public class ApiDocsTest {
     private static final List<Map.Entry<String, String>> ENDPOINTS = List.of(
         Map.entry("get", "/accounts/{id}"),
         Map.entry("get", "/accounts/user/{userId}"),
+        Map.entry("get", "/accounts/orders/{accountId}"),
         Map.entry("post", "/accounts"),
         Map.entry("patch", "/accounts/close/{id}"),
         Map.entry("post", "/orders"),
@@ -52,6 +53,7 @@ public class ApiDocsTest {
         Map.entry("get", "/admin/orders/{userId}/cancelled"),
         Map.entry("get", "/admin/accounts"),
         Map.entry("get", "/admin/accounts/{userId}"),
+        Map.entry("get", "/admin/users"),
         Map.entry("post", "/user"),
         Map.entry("post", "/user/login"),
         Map.entry("post", "/user/resetpassword"),

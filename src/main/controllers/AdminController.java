@@ -5,6 +5,7 @@ import services.EmailService;
 import services.AccountService;
 import services.OrderService;
 import entities.AdminEntity;
+import entities.UserEntity;
 import dto.request.AdminCreation;
 import dto.response.OrderAdminResponse;
 import dto.response.AccountResponse;
@@ -103,5 +104,13 @@ public class AdminController {
     @GetMapping("/orders/{userId}/cancelled")
     public List<OrderAdminResponse> getUserCancelledOrders(@PathVariable Integer userId) {
         return orderService.getCancelledOrdersByUserID(userId);
+    }
+
+    @Operation(summary = "Retrieve all users",
+        description = "Returns a list of all users")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved users")
+    @GetMapping("/users")
+    public List<UserEntity> getAllUsers() {
+        return service.getAllUsers();
     }
 }

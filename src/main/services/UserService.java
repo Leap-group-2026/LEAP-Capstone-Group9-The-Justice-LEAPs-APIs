@@ -18,9 +18,11 @@ import dto.request.VerifyPasswordReset;
 import dto.request.UpdateNameRequest;
 import dto.request.UpdateEmailRequest;
 import dto.request.UpdateAddressRequest;
+import dto.request.UpdateUserRequest;
 import dto.response.UserResponse;
 import dto.response.UpdateNameResponse;
 import dto.response.UpdateEmailResponse;
+import dto.response.UpdateUserResponse;
 import repos.InstrumentRepo;
 import repos.AccountsRepo;
 import repos.PositionsRepo;
@@ -283,6 +285,37 @@ public class UserService {
         repo.update(user);
 
         return new UpdateAddressResponse(user.getUserId(), user.getAddress());
+    }
+
+    public UpdateUserResponse updateUser(Integer userId, UpdateUserRequest request) {
+        UserEntity user = repo.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", userId.toString()));
+
+        if (request.name() != null && !request.name().isBlank()) {
+            user.setName(request.name().trim());
+        }
+
+        if (request.email() != null && !request.email().isBlank()) {
+            String newEmail = request.email().trim().toLowerCase();
+            
+            if (!isValidEmail(newEmail)) {
+                throw new IllegalArgumentException("Invalid email format");
+            }
+
+            if (repo.existsByEmail(newEmail) && !user.getEmail().equalsIgnoreCase(newEmail)) {
+                throw new IllegalArgumentException("Email already in use");
+            }
+
+            user.setEmail(newEmail);
+        }
+
+        if (request.address() != null && !request.address().isBlank()) {
+            user.setAddress(request.address().trim());
+        }
+
+        repo.update(user);
+
+        return new UpdateUserResponse(user.getUserId(), user.getName(), user.getEmail(), user.getAddress());
     }
 
     private boolean isValidEmail(String email) {

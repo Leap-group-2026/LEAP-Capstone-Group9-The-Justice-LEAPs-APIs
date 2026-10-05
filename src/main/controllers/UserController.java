@@ -7,10 +7,12 @@ import dto.request.LoginRequest;
 import dto.request.UpdateNameRequest;
 import dto.request.UpdateEmailRequest;
 import dto.request.UpdateAddressRequest;
+import dto.request.UpdateUserRequest;
 import dto.response.UserResponse;
 import dto.response.UpdateNameResponse;
 import dto.response.UpdateEmailResponse;
 import dto.response.UpdateAddressResponse;
+import dto.response.UpdateUserResponse;
 import dto.request.TransactionRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -86,52 +88,28 @@ public class UserController {
         return service.login(request);
     }
 
-    @Operation(summary = "Change a user's name")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Name updated"),
-        @ApiResponse(responseCode = "400", description = "Blank name", content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Name cannot be empty"))),
-        @ApiResponse(responseCode = "404", description = "No user with this id", content = @Content(schema = @Schema(implementation = ValidationError.class)))
-    })
-    @PatchMapping("/{id}/name")
-    public ResponseEntity<UpdateNameResponse> updateName(
-            @PathVariable Integer id,
-            @RequestBody UpdateNameRequest request) {
-        UpdateNameResponse response = service.updateUserName(id, request);
-        return ResponseEntity.ok(response);
-    }
-
-    @Operation(summary = "Change a user's email", description = "The new email must be well-formed and not used by another user.")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Email updated"),
-        @ApiResponse(responseCode = "400", description = "\"Email cannot be empty\", \"Invalid email format\" or \"Email already in use\"",
-            content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Email already in use"))),
-        @ApiResponse(responseCode = "404", description = "No user with this id", content = @Content(schema = @Schema(implementation = ValidationError.class)))
-    })
-    @PatchMapping("/{id}/email")
-    public ResponseEntity<UpdateEmailResponse> updateEmail(
-            @PathVariable Integer id,
-            @RequestBody UpdateEmailRequest request) {
-        UpdateEmailResponse response = service.updateUserEmail(id, request);
-        return ResponseEntity.ok(response);
-    }
-
-    @Operation(summary = "Change a user's address")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Address updated"),
-        @ApiResponse(responseCode = "400", description = "Blank address", content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Address cannot be empty"))),
-        @ApiResponse(responseCode = "404", description = "No user with this id", content = @Content(schema = @Schema(implementation = ValidationError.class)))
-    })
-    @PatchMapping("/{id}/address")
-    public ResponseEntity<UpdateAddressResponse> updateAddress(
-            @PathVariable Integer id,
-            @RequestBody UpdateAddressRequest request) {
-        UpdateAddressResponse response = service.updateUserAddress(id, request);
-        return ResponseEntity.ok(response);
-    }
-
     @Operation(summary = "Currency exchange transaction")
     @PostMapping("/transactions/exchange")
     public ResponseEntity<String> currencyExchange(@Valid @RequestBody TransactionRequest transactionRequest){
         return service.currencyExchange(transactionRequest);
     }
+
+    @Operation(summary = "Update a user's profile",
+        description = "Updates one or more of the user's name, email, or address. At least one field must be provided. "
+            + "Email must be well-formed and not used by another user.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Profile updated"),
+        @ApiResponse(responseCode = "400", description = "\"Email cannot be empty\", \"Invalid email format\", "
+            + "\"Email already in use\", or \"Name cannot be empty\", \"Address cannot be empty\"",
+            content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Email already in use"))),
+        @ApiResponse(responseCode = "404", description = "No user with this id", content = @Content(schema = @Schema(implementation = ValidationError.class)))
+    })
+    @PatchMapping("/{id}")
+    public ResponseEntity<UpdateUserResponse> updateUser(
+            @PathVariable Integer id,
+            @RequestBody UpdateUserRequest request) {
+        UpdateUserResponse response = service.updateUser(id, request);
+        return ResponseEntity.ok(response);
+    }
+
 }

@@ -39,5 +39,5 @@ public interface AdminRepo {
     Optional<AdminEntity> findByEmail(String email);
 
     @Select("SELECT * FROM orders")
-    List<OrderAdminResponse> getAllOrders();
+    List<OrderAdminResponse> getAllOrders(); 
 }

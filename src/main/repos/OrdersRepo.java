@@ -37,6 +37,21 @@ public interface OrdersRepo {
     @ResultMap("orderResult")
     List<OrderEntity> findAll();
 
+
+    @Select("SELECT o.* FROM orders o " +
+            "JOIN accounts a ON o.account_id = a.account_id " +
+            "WHERE a.user_id = #{userId} " +
+            "ORDER BY o.created_at DESC, o.order_id DESC")
+    @ResultMap("orderResult")
+    List<OrderEntity> findByUser(@Param("userId") Integer userId);
+
+    @Select("SELECT o.* FROM orders o " +
+            "JOIN accounts a ON o.account_id = a.account_id " +
+            "WHERE a.user_id = #{userId} AND o.status = 'CANCELED' " +
+            "ORDER BY o.updated_at DESC, o.order_id DESC")
+    @ResultMap("orderResult")
+    List<OrderEntity> findCanceledByUser(@Param("userId") Integer userId);
+
     @Select("SELECT order_id FROM orders WHERE status = 'PENDING' ORDER BY created_at ASC, order_id ASC")
     List<Integer> findPendingOrderIds();
 

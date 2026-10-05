@@ -3,6 +3,7 @@ package controllers;
 import services.AdminService;
 import services.EmailService;
 import services.AccountService;
+import services.OrderService;
 import entities.AdminEntity;
 import entities.UserEntity;
 import dto.request.AdminCreation;
@@ -27,11 +28,13 @@ public class AdminController {
     private PasswordEncoder passwordEncoder;
     private EmailService emailService;
     private AccountService accountService;
-    public AdminController(AdminService service, PasswordEncoder passwordEncoder, EmailService emailService, AccountService accountService){
+    private OrderService orderService;
+    public AdminController(AdminService service, PasswordEncoder passwordEncoder, EmailService emailService, AccountService accountService, OrderService orderService){
         this.service = service;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.accountService = accountService;
+        this.orderService = orderService;
     }
     @Operation(summary = "Create an admin",
         description = "Creates an administrator with a bcrypt-hashed password. The username must be unique "
@@ -85,6 +88,22 @@ public class AdminController {
     @GetMapping("/accounts/{userId}")
     public List<AccountResponse> getUserAccounts(@PathVariable Integer userId) {
         return accountService.getAccountsByUserID(userId);
+    }
+
+    @Operation(summary = "Retrieve all orders for a specific user",
+           description = "Returns a list of all orders placed by the specified user")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved user's orders")
+    @GetMapping("/orders/{userId}")
+    public List<OrderAdminResponse> getUserOrders(@PathVariable Integer userId) {
+        return orderService.getOrdersByUserID(userId);
+    }
+
+    @Operation(summary = "Retrieve all cancelled orders for a specific user",
+           description = "Returns a list of all cancelled orders placed by the specified user")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved user's cancelled orders")
+    @GetMapping("/orders/{userId}/cancelled")
+    public List<OrderAdminResponse> getUserCancelledOrders(@PathVariable Integer userId) {
+        return orderService.getCancelledOrdersByUserID(userId);
     }
 
     @Operation(summary = "Retrieve all users",

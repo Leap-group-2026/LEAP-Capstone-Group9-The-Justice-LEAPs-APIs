@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import dto.request.CreateOrderRequest;
 import dto.response.OrderSubmissionResponse;
+import dto.response.OrderAdminResponse;
 import entities.OrderEntity;
 import entities.AccountsEntity;
 import entities.InstrumentEntity;
@@ -23,6 +24,7 @@ import services.resolver.AccountResolver;
 import services.resolver.InstrumentResolver;
 import exception.InvalidOrderException;
 import exception.ResourceNotFoundException;
+import java.util.stream.Collectors;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.Clock;
@@ -158,5 +160,31 @@ public class OrderService {
         historicalOrdersService.captureOrderSnapshot(order, canceledAt);
 
         return getByOrderId(orderId);
+    }
+
+    public List<OrderAdminResponse> getOrdersByUserID(Integer userId) {
+        return ordersRepo.findByUser(userId).stream()
+            .map(this::toAdminResponse)
+            .collect(Collectors.toList());
+    }
+
+    public List<OrderAdminResponse> getCancelledOrdersByUserID(Integer userId) {
+        return ordersRepo.findCanceledByUser(userId).stream()
+            .map(this::toAdminResponse)
+            .collect(Collectors.toList());
+    }
+
+    private OrderAdminResponse toAdminResponse(OrderEntity order) {
+        OrderAdminResponse response = new OrderAdminResponse();
+        response.setOrderId(order.getOrderId());
+        response.setSide(order.getSide());
+        response.setAccountId(order.getAccountId().getAccountId());
+        response.setInstrumentId(order.getInstrumentId().getInstrumentId());
+        response.setStatus(order.getStatus());
+        response.setQuantity(order.getQuantity());
+        response.setTotalPrice(order.getTotalPrice());
+        response.setCreatedAt(order.getCreatedAt());
+        response.setUpdatedAt(order.getUpdatedAt());
+        return response;
     }
 }

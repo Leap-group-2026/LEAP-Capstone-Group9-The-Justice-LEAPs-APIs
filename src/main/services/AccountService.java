@@ -52,6 +52,11 @@ public class AccountService {
         AccountsEntity existingAccount = repo.findByIdIncludingInactive(accountId)
         .orElseThrow(() -> new IllegalStateException("Not a valid user"));
         
+        // Check if account user information is missing
+        if (existingAccount.getUserId() == null || existingAccount.getUserId().getUserId() == null) {
+            throw new IllegalStateException("Account user information is missing");
+        }
+        
         // Check if account is already closed
         if (!existingAccount.getAccountActive()) {
             throw new IllegalStateException("Account is already closed");
@@ -112,6 +117,19 @@ public class AccountService {
                 response.setUpdatedAt(order.getUpdatedAt());
                 return response;
             })
+            .collect(Collectors.toList());
+    }
+    public List<AccountResponse> getAllAccounts() {
+        return repo.findAll().stream()
+            .map(account -> new AccountResponse(
+                account.getAccountId(),
+                account.getUserId().getUserId(),
+                account.getBalance(),
+                account.getPortfolioSize().getValue(),
+                account.getTradeType(),
+                account.getCreatedAt(),
+                account.getAccountActive()
+            ))
             .collect(Collectors.toList());
     }
 }

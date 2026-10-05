@@ -4,8 +4,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import repos.AdminRepo;
+import repos.UserRepo;
 import dto.response.OrderAdminResponse;
 import entities.AdminEntity;
+import entities.UserEntity;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -13,9 +15,11 @@ import java.util.List;
 @Service
 public class AdminService {
     private AdminRepo repo;
+    private UserRepo userRepo;
     private PasswordEncoder passwordEncoder;
-    public AdminService(AdminRepo repo, PasswordEncoder passwordEncoder){
+    public AdminService(AdminRepo repo, UserRepo userRepo, PasswordEncoder passwordEncoder){
         this.repo = repo;
+        this.userRepo = userRepo;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -58,5 +62,9 @@ public class AdminService {
     }
     public List<OrderAdminResponse> getAllOrders() {
         return repo.getAllOrders();
+    }
+
+    public List<UserEntity> getAllUsers() {
+        return userRepo.findAll();
     }
 }

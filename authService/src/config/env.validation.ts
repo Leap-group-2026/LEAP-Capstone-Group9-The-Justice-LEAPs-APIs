@@ -6,7 +6,7 @@ export interface EnvConfig {
   CORS_ORIGIN: string;
 }
 
-// Runs once at startup; a missing or malformed setting stops the service with a message naming it
+
 export function validateEnv(env: Record<string, unknown>): EnvConfig {
   const secret = env.JWT_SECRET;
   if (typeof secret !== 'string' || secret.trim() === '') {

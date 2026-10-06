@@ -1,11 +1,14 @@
 package services;
-
+import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import repos.AdminRepo;
 import repos.UserRepo;
 import dto.response.OrderAdminResponse;
+import dto.response.AdminLoginResponse;
+import exception.InvalidCredentialsException;
+import exception.AdminRoleNotAssignedException;
 import entities.AdminEntity;
 import entities.UserEntity;
 
@@ -17,6 +20,13 @@ public class AdminService {
     private AdminRepo repo;
     private UserRepo userRepo;
     private PasswordEncoder passwordEncoder;
+
+    private static final Map<String, String> TOKEN_ROLES = Map.of(
+        "SUPER ADMIN", "superadmin",
+        "ADMIN", "admin",
+        "REPORTER/ANALYST", "analyst"
+    );
+
     public AdminService(AdminRepo repo, UserRepo userRepo, PasswordEncoder passwordEncoder){
         this.repo = repo;
         this.userRepo = userRepo;
@@ -47,18 +57,16 @@ public class AdminService {
         return entity;
     }
 
-    public ResponseEntity<String> login(AdminEntity entity){
-        if (!repo.existsByEmail(entity.getEmail())){
-            throw new IllegalArgumentException("Email doesn't exist");
+    public AdminLoginResponse login(String email, String password){
+        AdminEntity admin = repo.findByEmail(email)
+            .filter(a -> password != null && passwordEncoder.matches(password, a.getPassHash()))
+            .orElseThrow(InvalidCredentialsException::new);
+
+        String role = admin.getRole() == null ? null : TOKEN_ROLES.get(admin.getRole());
+        if (role == null) {
+            throw new AdminRoleNotAssignedException();
         }
-        AdminEntity user = repo.findByEmail(entity.getEmail()).orElseThrow(() -> new IllegalArgumentException("User not found"));
-        boolean match = passwordEncoder.matches(entity.getPassHash(), user.getPassHash());
-        if(!match){
-            return ResponseEntity.badRequest().body("Wrong password");
-        }
-        else{
-            return ResponseEntity.ok("Login successful");
-        }
+        return new AdminLoginResponse(admin.getAdminId(), role);
     }
     public List<OrderAdminResponse> getAllOrders() {
         return repo.getAllOrders();

@@ -1,15 +1,18 @@
 import { NestFactory } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
+import { EnvConfig } from './config/env.validation';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
+  const config = app.get<ConfigService<EnvConfig, true>>(ConfigService);
+
   app.enableCors({
-    origin: process.env.SPRINGBOOT_API_URL || 'http://localhost:8081',
+    origin: config.get('CORS_ORIGIN', { infer: true }),
     credentials: true,
   });
 
-  const port = process.env.PORT || 3001;
+  const port = config.get('PORT', { infer: true });
   await app.listen(port);
   console.log(`Auth service running on port ${port}`);
 }

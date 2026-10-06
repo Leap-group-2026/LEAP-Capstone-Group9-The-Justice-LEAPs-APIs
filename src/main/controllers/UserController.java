@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import dto.response.UserLoginResponse;
 
 @Tag(name = "Users")  // description and display order: OpenApiConfig
 @RestController 
@@ -71,16 +72,20 @@ public class UserController {
         return service.emailResetPassword(user);
     }
 
-    @Operation(summary = "User login", description = "Checks a user's email and password. No session or token is issued yet.")
+    @Operation(summary = "User login",
+        description = "Checks a client's email and password and returns their identity for the token service. "
+            + "Spring issues no token: the auth service signs one with role \"client\".")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Credentials valid", content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Login successful"))),
-        @ApiResponse(responseCode = "400", description = "Unknown email (\"Email doesn't exist\") or wrong password (\"Wrong password\")",
-            content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Wrong password")))
+        @ApiResponse(responseCode = "200", description = "Credentials valid; the body is the client's identity",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserLoginResponse.class))),
+        @ApiResponse(responseCode = "401", description = "Unknown email or wrong password (identical response for both)",
+            content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Invalid email or password")))
     })
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest request){
+    public UserLoginResponse login(@RequestBody LoginRequest request){
         return service.login(request);
     }
+
 
     @Operation(summary = "Currency exchange transaction")
     @PostMapping("/transactions/exchange")

@@ -1,16 +1,32 @@
-import { Injectable } from '@nestjs/common';
+import { BadGatewayException, Injectable, HttpException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import { LoginDto } from './dto/login.dto';
+import { SpringUsersClient } from './spring-users.client';
+
 
 @Injectable()
 export class AuthService {
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    private spring: SpringUsersClient,
+  ) {}
 
-  async validateUser(email: string, password: string): Promise<any> {
-    // add login security stuff here
-    console.log(`Validating user: ${email}`);
-    return null;
+  async login({ email, password }: LoginDto): Promise<{ accessToken: string }> {
+  const res = await this.spring.login(email, password);
+
+  if (res.status === 200 && Number.isInteger(res.data?.id)) {
+    const accessToken = await this.jwtService.signAsync({ sub: String(res.data.id), role: 'client' });
+    return { accessToken };
   }
+  if (res.status === 401) {
+    throw new UnauthorizedException('Invalid email or password'); 
+  }
+  if (res.status >= 400 && res.status < 500) {
+    throw new HttpException(res.data, res.status); 
+  }
+  throw new BadGatewayException('Account service is unavailable'); 
+}
+
 
   async generateToken(payload: any): Promise<string> {
     return this.jwtService.sign(payload);
@@ -24,12 +40,4 @@ export class AuthService {
     }
   }
 
-  async hashPassword(password: string): Promise<string> {
-    const salt = await bcrypt.genSalt(10);
-    return bcrypt.hash(password, salt);
-  }
-
-  async comparePasswords(password: string, hash: string): Promise<boolean> {
-    return bcrypt.compare(password, hash);
-  }
 }

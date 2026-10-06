@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.List;
+import dto.response.AdminLoginResponse;
 
 @Tag(name = "Admin")  // description and display order: OpenApiConfig
 @RestController
@@ -53,19 +54,22 @@ public class AdminController {
         adminEntity.setRole("placeholder");
         return service.saveAdmin(adminEntity);
     }
-    @Operation(summary = "Admin login", description = "Checks an admin username and password. No session or token is issued yet.")
+    @Operation(summary = "Admin login",
+        description = "Checks an admin's email and password and returns their identity and token role for the token service. "
+            + "Spring issues no token. Roles map as SUPER ADMIN -> superadmin, ADMIN -> admin, REPORTER/ANALYST -> analyst.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Credentials valid", content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Login successful"))),
-        @ApiResponse(responseCode = "400", description = "Unknown username (\"Username doesn't exist\") or wrong password (\"Wrong password\")",
-            content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Wrong password")))
+        @ApiResponse(responseCode = "200", description = "Credentials valid; the body is the admin's identity and token role",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = AdminLoginResponse.class))),
+        @ApiResponse(responseCode = "401", description = "Unknown email or wrong password (identical response for both)",
+            content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Invalid email or password"))),
+        @ApiResponse(responseCode = "403", description = "Credentials valid but the admin's role is placeholder or empty",
+            content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "This admin has no role assigned")))
     })
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody AdminCreation admin){
-        AdminEntity adminEntity = new AdminEntity();
-        adminEntity.setEmail(admin.getEmail());
-        adminEntity.setPassHash(admin.getPassword());
-        return service.login(adminEntity);
+    public AdminLoginResponse login(@RequestBody AdminCreation admin){
+        return service.login(admin.getEmail(), admin.getPassword());
     }
+
     @Operation(summary = "Retrieve all orders across all users and accounts", 
            description = "Returns a list of all orders for admin monitoring and auditing")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved all orders")

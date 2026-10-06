@@ -1,23 +1,28 @@
-import { Controller, Post, Body, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Request, HttpCode, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { LoginDto } from './dto/login.dto';
+import { SpringUsersClient } from './spring-users.client';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private spring: SpringUsersClient,
+  ) {}
 
   @Post('login')
-  async login(@Body() credentials: { email: string; password: string }) {
-    // login stuff
-    console.log('Login attempt:', credentials.email);
-    return { message: 'Login endpoint - TODO' };
+  @HttpCode(200)
+  login(@Body() dto: LoginDto) {
+    return this.authService.login(dto);
   }
 
+
   @Post('register')
-  async register(@Body() userData: any) {
-    // register stuff
-    console.log('Registration attempt:', userData.email);
-    return { message: 'Register endpoint - TODO' };
+  async register(@Body() body: Record<string, unknown>, @Res() res: Response) {
+    const spring = await this.spring.register(body);
+    res.status(spring.status).type(String(spring.headers['content-type'] ?? 'text/plain')).send(spring.data);
   }
 
   @Post('refresh')

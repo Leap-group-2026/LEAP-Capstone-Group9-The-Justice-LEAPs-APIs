@@ -23,6 +23,8 @@ import repos.AccountsRepo;
 import repos.PositionsRepo;
 import repos.CurrentPriceRepo;
 import exception.ResourceNotFoundException;
+import dto.response.UserLoginResponse;
+import exception.InvalidCredentialsException;
 
 import java.security.MessageDigest;
 import java.util.Base64;
@@ -107,19 +109,14 @@ public class UserService {
         );
     }
 
-    public ResponseEntity<String> login(LoginRequest request){
-        if (!repo.existsByEmail(request.getEmail())){
-            throw new IllegalArgumentException("Email doesn't exist");
-        }
-        UserEntity user = repo.findByEmail(request.getEmail()).orElseThrow(() -> new IllegalArgumentException("User not found"));
-        boolean match = passwordEncoder.matches(request.getPassword(), user.getPassHash());
-        if(!match){
-            return ResponseEntity.badRequest().body("Wrong password");
-        }
-        else{
-            return ResponseEntity.ok("Login successful");
-        }
+    public UserLoginResponse login(LoginRequest request){
+        UserEntity user = repo.findByEmail(request.getEmail())
+            .filter(u -> request.getPassword() != null
+                && passwordEncoder.matches(request.getPassword(), u.getPassHash()))
+            .orElseThrow(InvalidCredentialsException::new);
+        return new UserLoginResponse(user.getUserId());
     }
+
 
 
     // Ensures all fields are filled. 

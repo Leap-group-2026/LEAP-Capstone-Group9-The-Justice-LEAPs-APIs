@@ -19,10 +19,13 @@ import static org.hamcrest.Matchers.notNullValue;
 import main.Application;
 import entities.AdminEntity;
 import repos.AdminRepo;
+import org.springframework.context.annotation.Import;
+import test.config.TestSecurityConfig;
 
 import java.time.LocalDateTime;
 
 @SpringBootTest(classes = Application.class)
+@Import(TestSecurityConfig.class)
 @AutoConfigureMockMvc
 @Transactional
 public class AdminRouteTest {

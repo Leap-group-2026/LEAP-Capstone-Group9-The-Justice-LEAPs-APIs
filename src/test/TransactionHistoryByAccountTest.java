@@ -11,9 +11,11 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 import main.Application;
 import test.config.TestClockConfig;
+import test.config.TestSecurityConfig;
 
 /**
  * GET /transactions/account/{accountId}, verified end to end.
@@ -22,7 +24,7 @@ import test.config.TestClockConfig;
  * so every assertion checks a value that was written independently of the query that reads it.
  */
 @SpringBootTest(classes = Application.class)
-@Import(TestClockConfig.class)
+@Import({TestClockConfig.class, TestSecurityConfig.class})
 @AutoConfigureMockMvc
 @Transactional
 public class TransactionHistoryByAccountTest {
@@ -81,7 +83,8 @@ public class TransactionHistoryByAccountTest {
 
     @Test
     void transactionReturnsEveryAcceptanceCriteriaField() throws Exception {
-        mockMvc.perform(get("/transactions/account/" + ACCOUNT_ID))
+        mockMvc.perform(get("/transactions/account/" + ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[1].transaction_id").value(EXCHANGE_ID))
             .andExpect(jsonPath("$[1].transaction_type").value("CURRENCY EXCHANGE"))
@@ -93,14 +96,16 @@ public class TransactionHistoryByAccountTest {
 
     @Test
     void responseContainsOnlyTheStoryFields() throws Exception {
-        mockMvc.perform(get("/transactions/account/" + ACCOUNT_ID))
+        mockMvc.perform(get("/transactions/account/" + ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].*", hasSize(6)));
     }
 
     @Test
     void returnsOnlyThisAccountsTransactionsNewestFirst() throws Exception {
-        mockMvc.perform(get("/transactions/account/" + ACCOUNT_ID))
+        mockMvc.perform(get("/transactions/account/" + ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(3)))
             .andExpect(jsonPath("$[*].transaction_id", contains(WITHDRAWAL_ID, EXCHANGE_ID, DEPOSIT_ID)))
@@ -109,21 +114,24 @@ public class TransactionHistoryByAccountTest {
 
     @Test
     void accountWithNoTransactionsReturnsEmptyList() throws Exception {
-        mockMvc.perform(get("/transactions/account/" + EMPTY_ACCOUNT_ID))
+        mockMvc.perform(get("/transactions/account/" + EMPTY_ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(0)));
     }
 
     @Test
     void unknownAccountIsNotFound() throws Exception {
-        mockMvc.perform(get("/transactions/account/" + NEVER_EXISTED_ACCOUNT_ID))
+        mockMvc.perform(get("/transactions/account/" + NEVER_EXISTED_ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.status").value(404));
     }
 
     @Test
     void closedAccountIsNotFoundEvenWithTransactions() throws Exception {
-        mockMvc.perform(get("/transactions/account/" + CLOSED_ACCOUNT_ID))
+        mockMvc.perform(get("/transactions/account/" + CLOSED_ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.status").value(404));
     }

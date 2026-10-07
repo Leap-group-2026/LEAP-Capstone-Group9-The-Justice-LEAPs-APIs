@@ -11,6 +11,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import main.Application;
+import org.springframework.context.annotation.Import;
+import test.config.TestSecurityConfig;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -22,6 +24,7 @@ import java.util.Map;
  * Adding an endpoint means adding it to ENDPOINTS here, which is the point.
  */
 @SpringBootTest(classes = Application.class)
+@Import(TestSecurityConfig.class)
 @AutoConfigureMockMvc
 public class ApiDocsTest {
 
@@ -42,6 +45,7 @@ public class ApiDocsTest {
         Map.entry("get", "/orders/{orderId}/history"),
         Map.entry("get", "/transactions/account/{accountId}"),
         Map.entry("get", "/instruments/{ticker}"),
+        Map.entry("get", "/user/accounts"),
         Map.entry("get", "/instruments"),
         Map.entry("get", "/positions/{id}"),
         Map.entry("post", "/positions"),
@@ -54,11 +58,11 @@ public class ApiDocsTest {
         Map.entry("get", "/admin/accounts"),
         Map.entry("get", "/admin/accounts/{userId}"),
         Map.entry("get", "/admin/users"),
+        Map.entry("patch", "/user"),
         Map.entry("post", "/user"),
         Map.entry("post", "/user/login"),
         Map.entry("post", "/user/resetpassword"),
         Map.entry("post", "/user/resetpassword/reset"),
-        Map.entry("patch", "/user/{id}"),
         Map.entry("post", "/user/transactions/exchange"));
 
     @Autowired

@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,6 +19,7 @@ import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.*;
 import main.Application;
 import test.config.TestClockConfig;
+import test.config.TestSecurityConfig;
 
 /**
  * GET /positions/account/{accountId}, verified end to end.
@@ -26,7 +28,7 @@ import test.config.TestClockConfig;
  * so every assertion checks a value that was written independently of the query that reads it.
  */
 @SpringBootTest(classes = Application.class)
-@Import(TestClockConfig.class)
+@Import({TestClockConfig.class, TestSecurityConfig.class})
 @AutoConfigureMockMvc
 @Transactional
 public class PositionsByAccountTest {
@@ -103,7 +105,8 @@ public class PositionsByAccountTest {
 
     @Test
     void positionReturnsEveryAcceptanceCriteriaField() throws Exception {
-        mockMvc.perform(get("/positions/account/" + ACCOUNT_ID))
+        mockMvc.perform(get("/positions/account/" + ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[1].position_id").value(OLDER_OPEN_POSITION_ID))
             .andExpect(jsonPath("$[1].account_id").value(ACCOUNT_ID))
@@ -120,7 +123,8 @@ public class PositionsByAccountTest {
 
     @Test
     void instrumentDetailsBelongToEachPositionsOwnInstrument() throws Exception {
-        mockMvc.perform(get("/positions/account/" + ACCOUNT_ID))
+        mockMvc.perform(get("/positions/account/" + ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].position_id").value(NEWER_OPEN_POSITION_ID))
             .andExpect(jsonPath("$[0].instrument_id").value(BETA_INSTRUMENT_ID))
@@ -133,21 +137,24 @@ public class PositionsByAccountTest {
 
     @Test
     void responseContainsOnlyTheStoryFields() throws Exception {
-        mockMvc.perform(get("/positions/account/" + ACCOUNT_ID))
+        mockMvc.perform(get("/positions/account/" + ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].*", hasSize(11)));
     }
 
     @Test
     void closedPositionsAreExcluded() throws Exception {
-        mockMvc.perform(get("/positions/account/" + ACCOUNT_ID))
+        mockMvc.perform(get("/positions/account/" + ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[*].position_id", not(hasItem(CLOSED_POSITION_ID))));
     }
 
     @Test
     void returnsOnlyThisAccountsOpenPositionsNewestFirst() throws Exception {
-        mockMvc.perform(get("/positions/account/" + ACCOUNT_ID))
+        mockMvc.perform(get("/positions/account/" + ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(2)))
             .andExpect(jsonPath("$[*].position_id", contains(NEWER_OPEN_POSITION_ID, OLDER_OPEN_POSITION_ID)))
@@ -156,21 +163,24 @@ public class PositionsByAccountTest {
 
     @Test
     void accountWithNoPositionsReturnsEmptyList() throws Exception {
-        mockMvc.perform(get("/positions/account/" + EMPTY_ACCOUNT_ID))
+        mockMvc.perform(get("/positions/account/" + EMPTY_ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(0)));
     }
 
     @Test
     void unknownAccountIsNotFound() throws Exception {
-        mockMvc.perform(get("/positions/account/" + NEVER_EXISTED_ACCOUNT_ID))
+        mockMvc.perform(get("/positions/account/" + NEVER_EXISTED_ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.status").value(404));
     }
 
     @Test
     void closedAccountIsNotFoundEvenWithPositions() throws Exception {
-        mockMvc.perform(get("/positions/account/" + CLOSED_ACCOUNT_ID))
+        mockMvc.perform(get("/positions/account/" + CLOSED_ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.status").value(404));
     }
@@ -179,7 +189,8 @@ public class PositionsByAccountTest {
 
     @Test
     void positionByIdIncludesItsAccountAndInstrument() throws Exception {
-        String body = mockMvc.perform(get("/positions/" + OLDER_OPEN_POSITION_ID))
+        String body = mockMvc.perform(get("/positions/" + OLDER_OPEN_POSITION_ID)
+            .with(user("" + USER_ID).roles("ADMIN")))
             .andExpect(status().isOk())
             .andReturn().getResponse().getContentAsString();
 
@@ -195,7 +206,8 @@ public class PositionsByAccountTest {
 
     @Test
     void unknownPositionIdIsNotFound() throws Exception {
-        mockMvc.perform(get("/positions/" + 999995))
+        mockMvc.perform(get("/positions/" + 999995)
+            .with(user("" + USER_ID).roles("ADMIN")))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.status").value(404));
     }

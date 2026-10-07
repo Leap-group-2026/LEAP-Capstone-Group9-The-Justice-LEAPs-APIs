@@ -15,10 +15,13 @@ import main.Application;
 import entities.UserEntity;
 import repos.UserRepo;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.context.annotation.Import;
+import test.config.TestSecurityConfig;
 
 import java.time.LocalDate;
 
 @SpringBootTest(classes = Application.class)
+@Import(TestSecurityConfig.class)
 @AutoConfigureMockMvc
 @Transactional
 @DisplayName("UserController Password Reset Endpoints Tests")

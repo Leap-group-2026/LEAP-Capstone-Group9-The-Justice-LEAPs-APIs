@@ -16,12 +16,15 @@ import static org.mockito.Mockito.when;
 import main.Application;
 import entities.UserEntity;
 import services.AdminService;
+import org.springframework.context.annotation.Import;
+import test.config.TestSecurityConfig;
 
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 
 @SpringBootTest(classes = Application.class)
+@Import(TestSecurityConfig.class)
 @AutoConfigureMockMvc
 @Transactional
 public class GetAllUsersTest {

@@ -36,6 +36,7 @@ import entities.OrderEntity;
 import events.OrderSubmittedEvent;
 import services.HistoricalOrdersService;
 import test.config.TestClockConfig;
+import test.config.TestSecurityConfig;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -69,7 +70,7 @@ import java.util.UUID;
     "spring.kafka.consumer.auto-offset-reset=earliest"
 })
 @EmbeddedKafka(partitions = 3, topics = {"order.submitted", "order.submitted.DLT"})
-@Import(TestClockConfig.class)
+@Import({TestClockConfig.class, TestSecurityConfig.class})
 @AutoConfigureMockMvc
 public class OrderFillKafkaTest {
 
@@ -302,7 +303,7 @@ public class OrderFillKafkaTest {
         "spring.kafka.admin.auto-create=false",
         "spring.kafka.listener.auto-startup=false"
     })
-    @Import(TestClockConfig.class)
+    @Import({TestClockConfig.class, TestSecurityConfig.class})
     @AutoConfigureMockMvc
     class WhenKafkaIsDown {
 

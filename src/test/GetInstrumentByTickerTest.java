@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import main.Application;
 import test.config.TestClockConfig;
+import test.config.TestSecurityConfig;
 
 /**
  * GET /instruments/{ticker}, verified end to end.
@@ -23,7 +24,7 @@ import test.config.TestClockConfig;
  * Fixtures are inserted with raw SQL through JdbcTemplate, never through the code under test.
  */
 @SpringBootTest(classes = Application.class)
-@Import(TestClockConfig.class)
+@Import({TestClockConfig.class, TestSecurityConfig.class})
 @AutoConfigureMockMvc
 @Transactional
 @DisplayName("GET /instruments/{ticker} Tests")

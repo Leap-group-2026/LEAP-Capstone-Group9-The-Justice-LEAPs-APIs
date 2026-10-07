@@ -6,6 +6,10 @@ import { firstValueFrom } from 'rxjs';
 @Injectable()
 export class SpringUsersClient {
   constructor(private readonly http: HttpService) {}
+  adminLogin(email: string, password:string){
+    return this.send('post', '/admin/login', {email, password});
+  }
+
 
   login(email: string, password: string) {
     return this.send('post', '/user/login', { email, password });

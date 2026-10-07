@@ -12,10 +12,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 import main.Application;
 import dto.response.OrderAccountResponse;
 import services.AccountService;
+import entities.AccountsEntity;
+import entities.UserEntity;
+import org.springframework.context.annotation.Import;
+import test.config.TestSecurityConfig;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -23,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @SpringBootTest(classes = Application.class)
+@Import(TestSecurityConfig.class)
 @AutoConfigureMockMvc
 @Transactional
 public class GetAllOrdersByAccountTest {
@@ -32,8 +38,16 @@ public class GetAllOrdersByAccountTest {
     @MockBean
     AccountService accountService;
 
-    @Test 
+    @Test
     public void getAllOrdersByAccountSuccess() throws Exception {
+        // Mock the account lookup first
+        AccountsEntity mockAccount = new AccountsEntity();
+        mockAccount.setAccountId(10);
+        UserEntity mockUser = new UserEntity();
+        mockUser.setUserId(1);
+        mockAccount.setUserId(mockUser);
+        when(accountService.findById(10)).thenReturn(mockAccount);
+        
         OrderAccountResponse order1 = new OrderAccountResponse(
             "BUY",
             "AAPL",
@@ -58,6 +72,7 @@ public class GetAllOrdersByAccountTest {
         when(accountService.getAllOrdersById(10)).thenReturn(orders);
         
         mockMvc.perform(get("/accounts/orders/10")
+            .with(user("1").roles("ADMIN"))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(2)))
@@ -69,10 +84,19 @@ public class GetAllOrdersByAccountTest {
     
     @Test
     public void getAllOrdersByAccountEmpty() throws Exception {
+        // Mock the account lookup first
+        AccountsEntity mockAccount = new AccountsEntity();
+        mockAccount.setAccountId(10);
+        UserEntity mockUser = new UserEntity();
+        mockUser.setUserId(1);
+        mockAccount.setUserId(mockUser);
+        when(accountService.findById(10)).thenReturn(mockAccount);
+        
         List<OrderAccountResponse> orders = Arrays.asList();
         when(accountService.getAllOrdersById(10)).thenReturn(orders);
         
         mockMvc.perform(get("/accounts/orders/10")
+            .with(user("1").roles("ADMIN"))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(0)));

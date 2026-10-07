@@ -18,6 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 import main.Application;
 import dto.InstrumentWithPrice;
@@ -25,6 +26,7 @@ import entities.AccountsEntity;
 import repos.AccountsRepo;
 import repos.InstrumentRepo;
 import test.config.TestClockConfig;
+import test.config.TestSecurityConfig;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +38,7 @@ import java.util.Optional;
  * under test, so a test can't pass merely because the writer and reader agree with each other.
  */
 @SpringBootTest(classes = Application.class)
-@Import(TestClockConfig.class)
+@Import({TestClockConfig.class, TestSecurityConfig.class})
 @AutoConfigureMockMvc
 @Transactional
 public class AccountActiveFilteringTest {
@@ -97,7 +99,8 @@ public class AccountActiveFilteringTest {
 
     @Test
     void getActiveAccountReturnsData() throws Exception {
-        mockMvc.perform(get("/accounts/" + ACTIVE_ACCOUNT_ID))
+        mockMvc.perform(get("/accounts/" + ACTIVE_ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.accountId").value(ACTIVE_ACCOUNT_ID))
             .andExpect(jsonPath("$.account_active").value(true))
@@ -108,10 +111,12 @@ public class AccountActiveFilteringTest {
 
     @Test
     void getClosedAccountIsIndistinguishableFromMissing() throws Exception {
-        String closed = mockMvc.perform(get("/accounts/" + CLOSED_ACCOUNT_ID))
+        String closed = mockMvc.perform(get("/accounts/" + CLOSED_ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isNotFound())
             .andReturn().getResponse().getContentAsString();
-        String missing = mockMvc.perform(get("/accounts/" + NEVER_EXISTED_ACCOUNT_ID))
+        String missing = mockMvc.perform(get("/accounts/" + NEVER_EXISTED_ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isNotFound())
             .andReturn().getResponse().getContentAsString();
 
@@ -165,9 +170,10 @@ public class AccountActiveFilteringTest {
 
     @Test
     void closingTwiceGivesExplicitErrorSecondTime() throws Exception {
-        String body = "{\"userId\":" + USER_ID + "}";
-
-        mockMvc.perform(patch("/accounts/close/" + ZERO_BALANCE_ACCOUNT_ID).contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(patch("/accounts/close/" + ZERO_BALANCE_ACCOUNT_ID)
+            .with(user("" + USER_ID))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{}"))
             .andExpect(status().isOk())
             .andExpect(content().string("Success"));
 
@@ -175,7 +181,10 @@ public class AccountActiveFilteringTest {
             "SELECT account_active FROM accounts WHERE account_id = ?", Boolean.class, ZERO_BALANCE_ACCOUNT_ID);
         assertFalse(active);
 
-        mockMvc.perform(patch("/accounts/close/" + ZERO_BALANCE_ACCOUNT_ID).contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(patch("/accounts/close/" + ZERO_BALANCE_ACCOUNT_ID)
+            .with(user("" + USER_ID))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{}"))
             .andExpect(status().isBadRequest())
             .andExpect(content().string("Account is already closed"));
     }
@@ -184,10 +193,13 @@ public class AccountActiveFilteringTest {
 
     @Test
     void createReturnsGeneratedIdOfTheStoredRow() throws Exception {
-        String body = "{\"userId\":" + USER_ID + ",\"balance\":250.5,"
+        String body = "{\"balance\":250.5,"
             + "\"portfolioSize\":\"LOW\",\"tradeType\":\"Active\"}";
 
-        MvcResult result = mockMvc.perform(post("/accounts").contentType(MediaType.APPLICATION_JSON).content(body))
+        MvcResult result = mockMvc.perform(post("/accounts")
+            .with(user("" + USER_ID))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.accountId", notNullValue()))
             .andReturn();
@@ -199,27 +211,17 @@ public class AccountActiveFilteringTest {
     }
 
     @Test
-    void createWithoutUserIdIsRejectedAndNothingIsWritten() throws Exception {
-        Integer before = jdbcTemplate.queryForObject("SELECT count(*) FROM accounts", Integer.class);
-
-        mockMvc.perform(post("/accounts").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"balance\":10,\"portfolioSize\":\"LOW\",\"tradeType\":\"Active\"}"))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.message").value("Validation failed"))
-            .andExpect(jsonPath("$.fieldName").value("userId"));
-
-        assertEquals(before, jdbcTemplate.queryForObject("SELECT count(*) FROM accounts", Integer.class));
-    }
-
-    @Test
-    void closeWithoutUserIdIsRejected() throws Exception {
-        mockMvc.perform(patch("/accounts/close/" + ZERO_BALANCE_ACCOUNT_ID).contentType(MediaType.APPLICATION_JSON).content("{}"))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.fieldName").value("userId"));
+    void closeAccountSuccessfully() throws Exception {
+        mockMvc.perform(patch("/accounts/close/" + ZERO_BALANCE_ACCOUNT_ID)
+            .with(user("" + USER_ID))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{}"))
+            .andExpect(status().isOk())
+            .andExpect(content().string("Success"));
 
         Boolean active = jdbcTemplate.queryForObject(
             "SELECT account_active FROM accounts WHERE account_id = ?", Boolean.class, ZERO_BALANCE_ACCOUNT_ID);
-        assertTrue(active);
+        assertFalse(active);
     }
 
     // ---- positions take ids, not nested objects ----

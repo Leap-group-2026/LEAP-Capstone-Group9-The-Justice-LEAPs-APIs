@@ -4,6 +4,8 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LoginDto } from './dto/login.dto';
 import { SpringUsersClient } from './spring-users.client';
+import { AccessTokenClaims } from './token-claims';
+
 
 @Controller('auth')
 export class AuthController {
@@ -26,9 +28,10 @@ export class AuthController {
   }
 
   @Post('refresh')
-  async refreshToken(@Body() body: { refreshToken: string }) {
-    //refresh logic
-    return { message: 'Refresh token endpoint - TODO' };
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard)
+  refresh(@Request() req: { user: AccessTokenClaims }) {
+    return this.authService.refresh(req.user);
   }
 
   @Post('logout')

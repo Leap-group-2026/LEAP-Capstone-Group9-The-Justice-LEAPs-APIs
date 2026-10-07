@@ -4,6 +4,7 @@ export interface EnvConfig {
   JWT_EXPIRATION: number;
   SPRINGBOOT_API_URL: string;
   CORS_ORIGIN: string;
+  JWT_MAX_SESSION: number;
 }
 
 
@@ -19,6 +20,7 @@ export function validateEnv(env: Record<string, unknown>): EnvConfig {
     JWT_EXPIRATION: toPositiveInt(env, 'JWT_EXPIRATION', 1800),
     SPRINGBOOT_API_URL: toText(env, 'SPRINGBOOT_API_URL', 'http://localhost:8081'),
     CORS_ORIGIN: toText(env, 'CORS_ORIGIN', 'http://localhost:4200'),
+    JWT_MAX_SESSION: toPositiveInt(env, 'JWT_MAX_SESSION', 28800),
   };
 }
 

@@ -55,7 +55,8 @@ describe('POST /auth/login and /auth/register (N2)', () => {
 
       const res = await login({ email: 'jo@example.com', password: 'Secret' }).expect(200);
 
-      expect(Object.keys(jwt.decode(res.body.accessToken)).sort()).toEqual(['exp', 'iat', 'role', 'sub']);
+      expect(Object.keys(jwt.decode(res.body.accessToken)).sort())
+        .toEqual(['auth_time', 'exp', 'iat', 'role', 'sub', 'type']);
     });
 
     it('returns the same 401 body for a wrong password and an unknown email', async () => {

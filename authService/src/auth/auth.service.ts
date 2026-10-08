@@ -19,21 +19,37 @@ export class AuthService {
     return this.jwtService.signAsync({ sub, role, type: 'access', auth_time: authTime });
   }
 
-  async login({ email, password }: LoginDto): Promise<{ accessToken: string }> {
-  const res = await this.spring.login(email, password);
+  async adminLogin({ email, password }: LoginDto): Promise<{ accessToken: string }> {
+    const res = await this.spring.adminLogin(email, password);
 
-  if (res.status === 200 && Number.isInteger(res.data?.id)) {
-    const accessToken = await this.signAccess(String(res.data.id), 'client', Math.floor(Date.now() / 1000));
-    return { accessToken };
+    if (res.status === 200 && Number.isInteger(res.data?.id)) {
+      const accessToken = await this.signAccess(String(res.data.id), 'admin', Math.floor(Date.now() / 1000));
+      return { accessToken };
+    }
+    if (res.status === 401) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+    if (res.status >= 400 && res.status < 500) {
+      throw new HttpException(res.data, res.status);
+    }
+    throw new BadGatewayException('Account service is unavailable');
   }
-  if (res.status === 401) {
-    throw new UnauthorizedException('Invalid email or password'); 
+
+  async login({ email, password }: LoginDto): Promise<{ accessToken: string }> {
+    const res = await this.spring.login(email, password);
+
+    if (res.status === 200 && Number.isInteger(res.data?.id)) {
+      const accessToken = await this.signAccess(String(res.data.id), 'client', Math.floor(Date.now() / 1000));
+      return { accessToken };
+    }
+    if (res.status === 401) {
+      throw new UnauthorizedException('Invalid email or password'); 
+    }
+    if (res.status >= 400 && res.status < 500) {
+      throw new HttpException(res.data, res.status); 
+    }
+    throw new BadGatewayException('Account service is unavailable'); 
   }
-  if (res.status >= 400 && res.status < 500) {
-    throw new HttpException(res.data, res.status); 
-  }
-  throw new BadGatewayException('Account service is unavailable'); 
-}
 
 async refresh(claims: AccessTokenClaims): Promise<{ accessToken: string }> {
     const sessionAge = Math.floor(Date.now() / 1000) - claims.auth_time;

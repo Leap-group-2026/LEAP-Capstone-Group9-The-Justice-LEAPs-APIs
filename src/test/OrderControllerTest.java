@@ -28,12 +28,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import repos.OrdersRepo;
 import repos.UserRepo;
 import test.config.TestClockConfig;
+import test.config.TestSecurityConfig;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @SpringBootTest(classes = Application.class)
-@Import(TestClockConfig.class)
+@Import({TestClockConfig.class, TestSecurityConfig.class})
 @AutoConfigureMockMvc
 @Transactional
 @DisplayName("OrderController.createOrder() Tests")

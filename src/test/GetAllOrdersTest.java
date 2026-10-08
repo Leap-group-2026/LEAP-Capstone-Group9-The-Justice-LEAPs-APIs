@@ -15,12 +15,15 @@ import static org.mockito.Mockito.when;
 import main.Application;
 import dto.response.OrderAdminResponse;
 import repos.AdminRepo;
+import org.springframework.context.annotation.Import;
+import test.config.TestSecurityConfig;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
 @SpringBootTest(classes = Application.class)
+@Import(TestSecurityConfig.class)
 @AutoConfigureMockMvc
 public class GetAllOrdersTest {
     

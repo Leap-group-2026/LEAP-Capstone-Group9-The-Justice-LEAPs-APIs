@@ -15,12 +15,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import main.Application;
 import test.config.TestClockConfig;
+import test.config.TestSecurityConfig;
 
 /**
  * Admin endpoints for account retrieval: GET /admin/accounts and GET /admin/accounts/{userId}
  */
 @SpringBootTest(classes = Application.class)
-@Import(TestClockConfig.class)
+@Import({TestClockConfig.class, TestSecurityConfig.class})
 @AutoConfigureMockMvc
 @Transactional
 @DisplayName("Admin Accounts Endpoints Tests")

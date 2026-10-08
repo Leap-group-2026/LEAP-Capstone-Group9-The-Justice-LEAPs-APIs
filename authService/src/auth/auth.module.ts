@@ -21,6 +21,7 @@ import { RefreshTokenStore } from './refresh-token.store';
         baseURL: config.get('SPRINGBOOT_API_URL', { infer: true }),
         timeout: 5000,
         validateStatus: () => true,
+        headers: { 'X-Internal-Api-Key': config.get('INTERNAL_API_KEY', { infer: true }) },
       }),
     }),
     JwtModule.registerAsync({

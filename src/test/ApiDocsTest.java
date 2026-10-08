@@ -65,8 +65,8 @@ public class ApiDocsTest {
         Map.entry("post", "/user/resetpassword/reset"),
         Map.entry("post", "/user/transactions/exchange"));
 
-    // The endpoints SecurityConfig lets through without a token; every other one must show the lock in Swagger UI
-    private static final List<Map.Entry<String, String>> PUBLIC_ENDPOINTS = List.of(
+    // The endpoints only the auth service calls: they take the internal API key instead of a token (InternalApiKeyFilter)
+    private static final List<Map.Entry<String, String>> INTERNAL_ENDPOINTS = List.of(
         Map.entry("post", "/user"),
         Map.entry("post", "/user/login"),
         Map.entry("post", "/admin/login"));
@@ -123,16 +123,24 @@ public class ApiDocsTest {
     }
 
     @Test
-    void onlyThePublicEndpointsAreDocumentedAsNotNeedingAToken() throws Exception {
-        JsonNode paths = apiDocs().path("paths");
+    void theAuthServiceEndpointsAskForTheInternalKeyAndEveryOtherForAToken() throws Exception {
+        JsonNode docs = apiDocs();
+        JsonNode keyScheme = docs.path("components").path("securitySchemes").path("internalApiKey");
+        assertEquals("apiKey", keyScheme.path("type").asText());
+        assertEquals("header", keyScheme.path("in").asText());
+        assertEquals("X-Internal-Api-Key", keyScheme.path("name").asText());
 
+        JsonNode paths = docs.path("paths");
         for (Map.Entry<String, String> e : ENDPOINTS) {
             JsonNode op = paths.path(e.getValue()).path(e.getKey());
             String name = e.getKey().toUpperCase() + " " + e.getValue();
-            // An operation without its own "security" inherits the global bearer requirement; [] opts it out
-            boolean optedOut = op.has("security") && op.path("security").isEmpty();
-            assertEquals(PUBLIC_ENDPOINTS.contains(e), optedOut,
-                name + (optedOut ? " is documented as public but needs a token" : " is public but documented as needing a token"));
+            if (INTERNAL_ENDPOINTS.contains(e)) {
+                // Exactly the internal key, and no bearer token
+                assertEquals("[{\"internalApiKey\":[]}]", op.path("security").toString(), name + " should ask for the internal key only");
+            } else {
+                // No security of its own, so it inherits the global bearer requirement
+                assertFalse(op.has("security"), name + " should need an access token, has " + op.path("security"));
+            }
         }
     }
 }

@@ -6,7 +6,11 @@ export interface EnvConfig {
   CORS_ORIGIN: string;
   JWT_MAX_SESSION: number;
   DATABASE_URL: string;
+  INTERNAL_API_KEY: string;
 }
+
+
+const MIN_INTERNAL_API_KEY_LENGTH = 32;
 
 
 export function validateEnv(env: Record<string, unknown>): EnvConfig {
@@ -20,6 +24,12 @@ export function validateEnv(env: Record<string, unknown>): EnvConfig {
     throw new Error('DATABASE_URL is not set. Add it to authService/.env (see .env.example).');
   }
 
+  const internalApiKey = env.INTERNAL_API_KEY;
+  if (typeof internalApiKey !== 'string' || internalApiKey.length < MIN_INTERNAL_API_KEY_LENGTH) {
+    throw new Error(`INTERNAL_API_KEY is missing or shorter than ${MIN_INTERNAL_API_KEY_LENGTH} characters. `
+      + 'Add it to authService/.env and give Spring the same value (see .env.example).');
+  }
+
   return {
     PORT: toPositiveInt(env, 'PORT', 3001),
     JWT_SECRET: secret,
@@ -28,6 +38,7 @@ export function validateEnv(env: Record<string, unknown>): EnvConfig {
     CORS_ORIGIN: toText(env, 'CORS_ORIGIN', 'http://localhost:4200'),
     JWT_MAX_SESSION: toPositiveInt(env, 'JWT_MAX_SESSION', 28800),
     DATABASE_URL: databaseUrl,
+    INTERNAL_API_KEY: internalApiKey,
   };
 }
 

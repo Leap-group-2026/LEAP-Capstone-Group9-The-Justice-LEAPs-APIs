@@ -21,6 +21,7 @@ describe('refresh tokens', () => {
 
   beforeAll(async () => {
     process.env.JWT_SECRET = 'test-secret';
+    process.env.INTERNAL_API_KEY = 'test-only-internal-api-key-0123456789-abcdef';
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     process.env.JWT_EXPIRATION = '1800';
     process.env.JWT_MAX_SESSION = '28800';

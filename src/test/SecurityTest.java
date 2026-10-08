@@ -1,4 +1,9 @@
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.beans.factory.annotation.Value;
+import config.InternalApiKeyFilter;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -63,6 +68,9 @@ public class SecurityTest {
     private JdbcTemplate jdbcTemplate;
 
     private final SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes());
+
+    @Value("${internal.api.key}")
+    private String internalApiKey;
 
     @BeforeEach
     void setUp() {
@@ -198,6 +206,51 @@ public class SecurityTest {
         assertThrows(IllegalStateException.class, () -> new JwtAuthenticationFilter(""));
         assertThrows(IllegalStateException.class, () -> new JwtAuthenticationFilter("your-secret-key"));
         assertDoesNotThrow(() -> new JwtAuthenticationFilter(SECRET));
+    }
+
+    // ---- Login and registration need no JWT, so only the auth service, holding the internal key, may call them ----
+
+    private static final String CREDENTIALS = "{\"email\":\"nobody@security.test\",\"password\":\"Wrong-Pass-123!!\"}";
+
+    @Test
+    void loginAndRegistrationWithoutTheInternalKeyGet401() throws Exception {
+        for (String path : new String[] {"/user/login", "/admin/login", "/user"}) {
+            mockMvc.perform(json(post(path), CREDENTIALS))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().string(containsString(InternalApiKeyFilter.HEADER)));
+        }
+    }
+
+    @Test
+    void aWrongInternalKeyGets401() throws Exception {
+        mockMvc.perform(json(post("/user/login"), CREDENTIALS).header(InternalApiKeyFilter.HEADER, internalApiKey + "x"))
+            .andExpect(status().isUnauthorized())
+            .andExpect(content().string(containsString(InternalApiKeyFilter.HEADER)));
+    }
+
+    // Past the filter the endpoint answers for itself: the login's own "Invalid email or password",
+    // and registration's own validation error for an empty body
+    @Test
+    void theRightInternalKeyReachesTheEndpoint() throws Exception {
+        mockMvc.perform(json(post("/user/login"), CREDENTIALS).header(InternalApiKeyFilter.HEADER, internalApiKey))
+            .andExpect(status().isUnauthorized())
+            .andExpect(content().string(containsString("Invalid email or password")));
+        mockMvc.perform(json(post("/user"), "{}").header(InternalApiKeyFilter.HEADER, internalApiKey))
+            .andExpect(status().isBadRequest());
+    }
+
+    // Only POST /user is registration; PATCH /user is a client updating their profile with their own token
+    @Test
+    void otherRequestsDoNotNeedTheInternalKey() throws Exception {
+        mockMvc.perform(as(clientToken(OWNER_ID), json(patch("/user"), "{}")))
+            .andExpect(content().string(not(containsString(InternalApiKeyFilter.HEADER))));
+    }
+
+    @Test
+    void startupRefusesAMissingOrTooShortInternalKey() {
+        assertThrows(IllegalStateException.class, () -> new InternalApiKeyFilter(""));
+        assertThrows(IllegalStateException.class, () -> new InternalApiKeyFilter("too-short"));
+        assertDoesNotThrow(() -> new InternalApiKeyFilter(internalApiKey));
     }
 
     // ---- Roles ----

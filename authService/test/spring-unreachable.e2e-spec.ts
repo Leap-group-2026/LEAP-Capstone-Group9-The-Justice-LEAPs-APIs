@@ -8,6 +8,7 @@ describe('POST /auth/login with Spring down (N2)', () => {
 
   beforeAll(async () => {
     process.env.JWT_SECRET = 'test-secret';
+    process.env.INTERNAL_API_KEY = 'test-only-internal-api-key-0123456789-abcdef';
     // Nothing listens here: these tests never touch Postgres, and must never reach a real database
     process.env.DATABASE_URL = 'postgres://test@127.0.0.1:1/none';
     process.env.SPRINGBOOT_API_URL = 'http://127.0.0.1:1';

@@ -1,4 +1,6 @@
 import org.junit.jupiter.api.Test;
+import config.InternalApiKeyFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
@@ -29,6 +31,10 @@ import java.time.LocalDateTime;
 @AutoConfigureMockMvc
 @Transactional
 public class AdminRouteTest {
+
+    // The auth service's key; these endpoints refuse requests without it
+    @Value("${internal.api.key}")
+    private String internalApiKey;
     @Autowired
     MockMvc mockMvc;
     @Autowired
@@ -50,6 +56,7 @@ public class AdminRouteTest {
 
     private ResultActions login(String email, String password) throws Exception {
         return mockMvc.perform(post("/admin/login")
+            .header(InternalApiKeyFilter.HEADER, internalApiKey)
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}"));
     }

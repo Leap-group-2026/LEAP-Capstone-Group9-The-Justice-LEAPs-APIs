@@ -8,6 +8,7 @@ describe('JWT signing', () => {
 
   beforeAll(async () => {
     process.env.JWT_SECRET = 'test-secret';
+    process.env.INTERNAL_API_KEY = 'test-only-internal-api-key-0123456789-abcdef';
     process.env.DATABASE_URL = 'postgres://test@127.0.0.1:1/none';
     process.env.JWT_EXPIRATION = '1800';
     const { AppModule } = await import('../app.module');
@@ -33,5 +34,10 @@ describe('validateEnv', () => {
 
   it('names JWT_SECRET when it is blank', () => {
     expect(() => validateEnv({ JWT_SECRET: '  ' })).toThrow(/JWT_SECRET/);
+  });
+
+  it.each([[undefined], ['too-short']])('names INTERNAL_API_KEY when it is %p', (key) => {
+    expect(() => validateEnv({ JWT_SECRET: 'x', DATABASE_URL: 'postgres://x', INTERNAL_API_KEY: key }))
+      .toThrow(/INTERNAL_API_KEY/);
   });
 });

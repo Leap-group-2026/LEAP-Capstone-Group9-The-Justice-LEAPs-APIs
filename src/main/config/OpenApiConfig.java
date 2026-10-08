@@ -16,6 +16,7 @@ public class OpenApiConfig {
 
 
     public static final String BEARER_SCHEME = "bearerAuth";
+    public static final String INTERNAL_KEY_SCHEME = "internalApiKey";
 
     @Bean
     public OpenAPI leapOpenApi() {
@@ -32,11 +33,14 @@ public class OpenApiConfig {
                 .type(SecurityScheme.Type.HTTP)
                 .scheme("bearer")
                 .bearerFormat("JWT")
-                .description("The accessToken from the auth service. Role client or admin decides which endpoints it opens.")))
-            // Applies to every endpoint unless the endpoint opts out
+                .description("The accessToken from the auth service. Role client or admin decides which endpoints it opens."))
+                .addSecuritySchemes(INTERNAL_KEY_SCHEME, new SecurityScheme()
+                    .type(SecurityScheme.Type.APIKEY)
+                    .in(SecurityScheme.In.HEADER)
+                    .name("X-Internal-Api-Key")
+                    .description("INTERNAL_API_KEY, shared with the auth service. Only the auth service calls these endpoints.")))
+
             .addSecurityItem(new SecurityRequirement().addList(BEARER_SCHEME))
-            // Swagger UI shows the groups in this order. Defining a group here replaces the
-            // description on the controller's @Tag, so the descriptions live here too.
             .tags(List.of(
                 new Tag().name("Admin").description("Administrator accounts: create and log in"),
                 new Tag().name("Users").description("Customer registration, login, password reset and profile updates"),

@@ -18,7 +18,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import dto.response.ValidationError;
 import java.util.List;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import config.OpenApiConfig;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -49,7 +50,7 @@ public class UserController {
             + "\"SSN already exists.\") or password rule broken (e.g. \"Password must be a minimum of 12 characters.\")",
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Email already exists.")))
     })
-    @SecurityRequirements
+    @SecurityRequirement(name = OpenApiConfig.INTERNAL_KEY_SCHEME)
     @PostMapping
     public ResponseEntity<UserResponse> createUser(@RequestBody UserRegistrationRequest request){
         //return service.saveUser(user);
@@ -92,7 +93,7 @@ public class UserController {
         @ApiResponse(responseCode = "401", description = "Unknown email or wrong password (identical response for both)",
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Invalid email or password")))
     })
-    @SecurityRequirements  
+    @SecurityRequirement(name = OpenApiConfig.INTERNAL_KEY_SCHEME)  
     @PostMapping("/login")
     public UserLoginResponse login(@RequestBody LoginRequest request){
         return service.login(request);

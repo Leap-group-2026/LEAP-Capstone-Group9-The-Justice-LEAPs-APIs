@@ -21,6 +21,7 @@ describe('API docs (GET /docs-json)', () => {
 
   beforeAll(async () => {
     process.env.JWT_SECRET = 'test-secret';
+    process.env.INTERNAL_API_KEY = 'test-only-internal-api-key-0123456789-abcdef';
     // Nothing listens here: building the docs never touches Postgres
     process.env.DATABASE_URL = 'postgres://test@127.0.0.1:1/none';
     const { AppModule } = await import('../src/app.module');

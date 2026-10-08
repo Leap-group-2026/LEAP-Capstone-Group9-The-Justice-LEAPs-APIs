@@ -4,7 +4,7 @@ Logs clients and admins in through Spring and returns a 30-minute JWT plus a ref
 
 ```bash
 cd authService && npm install
-cp .env.example .env      # set JWT_SECRET and DATABASE_URL (both required)
+cp .env.example .env      # set JWT_SECRET, DATABASE_URL and INTERNAL_API_KEY (all required)
 npm run start:dev         # http://localhost:3001/health
 npm test                  # unit tests
 npm run test:e2e          # needs Docker: starts a throwaway Postgres, never the shared one
@@ -19,3 +19,5 @@ Endpoints:
 - `GET /auth/verify`: Bearer access token
 
 Refresh tokens are random strings, not JWTs. Only their SHA-256 hash is stored, in the `refresh_tokens` table; its definition is in `test/fixtures/auth-schema.sql`.
+
+Every call to Spring (login, admin login, register) carries `X-Internal-Api-Key: <INTERNAL_API_KEY>`. Spring refuses those endpoints without it, so give Spring the same value.

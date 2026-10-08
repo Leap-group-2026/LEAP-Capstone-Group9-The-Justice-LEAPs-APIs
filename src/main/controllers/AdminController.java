@@ -12,7 +12,8 @@ import dto.response.AccountResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import config.OpenApiConfig;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -66,7 +67,7 @@ public class AdminController {
         @ApiResponse(responseCode = "403", description = "Credentials valid but the admin's role is placeholder or empty",
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "This admin has no role assigned")))
     })
-    @SecurityRequirements  
+    @SecurityRequirement(name = OpenApiConfig.INTERNAL_KEY_SCHEME) 
     @PostMapping("/login")
     public AdminLoginResponse login(@RequestBody AdminCreation admin){
         return service.login(admin.getEmail(), admin.getPassword());

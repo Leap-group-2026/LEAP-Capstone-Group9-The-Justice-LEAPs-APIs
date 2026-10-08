@@ -10,6 +10,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.security.Keys;
@@ -19,6 +21,8 @@ import java.util.List;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+    
     @Value("${jwt.secret:your-secret-key}")
     private String jwtSecret;
 
@@ -42,7 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private String extractToken(HttpServletRequest request) {
         String header = request.getHeader("Authorization");
-        return header != null && header.startsWith("Bearer ") ? header.substring(7) : null;
+        return header != null && header.startsWith("Bearer ") ? header.substring(7).trim() : null;
     }
 
     private boolean validateToken(String token) {
@@ -51,6 +55,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
             return true;
         } catch (Exception e) {
+            logger.warn("Token validation failed: {}", e.getMessage());
             return false;
         }
     }

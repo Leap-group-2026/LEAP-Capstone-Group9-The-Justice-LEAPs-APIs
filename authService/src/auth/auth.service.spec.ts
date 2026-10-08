@@ -8,6 +8,7 @@ describe('JWT signing', () => {
 
   beforeAll(async () => {
     process.env.JWT_SECRET = 'test-secret';
+    process.env.DATABASE_URL = 'postgres://test@127.0.0.1:1/none';
     process.env.JWT_EXPIRATION = '1800';
     const { AppModule } = await import('../app.module');
     const { AuthService } = await import('./auth.service');

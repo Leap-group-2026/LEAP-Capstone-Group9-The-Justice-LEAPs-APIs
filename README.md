@@ -3,10 +3,20 @@
 ## Running the API
 
 ```
-mvn spring-boot:run
+JWT_SECRET="$(grep '^JWT_SECRET=' authService/.env | cut -d= -f2-)" mvn spring-boot:run
+
+OR 
+
+add:
+spring.config.import=optional:file:./authService/.env[.properties]
+jwt.secret=${JWT_SECRET:}
+
+then mvn spring-boot:run
 ```
 
 The app starts on port **8081** and connects to the Postgres configured in `src/main/resources/application.properties`.
+
+`JWT_SECRET` must be the same value the auth service signs tokens with (`authService/.env`), and at least 32 bytes. Without it the app refuses to start. Get a token from the auth service (`POST http://localhost:3001/auth/login`) and send it as `Authorization: Bearer <accessToken>`. A missing, expired or invalid token gets 401; a valid token on a route its role can't use gets 403.
 
 ## API documentation (Swagger)
 

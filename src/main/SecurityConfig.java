@@ -1,6 +1,10 @@
 package main;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -39,6 +43,8 @@ public class SecurityConfig {
                 .requestMatchers("/user/**").hasRole("CLIENT")
                 // Admin-only endpoints (must come before general patterns)
                 .requestMatchers("/positions/{id}").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/positions").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/accounts").hasRole("CLIENT")
                 .requestMatchers("/orders/{orderId}").hasRole("ADMIN")
                 // General endpoints that support both ADMIN and CLIENT
                 .requestMatchers("/transactions/account/**").hasAnyRole("ADMIN", "CLIENT")
@@ -54,6 +60,8 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .csrf(csrf -> csrf.disable());
         return http.build();
     }

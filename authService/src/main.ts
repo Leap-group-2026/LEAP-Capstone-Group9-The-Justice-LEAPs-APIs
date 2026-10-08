@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { EnvConfig } from './config/env.validation';
+import { setupSwagger } from './swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,9 +13,11 @@ async function bootstrap() {
     credentials: true,
   });
 
+  setupSwagger(app);
+
   const port = config.get('PORT', { infer: true });
   await app.listen(port);
-  console.log(`Auth service running on port ${port}`);
+  console.log(`Auth service running on port ${port} (API docs: /docs)`);
 }
 
 bootstrap().catch(err => {

@@ -2,6 +2,7 @@ package controllers;
 
 import services.UserService;
 import services.AccountService;
+import config.AuthorizationUtil;
 import dto.request.UserRegistrationRequest;
 import dto.request.VerifyPasswordReset;
 import dto.request.LoginRequest;
@@ -17,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import dto.response.ValidationError;
 import java.util.List;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -31,9 +33,11 @@ import dto.response.UserLoginResponse;
 public class UserController {
     private UserService service;
     private AccountService accountService;
-    public UserController(UserService service, AccountService accountService){
+    private AuthorizationUtil authorizationUtil;
+    public UserController(UserService service, AccountService accountService, AuthorizationUtil authorizationUtil){
         this.service = service;
         this.accountService = accountService; 
+        this.authorizationUtil = authorizationUtil;
     }
 
     @Operation(summary = "Register a user",
@@ -45,6 +49,7 @@ public class UserController {
             + "\"SSN already exists.\") or password rule broken (e.g. \"Password must be a minimum of 12 characters.\")",
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Email already exists.")))
     })
+    @SecurityRequirements
     @PostMapping
     public ResponseEntity<UserResponse> createUser(@RequestBody UserRegistrationRequest request){
         //return service.saveUser(user);
@@ -87,6 +92,7 @@ public class UserController {
         @ApiResponse(responseCode = "401", description = "Unknown email or wrong password (identical response for both)",
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Invalid email or password")))
     })
+    @SecurityRequirements  
     @PostMapping("/login")
     public UserLoginResponse login(@RequestBody LoginRequest request){
         return service.login(request);
@@ -96,6 +102,9 @@ public class UserController {
     @Operation(summary = "Currency exchange transaction")
     @PostMapping("/transactions/exchange")
     public ResponseEntity<String> currencyExchange(@Valid @RequestBody TransactionRequest transactionRequest){
+        accountService.findIfPresent(transactionRequest.accountId())
+            .filter(account -> account.getUserId() != null)
+            .ifPresent(account -> authorizationUtil.checkAccountAccess(account.getAccountId(), account.getUserId().getUserId()));
         return service.currencyExchange(transactionRequest);
     }
 

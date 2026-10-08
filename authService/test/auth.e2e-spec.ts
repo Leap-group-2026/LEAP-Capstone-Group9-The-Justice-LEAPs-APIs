@@ -1,8 +1,10 @@
 import { BadGatewayException, INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
+import { Pool } from 'pg';
 import request from 'supertest';
 import { SpringUsersClient } from '../src/auth/spring-users.client';
+import { resetAuthTables } from './auth-tables';
 
 
 // Spring is replaced by this fake, so each case controls exactly what Spring "answers"
@@ -14,10 +16,13 @@ const reply = (status: number, data: unknown, contentType = 'application/json') 
 describe('POST /auth/login and /auth/register (N2)', () => {
   let app: INestApplication;
   let jwt: JwtService;
+  let db: Pool;
 
   beforeAll(async () => {
     // Set before AppModule loads: ConfigModule.forRoot reads the environment at import time
     process.env.JWT_SECRET = 'test-secret';
+    // The throwaway Postgres from postgres.global-setup.ts: a successful login now stores a refresh token
+    process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     process.env.JWT_EXPIRATION = '1800';
     const { AppModule } = await import('../src/app.module');
 
@@ -28,10 +33,17 @@ describe('POST /auth/login and /auth/register (N2)', () => {
     app = moduleRef.createNestApplication();
     await app.init();
     jwt = app.get(JwtService);
+    db = new Pool({ connectionString: process.env.TEST_DATABASE_URL });
   });
 
-  afterAll(() => app.close());
-  beforeEach(() => jest.resetAllMocks());
+  afterAll(async () => {
+    await app.close();
+    await db.end();
+  });
+  beforeEach(async () => {
+    jest.resetAllMocks();
+    await resetAuthTables(db);
+  });
 
   const login = (body: object) => request(app.getHttpServer()).post('/auth/login').send(body);
 
@@ -41,7 +53,7 @@ describe('POST /auth/login and /auth/register (N2)', () => {
 
       const res = await login({ email: 'jo@example.com', password: 'Secret' }).expect(200);
 
-      expect(Object.keys(res.body)).toEqual(['accessToken']);
+      expect(Object.keys(res.body).sort()).toEqual(['accessToken', 'refreshToken']);
       const claims = jwt.verify(res.body.accessToken);
       expect(claims.sub).toBe('42');
       expect(claims.role).toBe('client');
@@ -49,14 +61,14 @@ describe('POST /auth/login and /auth/register (N2)', () => {
       expect(spring.login).toHaveBeenCalledWith('jo@example.com', 'Secret');
     });
 
-    it('puts nothing but sub, role, iat and exp in the token', async () => {
+    it('puts nothing but sub, role, type, sid, auth_time, iat and exp in the token', async () => {
       // Even if Spring were to send extra fields, none of them may reach the token
       spring.login.mockResolvedValue(reply(200, { id: 42, email: 'jo@example.com', passHash: 'x', ssn: '123' }));
 
       const res = await login({ email: 'jo@example.com', password: 'Secret' }).expect(200);
 
       expect(Object.keys(jwt.decode(res.body.accessToken)).sort())
-        .toEqual(['auth_time', 'exp', 'iat', 'role', 'sub', 'type']);
+        .toEqual(['auth_time', 'exp', 'iat', 'role', 'sid', 'sub', 'type']);
     });
 
     it('returns the same 401 body for a wrong password and an unknown email', async () => {

@@ -65,6 +65,12 @@ public class ApiDocsTest {
         Map.entry("post", "/user/resetpassword/reset"),
         Map.entry("post", "/user/transactions/exchange"));
 
+    // The endpoints SecurityConfig lets through without a token; every other one must show the lock in Swagger UI
+    private static final List<Map.Entry<String, String>> PUBLIC_ENDPOINTS = List.of(
+        Map.entry("post", "/user"),
+        Map.entry("post", "/user/login"),
+        Map.entry("post", "/admin/login"));
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -103,6 +109,30 @@ public class ApiDocsTest {
             assertFalse(op.isMissingNode(), "not documented: " + name);
             assertEquals(1, op.path("tags").size(), name + " should be in exactly one group, has " + op.path("tags"));
             assertFalse(op.path("summary").asText().isBlank(), name + " has no summary");
+        }
+    }
+
+    @Test
+    void definesTheBearerSchemeAndRequiresItByDefault() throws Exception {
+        JsonNode docs = apiDocs();
+
+        JsonNode scheme = docs.path("components").path("securitySchemes").path("bearerAuth");
+        assertEquals("http", scheme.path("type").asText());
+        assertEquals("bearer", scheme.path("scheme").asText());
+        assertTrue(docs.path("security").toString().contains("bearerAuth"), "bearerAuth is not the default: " + docs.path("security"));
+    }
+
+    @Test
+    void onlyThePublicEndpointsAreDocumentedAsNotNeedingAToken() throws Exception {
+        JsonNode paths = apiDocs().path("paths");
+
+        for (Map.Entry<String, String> e : ENDPOINTS) {
+            JsonNode op = paths.path(e.getValue()).path(e.getKey());
+            String name = e.getKey().toUpperCase() + " " + e.getValue();
+            // An operation without its own "security" inherits the global bearer requirement; [] opts it out
+            boolean optedOut = op.has("security") && op.path("security").isEmpty();
+            assertEquals(PUBLIC_ENDPOINTS.contains(e), optedOut,
+                name + (optedOut ? " is documented as public but needs a token" : " is public but documented as needing a token"));
         }
     }
 }

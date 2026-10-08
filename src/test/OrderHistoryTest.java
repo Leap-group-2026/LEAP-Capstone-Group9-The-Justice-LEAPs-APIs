@@ -131,7 +131,7 @@ public class OrderHistoryTest {
     public void testInitialOrderCreatesSnapshot() throws Exception {
         // When an order is created, the trigger should capture a snapshot
         mockMvc.perform(get("/orders/" + testOrder.getOrderId() + "/history")
-            .with(user("1"))
+            .with(user(String.valueOf(testUser.getUserId())))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))  // At least 1 snapshot on INSERT
@@ -144,7 +144,7 @@ public class OrderHistoryTest {
         // The snapshot now contains only scalar values and IDs (camelCase: instrumentId, accountId)
         // not entity references like order_id
         mockMvc.perform(get("/orders/" + testOrder.getOrderId() + "/history")
-            .with(user("1"))
+            .with(user(String.valueOf(testUser.getUserId())))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             // Raw JSON snapshot should contain camelCase field names (new format)
@@ -167,7 +167,7 @@ public class OrderHistoryTest {
     public void testHistorySnapshotHasTimestamp() throws Exception {
         // Verify the snapshot has an occurred_at timestamp
         mockMvc.perform(get("/orders/" + testOrder.getOrderId() + "/history")
-            .with(user("1"))
+            .with(user(String.valueOf(testUser.getUserId())))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].occurred_at", notNullValue()));
@@ -177,7 +177,7 @@ public class OrderHistoryTest {
     public void testHistoryEndpointReturnsJsonArray() throws Exception {
         // Verify the endpoint returns valid JSON array
         mockMvc.perform(get("/orders/" + testOrder.getOrderId() + "/history")
-            .with(user("1"))
+            .with(user(String.valueOf(testUser.getUserId())))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", instanceOf(java.util.ArrayList.class)));
@@ -187,7 +187,7 @@ public class OrderHistoryTest {
     public void testHistoryForNonexistentOrder() throws Exception {
         // Try to retrieve history for an order that doesn't exist
         mockMvc.perform(get("/orders/99999/history")
-            .with(user("1"))
+            .with(user(String.valueOf(testUser.getUserId())))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(0)));  // Should return empty list
@@ -210,7 +210,7 @@ public class OrderHistoryTest {
         String createOrderJson = "{\"side\": \"BUY\", \"accountId\": " + testAccount.getAccountId()
             + ", \"instrumentId\": " + testInstrument.getInstrumentId() + ", \"quantity\": 50}";
         
-        MvcResult createResult = mockMvc.perform(post("/orders")
+        MvcResult createResult = mockMvc.perform(post("/orders").with(user(String.valueOf(testUser.getUserId())))
             .contentType(MediaType.APPLICATION_JSON)
             .content(createOrderJson))
             .andExpect(status().isOk())
@@ -226,7 +226,7 @@ public class OrderHistoryTest {
         
         // Read it back through the endpoint and verify all fields deserialize
         mockMvc.perform(get("/orders/" + orderId + "/history")
-            .with(user("1"))
+            .with(user(String.valueOf(testUser.getUserId())))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[1].status").value("FILLED"))  // Index 1 is the manually inserted one
@@ -256,7 +256,7 @@ public class OrderHistoryTest {
         String createOrderJson = "{\"side\": \"BUY\", \"accountId\": " + testAccount.getAccountId()
             + ", \"instrumentId\": " + testInstrument.getInstrumentId() + ", \"quantity\": 25}";
         
-        MvcResult createResult = mockMvc.perform(post("/orders")
+        MvcResult createResult = mockMvc.perform(post("/orders").with(user(String.valueOf(testUser.getUserId())))
             .contentType(MediaType.APPLICATION_JSON)
             .content(createOrderJson))
             .andExpect(status().isOk())
@@ -272,7 +272,7 @@ public class OrderHistoryTest {
         
         // Read it back through the endpoint and verify all fields deserialize
         mockMvc.perform(get("/orders/" + orderId + "/history")
-            .with(user("1"))
+            .with(user(String.valueOf(testUser.getUserId())))
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[1].status").value("CANCELED"))  // Index 1 is the manually inserted one

@@ -1,7 +1,10 @@
 package config;
 
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.tags.Tag;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,12 +14,27 @@ import java.util.List;
 @Configuration
 public class OpenApiConfig {
 
+
+    public static final String BEARER_SCHEME = "bearerAuth";
+
     @Bean
     public OpenAPI leapOpenApi() {
         return new OpenAPI().info(new Info()
             .title("Ribbit Trading Platform API")
-            .description("Backend for the LEAP retail trading platform: users, accounts, orders, positions and order history.")
+            .description("Backend for the LEAP retail trading platform: users, accounts, orders, positions and order history.\n\n"
+                + "Almost every endpoint needs an access token. Spring does not issue tokens: get one from the auth "
+                + "service with `POST http://localhost:3001/auth/login` (clients) or `/auth/adminLogin` (admins), then "
+                + "click **Authorize** and paste the `accessToken`. It lasts 30 minutes; trade the `refreshToken` at "
+                + "`POST http://localhost:3001/auth/refresh` for a new one. The auth service's own docs are at "
+                + "http://localhost:3001/docs.")
             .version("1.0.0"))
+            .components(new Components().addSecuritySchemes(BEARER_SCHEME, new SecurityScheme()
+                .type(SecurityScheme.Type.HTTP)
+                .scheme("bearer")
+                .bearerFormat("JWT")
+                .description("The accessToken from the auth service. Role client or admin decides which endpoints it opens.")))
+            // Applies to every endpoint unless the endpoint opts out
+            .addSecurityItem(new SecurityRequirement().addList(BEARER_SCHEME))
             // Swagger UI shows the groups in this order. Defining a group here replaces the
             // description on the controller's @Tag, so the descriptions live here too.
             .tags(List.of(

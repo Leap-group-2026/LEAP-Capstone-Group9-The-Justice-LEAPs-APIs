@@ -3,6 +3,9 @@
   "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
+  "maxWorkers": 1,
+  "globalSetup": "<rootDir>/postgres.global-setup.ts",
+  "globalTeardown": "<rootDir>/postgres.global-teardown.ts",
   "transform": {
     "^.+\\.ts$": "ts-jest"
   }

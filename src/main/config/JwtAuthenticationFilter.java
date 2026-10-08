@@ -12,27 +12,39 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.security.Keys;
 import javax.crypto.SecretKey;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    @Value("${jwt.secret:your-secret-key}")
-    private String jwtSecret;
+    static final int MIN_SECRET_BYTES = 32;
+
+    private final SecretKey key;
+
+    public JwtAuthenticationFilter(@Value("${jwt.secret:}") String jwtSecret) {
+        byte[] secret = jwtSecret.getBytes(StandardCharsets.UTF_8);
+        if (secret.length < MIN_SECRET_BYTES) {
+            throw new IllegalStateException("jwt.secret is missing or shorter than " + MIN_SECRET_BYTES + " bytes. "
+                + "Set the JWT_SECRET environment variable to the same value as authService/.env's JWT_SECRET.");
+        }
+        this.key = Keys.hmacShaKeyFor(secret);
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
-        String token = extractToken(request);
-        if (token != null && validateToken(token)) {
-            String role = extractRoleFromToken(token);
-            String userId = extractUserIdFromToken(token);
+        Claims claims = verifiedAccessClaims(extractToken(request));
+        if (claims != null) {
+            String role = claims.get("role", String.class);
+            String userId = claims.getSubject();
             if (role != null && userId != null) {
-                List<SimpleGrantedAuthority> authorities = 
+                List<SimpleGrantedAuthority> authorities =
                     List.of(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
-                UsernamePasswordAuthenticationToken auth = 
+                UsernamePasswordAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(userId, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
@@ -45,32 +57,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return header != null && header.startsWith("Bearer ") ? header.substring(7) : null;
     }
 
-    private boolean validateToken(String token) {
-        try {
-            SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
-            Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
 
-    private String extractRoleFromToken(String token) {
-        try {
-            SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
-            Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
-            return (String) claims.get("role");
-        } catch (Exception e) {
+    private Claims verifiedAccessClaims(String token) {
+        if (token == null) {
             return null;
         }
-    }
-
-    private String extractUserIdFromToken(String token) {
         try {
-            SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
             Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
-            return (String) claims.getSubject();
-        } catch (Exception e) {
+            return "access".equals(claims.get("type")) ? claims : null;
+        } catch (JwtException | IllegalArgumentException e) {
             return null;
         }
     }

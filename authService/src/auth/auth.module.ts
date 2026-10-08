@@ -8,10 +8,13 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { SpringUsersClient } from './spring-users.client';
 import { EnvConfig } from '../config/env.validation';
+import { DatabaseModule } from '../database/database.module';
+import { RefreshTokenStore } from './refresh-token.store';
 
 @Module({
   imports: [
     PassportModule,
+    DatabaseModule,
     HttpModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService<EnvConfig, true>) => ({
@@ -28,7 +31,7 @@ import { EnvConfig } from '../config/env.validation';
       }),
     }),
   ],
-  providers: [AuthService, JwtStrategy, SpringUsersClient],
+  providers: [AuthService, JwtStrategy, SpringUsersClient, RefreshTokenStore],
   controllers: [AuthController],
   exports: [AuthService],
 })

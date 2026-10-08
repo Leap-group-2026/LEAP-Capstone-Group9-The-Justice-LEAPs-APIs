@@ -5,6 +5,7 @@ export interface EnvConfig {
   SPRINGBOOT_API_URL: string;
   CORS_ORIGIN: string;
   JWT_MAX_SESSION: number;
+  DATABASE_URL: string;
 }
 
 
@@ -14,6 +15,11 @@ export function validateEnv(env: Record<string, unknown>): EnvConfig {
     throw new Error('JWT_SECRET is not set. Add it to authService/.env (see .env.example).');
   }
 
+  const databaseUrl = env.DATABASE_URL;
+  if (typeof databaseUrl !== 'string' || databaseUrl.trim() === '') {
+    throw new Error('DATABASE_URL is not set. Add it to authService/.env (see .env.example).');
+  }
+
   return {
     PORT: toPositiveInt(env, 'PORT', 3001),
     JWT_SECRET: secret,
@@ -21,6 +27,7 @@ export function validateEnv(env: Record<string, unknown>): EnvConfig {
     SPRINGBOOT_API_URL: toText(env, 'SPRINGBOOT_API_URL', 'http://localhost:8081'),
     CORS_ORIGIN: toText(env, 'CORS_ORIGIN', 'http://localhost:4200'),
     JWT_MAX_SESSION: toPositiveInt(env, 'JWT_MAX_SESSION', 28800),
+    DATABASE_URL: databaseUrl,
   };
 }
 

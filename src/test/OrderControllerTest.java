@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 import main.Application;
 import dto.response.OrderSubmissionResponse;
@@ -106,7 +107,7 @@ public class OrderControllerTest {
     void testValidation_MissingSideField() throws Exception {
         String jsonPayload = "{\"accountId\": 1, \"instrumentId\": 1, \"quantity\": 100}";
 
-        mockMvc.perform(post("/orders")
+        mockMvc.perform(post("/orders").with(user(String.valueOf(testAccount.getUserId().getUserId())))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonPayload))
             .andExpect(status().isBadRequest())
@@ -120,7 +121,7 @@ public class OrderControllerTest {
     void testValidation_NegativeQuantity() throws Exception {
         String jsonPayload = "{\"side\": \"BUY\", \"accountId\": 1, \"instrumentId\": 1, \"quantity\": -50}";
 
-        mockMvc.perform(post("/orders")
+        mockMvc.perform(post("/orders").with(user(String.valueOf(testAccount.getUserId().getUserId())))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonPayload))
             .andExpect(status().isBadRequest())
@@ -134,7 +135,7 @@ public class OrderControllerTest {
     void testValidation_NullAccountId() throws Exception {
         String jsonPayload = "{\"side\": \"BUY\", \"instrumentId\": 1, \"quantity\": 100}";
 
-        mockMvc.perform(post("/orders")
+        mockMvc.perform(post("/orders").with(user(String.valueOf(testAccount.getUserId().getUserId())))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonPayload))
             .andExpect(status().isBadRequest())
@@ -147,7 +148,7 @@ public class OrderControllerTest {
     void testValidation_NullInstrumentId() throws Exception {
         String jsonPayload = "{\"side\": \"BUY\", \"accountId\": 1, \"quantity\": 100}";
 
-        mockMvc.perform(post("/orders")
+        mockMvc.perform(post("/orders").with(user(String.valueOf(testAccount.getUserId().getUserId())))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonPayload))
                 .andExpect(status().isBadRequest())
@@ -161,7 +162,7 @@ public class OrderControllerTest {
         String jsonPayload = "{\"side\": \"BUY\", \"accountId\": " + testAccount.getAccountId()
             + ", \"instrumentId\": " + testInstrument.getInstrumentId() + ", \"quantity\": 50}";
 
-        MvcResult result = mockMvc.perform(post("/orders")
+        MvcResult result = mockMvc.perform(post("/orders").with(user(String.valueOf(testAccount.getUserId().getUserId())))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonPayload))
             .andExpect(status().isOk())

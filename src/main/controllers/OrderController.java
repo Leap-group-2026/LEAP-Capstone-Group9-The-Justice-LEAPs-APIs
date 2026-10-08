@@ -58,6 +58,7 @@ public class OrderController {
     })
     @PostMapping
     public OrderSubmissionResponse createOrder(@RequestBody @Valid CreateOrderRequest request) {
+        checkOwnsAccount(request.accountId());
         return orderService.createOrder(request);
     }
 
@@ -105,6 +106,14 @@ public class OrderController {
     })
     @PostMapping("/{orderId}/cancel")
     public OrderHistoryResponse cancelOrder(@PathVariable Integer orderId) {
+        ordersRepo.findById(orderId).ifPresent(order -> checkOwnsAccount(order.getAccountId().getAccountId()));
         return orderService.cancelOrder(orderId);
+    }
+
+
+    private void checkOwnsAccount(Integer accountId) {
+        accountService.findIfPresent(accountId)
+            .filter(account -> account.getUserId() != null)
+            .ifPresent(account -> authorizationUtil.checkAccountAccess(accountId, account.getUserId().getUserId()));
     }
 }

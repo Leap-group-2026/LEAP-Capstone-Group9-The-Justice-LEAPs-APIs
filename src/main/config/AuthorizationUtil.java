@@ -24,6 +24,11 @@ public class AuthorizationUtil {
         return null;
     }
     
+
+    public Integer getCurrentClientId() {
+        return isClient() ? getCurrentUserId() : null;
+    }
+
     /**
      * Checks if the current user has ADMIN role
      */
@@ -65,6 +70,14 @@ public class AuthorizationUtil {
         }
     }
     
+
+    public void checkUserAccess(Integer userId) {
+        Integer currentUserId = getCurrentUserId();
+        if (!isAdmin() && (currentUserId == null || !currentUserId.equals(userId))) {
+            throw new ResourceNotFoundException("User", userId.toString());
+        }
+    }
+
     /**
      * Checks if current user is admin
      * Throws ResourceNotFoundException if not authorized

@@ -1,5 +1,7 @@
 package services;
 
+import java.util.Optional;
+
 import org.springframework.stereotype.Service;
 import repos.AccountsRepo;
 import repos.UserRepo;
@@ -33,6 +35,11 @@ public class AccountService {
             .orElseThrow(() -> new ResourceNotFoundException("Account", String.valueOf(id)));
     }
 
+
+    public Optional<AccountsEntity> findIfPresent(Integer id) {
+        return repo.findById(id);
+    }
+
     public AccountsEntity saveAccount(AccountsEntity entity) {
         if (entity.getAccountActive() == null) {
             entity.setAccountActive(true);
@@ -47,6 +54,15 @@ public class AccountService {
         return entity;
     }
     public String closeAccount(Integer accountId, Integer currentUserId) {
+        return close(accountId, currentUserId, false);
+    }
+
+
+    public String closeAccountAsAdmin(Integer accountId) {
+        return close(accountId, null, true);
+    }
+
+    private String close(Integer accountId, Integer currentUserId, boolean asAdmin) {
         // Use unfiltered method to allow closing already-inactive accounts
         AccountsEntity existingAccount = repo.findByIdIncludingInactive(accountId)
         .orElseThrow(() -> new IllegalStateException("Not a valid user"));
@@ -61,7 +77,7 @@ public class AccountService {
             throw new IllegalStateException("Account is already closed");
         }
         
-       if(!accountValidation(existingAccount, currentUserId)){
+       if(!asAdmin && !accountValidation(existingAccount, currentUserId)){
             throw new IllegalStateException("You are not allowed to do operations on this account");
        }
         // If the account balance is not 0, closing the account will not work

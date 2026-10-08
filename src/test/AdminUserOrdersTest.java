@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import main.Application;
 import test.config.TestClockConfig;
+import test.config.TestSecurityConfig;
 
 /**
  * Admin endpoints for one user's orders: GET /admin/orders/{userId} and GET /admin/orders/{userId}/cancelled
@@ -23,7 +24,7 @@ import test.config.TestClockConfig;
  * test exercises the real SQL and result mapping rather than agreeing with itself.
  */
 @SpringBootTest(classes = Application.class)
-@Import(TestClockConfig.class)
+@Import({TestClockConfig.class, TestSecurityConfig.class})
 @AutoConfigureMockMvc
 @Transactional
 @DisplayName("Admin User Orders Endpoint Tests")

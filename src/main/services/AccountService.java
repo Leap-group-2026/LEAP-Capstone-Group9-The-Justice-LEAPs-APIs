@@ -7,7 +7,6 @@ import repos.OrdersRepo;
 import repos.InstrumentRepo;
 import entities.AccountsEntity;
 import entities.OrderEntity;
-import dto.request.CloseAccountRequest;
 import dto.response.AccountResponse;
 import dto.response.OrderAccountResponse;
 import exception.ResourceNotFoundException;

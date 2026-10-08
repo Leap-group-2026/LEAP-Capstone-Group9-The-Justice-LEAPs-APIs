@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import main.Application;
 import test.config.TestClockConfig;
+import test.config.TestSecurityConfig;
 
 /**
  * GET /accounts/user/{userId}, verified end to end.
@@ -24,7 +25,7 @@ import test.config.TestClockConfig;
  * so every assertion checks a value that was written independently of the query that reads it.
  */
 @SpringBootTest(classes = Application.class)
-@Import(TestClockConfig.class)
+@Import({TestClockConfig.class, TestSecurityConfig.class})
 @AutoConfigureMockMvc
 @Transactional
 @DisplayName("GET /accounts/user/{userId} Tests")

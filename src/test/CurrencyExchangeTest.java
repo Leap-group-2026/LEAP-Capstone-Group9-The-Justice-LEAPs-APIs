@@ -29,13 +29,15 @@ import repos.CurrentPriceRepo;
 import repos.PositionsRepo;
 import repos.UserRepo;
 import test.config.TestClockConfig;
+import test.config.TestSecurityConfig;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @SpringBootTest(classes = Application.class)
-@Import(TestClockConfig.class)
+@Import({TestClockConfig.class, TestSecurityConfig.class})
 @AutoConfigureMockMvc
 @Transactional
 @DisplayName("Currency Exchange Endpoint Tests")

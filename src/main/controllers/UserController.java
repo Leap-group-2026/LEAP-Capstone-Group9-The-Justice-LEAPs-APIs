@@ -1,17 +1,21 @@
 package controllers;
 
 import services.UserService;
+import services.AccountService;
 import dto.request.UserRegistrationRequest;
 import dto.request.VerifyPasswordReset;
 import dto.request.LoginRequest;
 import dto.request.UpdateUserRequest;
 import dto.response.UserResponse;
 import dto.response.UpdateUserResponse;
+import dto.response.AccountResponse;
 import dto.request.TransactionRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.context.SecurityContextHolder;
 import dto.response.ValidationError;
+import java.util.List;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -25,9 +29,11 @@ import dto.response.UserLoginResponse;
 @RestController 
 @RequestMapping("/user")
 public class UserController {
-    private UserService service; 
-    public UserController(UserService service){
-        this.service = service; 
+    private UserService service;
+    private AccountService accountService;
+    public UserController(UserService service, AccountService accountService){
+        this.service = service;
+        this.accountService = accountService; 
     }
 
     @Operation(summary = "Register a user",
@@ -93,6 +99,15 @@ public class UserController {
         return service.currencyExchange(transactionRequest);
     }
 
+    @Operation(summary = "Retrieve all accounts for the current user",
+        description = "Returns a list of all active accounts owned by the authenticated user")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved user's accounts")
+    @GetMapping("/accounts")
+    public List<AccountResponse> getUserAccounts() {
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        return accountService.getAccountsByUserID(Integer.parseInt(userId));
+    }
+
     @Operation(summary = "Update a user's profile",
         description = "Updates one or more of the user's name, email, or address. At least one field must be provided. "
             + "Email must be well-formed and not used by another user.")
@@ -103,11 +118,11 @@ public class UserController {
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Email already in use"))),
         @ApiResponse(responseCode = "404", description = "No user with this id", content = @Content(schema = @Schema(implementation = ValidationError.class)))
     })
-    @PatchMapping("/{id}")
+    @PatchMapping
     public ResponseEntity<UpdateUserResponse> updateUser(
-            @PathVariable Integer id,
             @RequestBody UpdateUserRequest request) {
-        UpdateUserResponse response = service.updateUser(id, request);
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        UpdateUserResponse response = service.updateUser(Integer.parseInt(userId), request);
         return ResponseEntity.ok(response);
     }
 

@@ -51,7 +51,7 @@ public class AdminController {
         adminEntity.setEmail(admin.getEmail());
         String pass = passwordEncoder.encode(admin.getPassword());
         adminEntity.setPassHash(pass);
-        adminEntity.setRole("placeholder");
+        adminEntity.setRole("ADMIN");
         return service.saveAdmin(adminEntity);
     }
     @Operation(summary = "Admin login",

@@ -12,9 +12,11 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 import main.Application;
 import test.config.TestClockConfig;
+import test.config.TestSecurityConfig;
 
 /**
  * GET /orders/{orderId}, verified end to end.
@@ -24,7 +26,7 @@ import test.config.TestClockConfig;
  * Fixtures are inserted with raw SQL through JdbcTemplate, never through the code under test.
  */
 @SpringBootTest(classes = Application.class)
-@Import(TestClockConfig.class)
+@Import({TestClockConfig.class, TestSecurityConfig.class})
 @AutoConfigureMockMvc
 @Transactional
 @DisplayName("GET /orders/{orderId} Tests")
@@ -94,7 +96,8 @@ public class GetOrderByIdTest {
     @Test
     @DisplayName("Should return filled order with all fields including executedAt")
     void returnFilledOrderWithExecutedAt() throws Exception {
-        mockMvc.perform(get("/orders/" + FILLED_ORDER_ID))
+        mockMvc.perform(get("/orders/" + FILLED_ORDER_ID)
+            .with(user("" + USER_ID).roles("ADMIN")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.orderId").value(FILLED_ORDER_ID))
             .andExpect(jsonPath("$.ticker").value("GOOG"))
@@ -109,7 +112,8 @@ public class GetOrderByIdTest {
     @Test
     @DisplayName("Should return pending order without executedAt")
     void returnPendingOrderWithoutExecutedAt() throws Exception {
-        mockMvc.perform(get("/orders/" + PENDING_ORDER_ID))
+        mockMvc.perform(get("/orders/" + PENDING_ORDER_ID)
+            .with(user("" + USER_ID).roles("ADMIN")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.orderId").value(PENDING_ORDER_ID))
             .andExpect(jsonPath("$.ticker").value("GOOG"))
@@ -124,7 +128,8 @@ public class GetOrderByIdTest {
     @Test
     @DisplayName("Should return canceled order without executedAt")
     void returnCanceledOrderWithoutExecutedAt() throws Exception {
-        mockMvc.perform(get("/orders/" + CANCELED_ORDER_ID))
+        mockMvc.perform(get("/orders/" + CANCELED_ORDER_ID)
+            .with(user("" + USER_ID).roles("ADMIN")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.orderId").value(CANCELED_ORDER_ID))
             .andExpect(jsonPath("$.ticker").value("GOOG"))
@@ -136,7 +141,8 @@ public class GetOrderByIdTest {
     @Test
     @DisplayName("Should correctly calculate pricePerUnit from totalPrice and quantity")
     void correctlyCalculatesPricePerUnit() throws Exception {
-        mockMvc.perform(get("/orders/" + FILLED_ORDER_ID))
+        mockMvc.perform(get("/orders/" + FILLED_ORDER_ID)
+            .with(user("" + USER_ID).roles("ADMIN")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.totalPrice").value(1500.0))
             .andExpect(jsonPath("$.quantity").value(10))
@@ -146,7 +152,8 @@ public class GetOrderByIdTest {
     @Test
     @DisplayName("Should populate ticker from resolved instrument")
     void populatesTicker() throws Exception {
-        mockMvc.perform(get("/orders/" + FILLED_ORDER_ID))
+        mockMvc.perform(get("/orders/" + FILLED_ORDER_ID)
+            .with(user("" + USER_ID).roles("ADMIN")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.ticker").value("GOOG"))
             .andExpect(jsonPath("$.ticker").isString());
@@ -155,7 +162,8 @@ public class GetOrderByIdTest {
     @Test
     @DisplayName("Should not include nested instrument object")
     void responseDoesNotIncludeNestedInstrument() throws Exception {
-        mockMvc.perform(get("/orders/" + FILLED_ORDER_ID))
+        mockMvc.perform(get("/orders/" + FILLED_ORDER_ID)
+            .with(user("" + USER_ID).roles("ADMIN")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.ticker").exists())
             .andExpect(jsonPath("$.instrument").doesNotExist())
@@ -165,7 +173,8 @@ public class GetOrderByIdTest {
     @Test
     @DisplayName("Should not include nested account object")
     void responseDoesNotIncludeNestedAccount() throws Exception {
-        mockMvc.perform(get("/orders/" + FILLED_ORDER_ID))
+        mockMvc.perform(get("/orders/" + FILLED_ORDER_ID)
+            .with(user("" + USER_ID).roles("ADMIN")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.account").doesNotExist())
             .andExpect(jsonPath("$.account.accountId").doesNotExist());
@@ -174,7 +183,8 @@ public class GetOrderByIdTest {
     @Test
     @DisplayName("Should return 404 for nonexistent order")
     void returnNotFoundForNonexistentOrder() throws Exception {
-        mockMvc.perform(get("/orders/" + NONEXISTENT_ORDER_ID))
+        mockMvc.perform(get("/orders/" + NONEXISTENT_ORDER_ID)
+            .with(user("" + USER_ID).roles("ADMIN")))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.status").value(404));
     }
@@ -182,7 +192,8 @@ public class GetOrderByIdTest {
     @Test
     @DisplayName("Should include all required DTO fields")
     void includesAllRequiredFields() throws Exception {
-        mockMvc.perform(get("/orders/" + FILLED_ORDER_ID))
+        mockMvc.perform(get("/orders/" + FILLED_ORDER_ID)
+            .with(user("" + USER_ID).roles("ADMIN")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.orderId").exists())
             .andExpect(jsonPath("$.ticker").exists())
@@ -196,7 +207,8 @@ public class GetOrderByIdTest {
     @Test
     @DisplayName("Should have correct field types")
     void correctFieldTypes() throws Exception {
-        mockMvc.perform(get("/orders/" + FILLED_ORDER_ID))
+        mockMvc.perform(get("/orders/" + FILLED_ORDER_ID)
+            .with(user("" + USER_ID).roles("ADMIN")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.orderId").isNumber())
             .andExpect(jsonPath("$.ticker").isString())

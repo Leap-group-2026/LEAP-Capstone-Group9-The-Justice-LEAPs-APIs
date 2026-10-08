@@ -12,6 +12,12 @@ export class AuthController {
     private spring: SpringUsersClient,
   ) {}
 
+  @Post('adminLogin')
+  @HttpCode(200)
+  async adminLogin(@Body() dto: LoginDto) {
+    return this.authService.adminLogin(dto);
+  }
+
   @Post('login')
   @HttpCode(200)
   login(@Body() dto: LoginDto) {

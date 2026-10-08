@@ -19,6 +19,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import main.Application;
 import repos.HistoricalOrdersRepo;
 import test.config.TestClockConfig;
+import test.config.TestSecurityConfig;
 
 /**
  * An order and its audit snapshot must be saved together or not at all. historical_orders is a
@@ -28,7 +29,7 @@ import test.config.TestClockConfig;
  * commits the order on its own. Fixtures are raw SQL and are removed in tearDown.
  */
 @SpringBootTest(classes = Application.class)
-@Import(TestClockConfig.class)
+@Import({TestClockConfig.class, TestSecurityConfig.class})
 @AutoConfigureMockMvc
 public class OrderAtomicityTest {
 

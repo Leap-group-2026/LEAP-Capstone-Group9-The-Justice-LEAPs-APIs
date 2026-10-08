@@ -11,9 +11,11 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 import main.Application;
 import test.config.TestClockConfig;
+import test.config.TestSecurityConfig;
 
 /**
  * GET /orders/account/{accountId}, verified end to end.
@@ -22,7 +24,7 @@ import test.config.TestClockConfig;
  * so every assertion checks a value that was written independently of the query that reads it.
  */
 @SpringBootTest(classes = Application.class)
-@Import(TestClockConfig.class)
+@Import({TestClockConfig.class, TestSecurityConfig.class})
 @AutoConfigureMockMvc
 @Transactional
 public class OrderHistoryByAccountTest {
@@ -94,7 +96,8 @@ public class OrderHistoryByAccountTest {
 
     @Test
     void filledOrderReturnsEveryAcceptanceCriteriaField() throws Exception {
-        mockMvc.perform(get("/orders/account/" + ACCOUNT_ID))
+        mockMvc.perform(get("/orders/account/" + ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[1].orderId").value(FILLED_ORDER_ID))
             .andExpect(jsonPath("$[1].ticker").value("OH_ALPHA"))
@@ -108,7 +111,8 @@ public class OrderHistoryByAccountTest {
 
     @Test
     void unexecutedOrderHasNoExecutionTimeAndPricePerUnitIsRounded() throws Exception {
-        mockMvc.perform(get("/orders/account/" + ACCOUNT_ID))
+        mockMvc.perform(get("/orders/account/" + ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].orderId").value(CANCELED_ORDER_ID))
             .andExpect(jsonPath("$[0].ticker").value("OH_BETA"))
@@ -121,7 +125,8 @@ public class OrderHistoryByAccountTest {
 
     @Test
     void returnsOnlyThisAccountsOrdersNewestFirst() throws Exception {
-        mockMvc.perform(get("/orders/account/" + ACCOUNT_ID))
+        mockMvc.perform(get("/orders/account/" + ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(2)))
             .andExpect(jsonPath("$[*].orderId", contains(CANCELED_ORDER_ID, FILLED_ORDER_ID)));
@@ -129,21 +134,24 @@ public class OrderHistoryByAccountTest {
 
     @Test
     void accountWithNoOrdersReturnsEmptyList() throws Exception {
-        mockMvc.perform(get("/orders/account/" + EMPTY_ACCOUNT_ID))
+        mockMvc.perform(get("/orders/account/" + EMPTY_ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(0)));
     }
 
     @Test
     void unknownAccountIsNotFound() throws Exception {
-        mockMvc.perform(get("/orders/account/" + NEVER_EXISTED_ACCOUNT_ID))
+        mockMvc.perform(get("/orders/account/" + NEVER_EXISTED_ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.status").value(404));
     }
 
     @Test
     void closedAccountIsNotFoundEvenWithOrders() throws Exception {
-        mockMvc.perform(get("/orders/account/" + CLOSED_ACCOUNT_ID))
+        mockMvc.perform(get("/orders/account/" + CLOSED_ACCOUNT_ID)
+            .with(user("" + USER_ID)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.status").value(404));
     }

@@ -1,6 +1,8 @@
 package controllers;
 
 import services.PositionService;
+import services.AccountService;
+import config.AuthorizationUtil;
 import entities.PositionsEntity;
 import entities.AccountsEntity;
 import entities.InstrumentEntity;
@@ -25,9 +27,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class PositionController {
     @Autowired
     private PositionService positionService;
+    
+    private AccountService accountService;
+    private AuthorizationUtil authorizationUtil;
 
-    public PositionController(PositionService positionService) {
+    public PositionController(PositionService positionService, AccountService accountService, AuthorizationUtil authorizationUtil) {
         this.positionService = positionService;
+        this.accountService = accountService;
+        this.authorizationUtil = authorizationUtil;
     }
     @Operation(summary = "Record a position",
         description = "Inserts a holding of instrumentId for accountId. Only the two ids are needed, not the full account "
@@ -66,6 +73,11 @@ public class PositionController {
     })
     @GetMapping("/account/{accountId}")
     public List<PositionResponse> findOpenPositionsByAccountId(@PathVariable Integer accountId) {
+        var account = accountService.findById(accountId);
+        if (account == null || account.getUserId() == null) {
+            throw new exception.ResourceNotFoundException("Account", accountId.toString());
+        }
+        authorizationUtil.checkAccountAccess(accountId, account.getUserId().getUserId());
         return positionService.findOpenPositionsByAccountId(accountId);
     }
     
@@ -78,6 +90,7 @@ public class PositionController {
     })
     @GetMapping("/{id}")
     public PositionsEntity getPositionById(@PathVariable Integer id) {
+        authorizationUtil.checkAdminAccess();
         return positionService.findById(id);
     }
 

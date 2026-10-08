@@ -2,12 +2,16 @@ package controllers;
 
 import org.springframework.web.bind.annotation.*;
 import dto.response.OrderHistoryResponse;
+import dto.response.HistoricalOrderResponse;
 import java.util.List;
 
 import jakarta.validation.Valid;
 import dto.request.CreateOrderRequest;
 import dto.response.OrderSubmissionResponse;
 import services.OrderService;
+import services.AccountService;
+import config.AuthorizationUtil;
+import entities.OrderEntity;
 import dto.response.ValidationError;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -16,15 +20,23 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import repos.OrdersRepo;
+import exception.ResourceNotFoundException;
 
 @Tag(name = "Orders")  // description and display order: OpenApiConfig
 @RestController
 @RequestMapping("/orders")
 public class OrderController {
     private final OrderService orderService;
+    private final AccountService accountService;
+    private final AuthorizationUtil authorizationUtil;
+    private final OrdersRepo ordersRepo;
 
-    public OrderController(OrderService orderService) {
+    public OrderController(OrderService orderService, AccountService accountService, AuthorizationUtil authorizationUtil, OrdersRepo ordersRepo) {
         this.orderService = orderService;
+        this.accountService = accountService;
+        this.authorizationUtil = authorizationUtil;
+        this.ordersRepo = ordersRepo;
     }
 
     @Operation(summary = "Place an order",
@@ -58,6 +70,11 @@ public class OrderController {
     })
     @GetMapping("/account/{accountId}")
     public List<OrderHistoryResponse> getOrderHistory(@PathVariable Integer accountId) {
+        var account = accountService.findById(accountId);
+        if (account == null || account.getUserId() == null) {
+            throw new ResourceNotFoundException("Account", accountId.toString());
+        }
+        authorizationUtil.checkAccountAccess(accountId, account.getUserId().getUserId());
         return orderService.getOrderHistory(accountId);
     }
 
@@ -71,6 +88,7 @@ public class OrderController {
     @GetMapping("/{orderId}")
     public OrderHistoryResponse getByOrderId(@PathVariable Integer orderId)
     {
+        authorizationUtil.checkAdminAccess();
         return orderService.getByOrderId(orderId);
     }
 
@@ -89,7 +107,4 @@ public class OrderController {
     public OrderHistoryResponse cancelOrder(@PathVariable Integer orderId) {
         return orderService.cancelOrder(orderId);
     }
-
-    
-    
 }

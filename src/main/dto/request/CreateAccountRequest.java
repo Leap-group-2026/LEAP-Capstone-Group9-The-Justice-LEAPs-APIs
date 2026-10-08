@@ -8,10 +8,6 @@ import entities.PortfolioSize;
 import java.math.BigDecimal;
 
 public record CreateAccountRequest(
-    @Schema(description = "Id of the existing user who will own the account", example = "1")
-    @NotNull
-    Integer userId,
-
     @Schema(description = "Opening balance", example = "1000.00")
     @NotNull
     @PositiveOrZero

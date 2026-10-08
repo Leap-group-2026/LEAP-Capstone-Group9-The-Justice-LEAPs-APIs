@@ -1,15 +1,22 @@
-package main.dto.request;
+package dto.request;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Email;
 
 public class AdminCreation {
-    private String username;
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email should be valid")
+    private String email;
+    
+    @NotBlank(message = "Password is required")
     private String password;
 
-    public String getUsername() {
-        return username;
+    public String getEmail() {
+        return email;
     }
 
-    public void setUsername(String name) {
-        this.username = name;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getPassword(){

@@ -1,8 +1,8 @@
-package main.config;
+package config;
 
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
-import main.entities.PortfolioSize;
+import entities.PortfolioSize;
 import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

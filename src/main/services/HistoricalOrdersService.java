@@ -1,16 +1,14 @@
-package main.services;
+package services;
 
 import org.springframework.stereotype.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import main.entities.OrderEntity;
-import main.repos.HistoricalOrdersRepo;
-import main.repos.OrdersRepo;
-import main.entities.HistoricalOrdersEntity;
-import main.dto.OrderSnapshot;
+import entities.OrderEntity;
+import repos.HistoricalOrdersRepo;
+import repos.OrdersRepo;
+import entities.HistoricalOrdersEntity;
+import dto.OrderSnapshot;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,15 +29,12 @@ public class HistoricalOrdersService {
         captureOrderSnapshot(order, order.getCreatedAt());
     }
 
-    /**
-     * Capture an immutable snapshot of the order's current state.
-     * Stores ONLY scalar values and IDs, not entity references.
-     */
+ 
     public void captureOrderSnapshot(OrderEntity order, LocalDateTime occuredAt) {
         Integer instrumentId = order.getInstrumentId().getInstrumentId();
         Integer accountId = order.getAccountId().getAccountId();
         
-        // Build a snapshot containing only scalars and IDs, not entity objects
+
         OrderSnapshot snapshot = new OrderSnapshot(
             order.getStatus(),                             
             order.getSide(),
@@ -56,21 +51,16 @@ public class HistoricalOrdersService {
             order.getOrderId(),
             accountId,
             jsonSnapshot,
-            order.getCreatedAt()
+            occuredAt
         );
     }
 
-    /**
-     * Retrieve all historical snapshots for an order in chronological order.
-     */
+
     public List<HistoricalOrdersEntity> getHistoricalOrders(Integer orderId) {
         return repo.findByOrderId_OrderIdOrderByCreatedAtAsc(orderId);
     }
 
-    /**
-     * Serialize an OrderSnapshot (not the full entity) to JSON string for storage.
-     * Throws RuntimeException if serialization fails.
-     */
+  
     private String serializeSnapshotToJson(OrderSnapshot snapshot) {
         try {
             return objectMapper.writeValueAsString(snapshot);

@@ -1,4 +1,4 @@
-package main.repos;
+package repos;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -8,7 +8,8 @@ import org.apache.ibatis.annotations.One;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Param;
-import main.entities.PositionsEntity;
+import entities.PositionsEntity;
+import dto.response.PositionResponse;
 import java.util.Optional;
 import java.util.List;
 import java.math.BigDecimal;
@@ -16,7 +17,18 @@ import java.time.LocalDateTime;
 
 @Mapper
 public interface PositionsRepo {
-    @Select("SELECT * FROM positions WHERE position_id = #{positionId}")
+    @Select("SELECT position_id, account_id, instrument_id, quantity, opened_at, closed_at, total_price, average_price " +
+            "FROM positions WHERE position_id = #{positionId}")
+    @Results({
+            @Result(column = "position_id", property = "positionId"),
+            @Result(column = "account_id", property = "account.accountId"),
+            @Result(column = "instrument_id", property = "instrument.instrumentId"),
+            @Result(column = "quantity", property = "quantity"),
+            @Result(column = "opened_at", property = "openedAt"),
+            @Result(column = "closed_at", property = "closedAt"),
+            @Result(column = "total_price", property = "totalPrice"),
+            @Result(column = "average_price", property = "averagePrice")
+    })
     Optional<PositionsEntity> findById(Integer positionId);
 
     @Select("SELECT * FROM positions")
@@ -27,13 +39,22 @@ public interface PositionsRepo {
         @Result(column = "position_id", property = "positionId"),
         @Result(column = "quantity", property = "quantity"),
         @Result(column = "instrument_id", property = "instrument", 
-                one = @One(select = "main.repos.InstrumentRepo.findEntityById")),
+                one = @One(select = "repos.InstrumentRepo.findEntityById")),
         @Result(column = "opened_at", property = "openedAt"),
         @Result(column = "closed_at", property = "closedAt"),
         @Result(column = "total_price", property = "totalPrice"),
         @Result(column = "average_price", property = "averagePrice")
     })
     List<PositionsEntity> findByAccount(@Param("accountId") Integer accountId);
+
+    @Select("SELECT p.position_id, p.account_id, " +
+            "i.instrument_id, i.ticker, i.asset_name, i.asset_type, i.currency, " +
+            "p.quantity, p.average_price, p.total_price, p.opened_at " +
+            "FROM positions p " +
+            "JOIN instruments i ON p.instrument_id = i.instrument_id " +
+            "WHERE p.account_id = #{accountId} AND p.closed_at IS NULL " +
+            "ORDER BY p.opened_at DESC, p.position_id DESC")
+    List<PositionResponse> findOpenPositionsByAccountId(@Param("accountId") Integer accountId);
 
     @Select("SELECT * FROM positions WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} " +
             "AND closed_at IS NULL ORDER BY opened_at ASC, position_id ASC LIMIT 1 FOR UPDATE")

@@ -1,20 +1,18 @@
-package test;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import main.services.validation.BuyOrderValidator;
-import main.dto.request.CreateOrderRequest;
-import main.entities.AccountsEntity;
-import main.dto.InstrumentWithPrice;
-import main.exception.InvalidOrderException;
+import services.validation.BuyOrderValidator;
+import dto.request.CreateOrderRequest;
+import entities.AccountsEntity;
+import dto.InstrumentWithPrice;
+import exception.InvalidOrderException;
 
-import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
-import java.time.LocalDateTime;
+
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.stream.Stream;

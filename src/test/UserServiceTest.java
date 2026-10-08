@@ -1,16 +1,23 @@
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import main.services.UserService;
-import main.repos.UserRepo;
-import main.entities.UserEntity;
-import main.dto.request.UserRegistrationRequest;
-import main.dto.request.LoginRequest;
-import main.dto.response.UserResponse;
+import services.UserService;
+import repos.UserRepo;
+import repos.AccountsRepo;
+import repos.CurrentPriceRepo;
+import repos.PositionsRepo;
+import repos.InstrumentRepo;
+import entities.UserEntity;
+import dto.request.UserRegistrationRequest;
+import dto.request.LoginRequest;
+import dto.response.UserResponse;
+import dto.response.UserLoginResponse;
+import exception.InvalidCredentialsException;
 
 import java.time.LocalDate;
 import java.security.MessageDigest;
@@ -19,6 +26,7 @@ import java.util.Base64;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 @DisplayName("User Service Tests")
 public class UserServiceTest {
 
@@ -30,10 +38,24 @@ public class UserServiceTest {
     @Mock
     private PasswordEncoder mockPasswordEncoder;
 
+    @Mock
+    private AccountsRepo mockAccountsRepo;
+
+    @Mock
+    private CurrentPriceRepo mockCurrentPriceRepo;
+
+    @Mock
+    private PositionsRepo mockPositionsRepo;
+
+    @Mock
+    private InstrumentRepo mockInstrumentRepo;
+
     @BeforeEach
     public void setUp() {
-        MockitoAnnotations.openMocks(this);
-        service = new UserService(mockUserRepo, mockPasswordEncoder);
+        // Pass null for EmailService to avoid mocking issues; it's only used in welcome emails
+        service = new UserService(mockUserRepo, null, mockPasswordEncoder, 
+                                  mockAccountsRepo, mockCurrentPriceRepo, 
+                                  mockPositionsRepo, mockInstrumentRepo);
     }
 
     // Helper method to generate SHA-256 hash (matches service implementation)
@@ -540,7 +562,7 @@ public class UserServiceTest {
     // ===== LOGIN TESTS =====
 
     @Test
-    @DisplayName("Successful login with correct email and password")
+    @DisplayName("Successful login returns the user's id")
     public void testLoginSuccessful() {
         // Arrange
         LoginRequest loginRequest = new LoginRequest();
@@ -552,41 +574,36 @@ public class UserServiceTest {
         existingUser.setEmail("john@example.com");
         existingUser.setPassHash("hashed_password");
 
-        when(mockUserRepo.existsByEmail("john@example.com")).thenReturn(true);
         when(mockUserRepo.findByEmail("john@example.com")).thenReturn(java.util.Optional.of(existingUser));
         when(mockPasswordEncoder.matches("SecurePass@123#", "hashed_password")).thenReturn(true);
 
         // Act
-        org.springframework.http.ResponseEntity<String> response = service.login(loginRequest);
+        UserLoginResponse response = service.login(loginRequest);
 
         // Assert
-        assertNotNull(response);
-        assertEquals(200, response.getStatusCodeValue());
-        assertEquals("Login successful", response.getBody());
-        verify(mockUserRepo, times(1)).existsByEmail("john@example.com");
-        verify(mockUserRepo, times(1)).findByEmail("john@example.com");
+        assertEquals(1, response.getId());
     }
 
     @Test
-    @DisplayName("Login fails when email doesn't exist")
+    @DisplayName("Login fails with the shared message when the email doesn't exist")
     public void testLoginEmailNotFound() {
         // Arrange
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setEmail("nonexistent@example.com");
         loginRequest.setPassword("SecurePass@123#");
 
-        when(mockUserRepo.existsByEmail("nonexistent@example.com")).thenReturn(false);
+        when(mockUserRepo.findByEmail("nonexistent@example.com")).thenReturn(java.util.Optional.empty());
 
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class, () -> {
             service.login(loginRequest);
         });
-        assertEquals("Email doesn't exist", exception.getMessage());
-        verify(mockUserRepo, times(1)).existsByEmail("nonexistent@example.com");
+        assertEquals("Invalid email or password", exception.getMessage());
+        verify(mockPasswordEncoder, never()).matches(any(), any());
     }
 
     @Test
-    @DisplayName("Login fails with incorrect password")
+    @DisplayName("Login fails with the shared message when the password is wrong")
     public void testLoginWrongPassword() {
         // Arrange
         LoginRequest loginRequest = new LoginRequest();
@@ -598,35 +615,30 @@ public class UserServiceTest {
         existingUser.setEmail("john@example.com");
         existingUser.setPassHash("hashed_correct_password");
 
-        when(mockUserRepo.existsByEmail("john@example.com")).thenReturn(true);
         when(mockUserRepo.findByEmail("john@example.com")).thenReturn(java.util.Optional.of(existingUser));
         when(mockPasswordEncoder.matches("WrongPassword@123#", "hashed_correct_password")).thenReturn(false);
 
-        // Act
-        org.springframework.http.ResponseEntity<String> response = service.login(loginRequest);
-
-        // Assert
-        assertNotNull(response);
-        assertEquals(400, response.getStatusCodeValue());
-        assertEquals("Wrong password", response.getBody());
-        verify(mockPasswordEncoder, times(1)).matches("WrongPassword@123#", "hashed_correct_password");
+        // Act & Assert
+        InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class, () -> {
+            service.login(loginRequest);
+        });
+        assertEquals("Invalid email or password", exception.getMessage());
     }
 
     @Test
-    @DisplayName("Login fails when user not found in database")
-    public void testLoginUserNotFoundInDB() {
+    @DisplayName("Login fails with the shared message when no password is sent")
+    public void testLoginMissingPassword() {
         // Arrange
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setEmail("john@example.com");
-        loginRequest.setPassword("SecurePass@123#");
 
-        when(mockUserRepo.existsByEmail("john@example.com")).thenReturn(true);
-        when(mockUserRepo.findByEmail("john@example.com")).thenReturn(java.util.Optional.empty());
+        UserEntity existingUser = new UserEntity();
+        existingUser.setUserId(1);
+        existingUser.setPassHash("hashed_password");
+
+        when(mockUserRepo.findByEmail("john@example.com")).thenReturn(java.util.Optional.of(existingUser));
 
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            service.login(loginRequest);
-        });
-        assertEquals("User not found", exception.getMessage());
+        assertThrows(InvalidCredentialsException.class, () -> service.login(loginRequest));
     }
 }

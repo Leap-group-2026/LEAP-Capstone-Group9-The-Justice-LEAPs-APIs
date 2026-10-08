@@ -1,12 +1,16 @@
-package main.controllers;
+package controllers;
 
-import main.services.PositionService;
-import main.entities.PositionsEntity;
-import main.entities.AccountsEntity;
-import main.entities.InstrumentEntity;
-import main.dto.request.CreatePositionRequest;
-import main.dto.response.ValidationError;
+import services.PositionService;
+import services.AccountService;
+import config.AuthorizationUtil;
+import entities.PositionsEntity;
+import entities.AccountsEntity;
+import entities.InstrumentEntity;
+import dto.request.CreatePositionRequest;
+import dto.response.ValidationError;
+import dto.response.PositionResponse;
 import jakarta.validation.Valid;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -23,9 +27,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class PositionController {
     @Autowired
     private PositionService positionService;
+    
+    private AccountService accountService;
+    private AuthorizationUtil authorizationUtil;
 
-    public PositionController(PositionService positionService) {
+    public PositionController(PositionService positionService, AccountService accountService, AuthorizationUtil authorizationUtil) {
         this.positionService = positionService;
+        this.accountService = accountService;
+        this.authorizationUtil = authorizationUtil;
     }
     @Operation(summary = "Record a position",
         description = "Inserts a holding of instrumentId for accountId. Only the two ids are needed, not the full account "
@@ -36,7 +45,7 @@ public class PositionController {
             content = @Content(schema = @Schema(implementation = ValidationError.class))),
         @ApiResponse(responseCode = "500", description = "accountId or instrumentId doesn't exist (database foreign key)", content = @Content)
     })
-    @PostMapping("/create")
+    @PostMapping
     public PositionsEntity savePosition(@RequestBody @Valid CreatePositionRequest request) {
         AccountsEntity account = new AccountsEntity();
         account.setAccountId(request.accountId());
@@ -53,15 +62,36 @@ public class PositionController {
         position.setClosedAt(request.closedAt());
         return positionService.savePosition(position);
     }
-    @Operation(summary = "Get a position",
-        description = "Returns a position by id. Known issue: account, instrument and their ids come back null, "
-            + "and an unknown id returns 200 with an empty body rather than 404.")
+
+    @Operation(summary = "Get all open positions for a specific account",
+        description = "Retrieves the open positions (closed_at not set) for the specified account, newest first, "
+            + "with the instrument details of each. A closed account returns the same 404 as a missing one.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "The position, or an empty body if the id doesn't exist")
+        @ApiResponse(responseCode = "200", description = "Open positions for the account; an empty list if it holds none"),
+        @ApiResponse(responseCode = "404", description = "No active account with this id (missing or closed)",
+            content = @Content(schema = @Schema(implementation = ValidationError.class)))
+    })
+    @GetMapping("/account/{accountId}")
+    public List<PositionResponse> findOpenPositionsByAccountId(@PathVariable Integer accountId) {
+        var account = accountService.findById(accountId);
+        if (account == null || account.getUserId() == null) {
+            throw new exception.ResourceNotFoundException("Account", accountId.toString());
+        }
+        authorizationUtil.checkAccountAccess(accountId, account.getUserId().getUserId());
+        return positionService.findOpenPositionsByAccountId(accountId);
+    }
+    
+    @Operation(summary = "Get a position",
+        description = "Returns a position by id, open or closed, with the ids of its account and instrument.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "The position"),
+        @ApiResponse(responseCode = "404", description = "No position with this id",
+            content = @Content(schema = @Schema(implementation = ValidationError.class)))
     })
     @GetMapping("/{id}")
     public PositionsEntity getPositionById(@PathVariable Integer id) {
+        authorizationUtil.checkAdminAccess();
         return positionService.findById(id);
     }
-    
+
 }

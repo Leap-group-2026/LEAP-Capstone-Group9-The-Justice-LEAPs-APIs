@@ -1,4 +1,4 @@
-package main.repos;
+package repos;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -6,8 +6,8 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Options;
-import main.entities.InstrumentEntity;
-import main.dto.InstrumentWithPrice;
+import entities.InstrumentEntity;
+import dto.InstrumentWithPrice;
 import java.util.Optional;
 import java.util.List;
 
@@ -45,4 +45,11 @@ public interface InstrumentRepo {
 
     @Select("SELECT instrument_id FROM instruments WHERE ticker = #{symbol}")
     Integer findIdBySymbol(String symbol);
+
+    @Select("SELECT i.instrument_id, i.ticker, i.asset_type, i.asset_name, i.currency, " +
+            "cp.price, cp.quote_time " +
+            "FROM instruments i " +
+            "LEFT JOIN current_prices cp USING (instrument_id) " +
+            "WHERE i.ticker = #{ticker}")
+    Optional<InstrumentWithPrice> findByTicker(String ticker);
 }

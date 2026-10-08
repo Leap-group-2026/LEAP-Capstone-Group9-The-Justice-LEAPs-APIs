@@ -1,4 +1,4 @@
-package main.repos;
+package repos;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -7,7 +7,7 @@ import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.ResultMap;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
-import main.entities.HistoricalOrdersEntity;
+import entities.HistoricalOrdersEntity;
 import java.util.Optional;
 import java.util.List;
 import java.time.LocalDateTime;
@@ -33,7 +33,7 @@ public interface HistoricalOrdersRepo {
     List<HistoricalOrdersEntity> findByOrderId_OrderIdOrderByCreatedAtAsc(@Param("orderId") Integer orderId);
 
     @Insert("INSERT INTO historical_orders (order_id, account_id, order_information_json, created_at) " +
-            "VALUES (#{orderId}, #{accountId}, #{orderInformationJson, typeHandler=main.config.JsonbStringTypeHandler}, #{createdAt})")
+            "VALUES (#{orderId}, #{accountId}, #{orderInformationJson, typeHandler=config.JsonbStringTypeHandler}, #{createdAt})")
     void insert(@Param("orderId") Integer orderId, 
                 @Param("accountId") Integer accountId,
                 @Param("orderInformationJson") String orderInformationJson,

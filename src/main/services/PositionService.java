@@ -1,12 +1,13 @@
-package main.services;
+package services;
 
 import org.springframework.stereotype.Service;
-import main.repos.PositionsRepo;
-import main.repos.AccountsRepo;
-import main.repos.InstrumentRepo;
-import main.entities.PositionsEntity;
-import main.entities.AccountsEntity;
-import main.entities.InstrumentEntity;
+import repos.PositionsRepo;
+import exception.ResourceNotFoundException;
+import repos.AccountsRepo;
+import repos.InstrumentRepo;
+import entities.PositionsEntity;
+import services.resolver.AccountResolver;
+import dto.response.PositionResponse;
 import java.util.List;
 import java.time.LocalDateTime;
 
@@ -15,15 +16,18 @@ public class PositionService {
     private PositionsRepo repo;
     private AccountsRepo accountsRepository;
     private InstrumentRepo instrumentRepository;
+    private AccountResolver accountResolver;
     
-    public PositionService(PositionsRepo repo, AccountsRepo accountsRepository, InstrumentRepo instrumentRepository) {
+    public PositionService(PositionsRepo repo, AccountsRepo accountsRepository, InstrumentRepo instrumentRepository, AccountResolver accountResolver) {
         this.repo = repo;
         this.accountsRepository = accountsRepository;
         this.instrumentRepository = instrumentRepository;
+        this.accountResolver = accountResolver;
     }
 
     public PositionsEntity findById(Integer id) {
-        return repo.findById(id).orElse(null);
+        return repo.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Position", String.valueOf(id)));
     }
 
     public PositionsEntity savePosition(PositionsEntity entity) {
@@ -39,5 +43,10 @@ public class PositionService {
                        entity.getAveragePrice(), openedAt, entity.getClosedAt());
         }
         return entity;
+    }
+
+    public List<PositionResponse> findOpenPositionsByAccountId(Integer accountId) {
+        accountResolver.resolve(accountId);
+        return repo.findOpenPositionsByAccountId(accountId);
     }
 }

@@ -1,47 +1,60 @@
-package main.services;
+package services;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import entities.AccountsEntity;
+import dto.request.TransactionRequest;
+
 import org.springframework.beans.factory.annotation.Autowired;
 
-import main.repos.UserRepo;
-import main.entities.UserEntity; 
-import main.dto.request.UserRegistrationRequest;
-import main.dto.request.LoginRequest;
-import main.dto.request.VerifyPasswordReset;
-import main.dto.request.UpdateNameRequest;
-import main.dto.request.UpdateEmailRequest;
-import main.dto.request.UpdateAddressRequest;
-import main.dto.response.UserResponse;
-import main.dto.response.UpdateNameResponse;
-import main.dto.response.UpdateEmailResponse;
-import main.dto.response.UpdateAddressResponse;
-import main.services.EmailService;
-import main.exception.ResourceNotFoundException;
+import repos.UserRepo;
+import entities.UserEntity; 
+import dto.request.UserRegistrationRequest;
+import dto.request.LoginRequest;
+import dto.request.VerifyPasswordReset;
+import dto.request.UpdateUserRequest;
+import dto.response.UserResponse;
+import dto.response.UpdateUserResponse;
+import repos.InstrumentRepo;
+import repos.AccountsRepo;
+import repos.PositionsRepo;
+import repos.CurrentPriceRepo;
+import exception.ResourceNotFoundException;
+import dto.response.UserLoginResponse;
+import exception.InvalidCredentialsException;
 
 import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.Random;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
 
 @Service
 public class UserService {
     private UserRepo repo; 
     private EmailService emailService;
+    private CurrentPriceRepo currentPriceRepo;
     private PasswordEncoder passwordEncoder;
+    private AccountsRepo accountsRepo;
+    private PositionsRepo positionsRepo;
+    private InstrumentRepo instrumentRepo;
     private static final Random random = new Random();
     
-    public UserService(UserRepo repo, PasswordEncoder passwordEncoder){
-        this.repo = repo; 
-        this.passwordEncoder = passwordEncoder;
-        this.emailService = null;
-    }
-    
     @Autowired
-    public UserService(UserRepo repo, EmailService emailService, PasswordEncoder passwordEncoder){
+    public UserService(UserRepo repo, EmailService emailService, PasswordEncoder passwordEncoder, 
+                       AccountsRepo accountsRepo, CurrentPriceRepo currentPriceRepo, 
+                       PositionsRepo positionsRepo, InstrumentRepo instrumentRepo){
         this.repo = repo; 
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
+        this.accountsRepo = accountsRepo;
+        this.currentPriceRepo = currentPriceRepo;
+        this.positionsRepo = positionsRepo;
+        this.instrumentRepo = instrumentRepo;
     }
 
     public UserResponse registerUser(UserRegistrationRequest request){
@@ -96,19 +109,14 @@ public class UserService {
         );
     }
 
-    public ResponseEntity<String> login(LoginRequest request){
-        if (!repo.existsByEmail(request.getEmail())){
-            throw new IllegalArgumentException("Email doesn't exist");
-        }
-        UserEntity user = repo.findByEmail(request.getEmail()).orElseThrow(() -> new IllegalArgumentException("User not found"));
-        boolean match = passwordEncoder.matches(request.getPassword(), user.getPassHash());
-        if(!match){
-            return ResponseEntity.badRequest().body("Wrong password");
-        }
-        else{
-            return ResponseEntity.ok("Login successful");
-        }
+    public UserLoginResponse login(LoginRequest request){
+        UserEntity user = repo.findByEmail(request.getEmail())
+            .filter(u -> request.getPassword() != null
+                && passwordEncoder.matches(request.getPassword(), u.getPassHash()))
+            .orElseThrow(InvalidCredentialsException::new);
+        return new UserLoginResponse(user.getUserId());
     }
+
 
 
     // Ensures all fields are filled. 
@@ -218,60 +226,113 @@ public class UserService {
         }
     }
 
-    public UpdateNameResponse updateUserName(Integer userId, UpdateNameRequest request) {
-        if (request.name() == null || request.name().isBlank()) {
-            throw new IllegalArgumentException("Name cannot be empty");
-        }
-
+    public UpdateUserResponse updateUser(Integer userId, UpdateUserRequest request) {
         UserEntity user = repo.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User", userId.toString()));
 
-        user.setName(request.name().trim());
+        if (request.name() != null && !request.name().isBlank()) {
+            user.setName(request.name().trim());
+        }
+
+        if (request.email() != null && !request.email().isBlank()) {
+            String newEmail = request.email().trim().toLowerCase();
+            
+            if (!isValidEmail(newEmail)) {
+                throw new IllegalArgumentException("Invalid email format");
+            }
+
+            if (repo.existsByEmail(newEmail) && !user.getEmail().equalsIgnoreCase(newEmail)) {
+                throw new IllegalArgumentException("Email already in use");
+            }
+
+            user.setEmail(newEmail);
+        }
+
+        if (request.address() != null && !request.address().isBlank()) {
+            user.setAddress(request.address().trim());
+        }
+
         repo.update(user);
 
-        return new UpdateNameResponse(user.getUserId(), user.getName());
-    }
-
-    public UpdateEmailResponse updateUserEmail(Integer userId, UpdateEmailRequest request) {
-        if (request.email() == null || request.email().isBlank()) {
-            throw new IllegalArgumentException("Email cannot be empty");
-        }
-
-        String newEmail = request.email().trim().toLowerCase();
-        
-        if (!isValidEmail(newEmail)) {
-            throw new IllegalArgumentException("Invalid email format");
-        }
-
-        UserEntity user = repo.findById(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User", userId.toString()));
-
-        if (repo.existsByEmail(newEmail) && !user.getEmail().equalsIgnoreCase(newEmail)) {
-            throw new IllegalArgumentException("Email already in use");
-        }
-
-        user.setEmail(newEmail);
-        repo.update(user);
-
-        return new UpdateEmailResponse(user.getUserId(), user.getEmail());
-    }
-
-    public UpdateAddressResponse updateUserAddress(Integer userId, UpdateAddressRequest request) {
-        if (request.address() == null || request.address().isBlank()) {
-            throw new IllegalArgumentException("Address cannot be empty");
-        }
-
-        UserEntity user = repo.findById(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User", userId.toString()));
-
-        user.setAddress(request.address().trim());
-        repo.update(user);
-
-        return new UpdateAddressResponse(user.getUserId(), user.getAddress());
+        return new UpdateUserResponse(user.getUserId(), user.getName(), user.getEmail(), user.getAddress());
     }
 
     private boolean isValidEmail(String email) {
         String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
         return email.matches(emailRegex) && email.length() <= 255;
+    }
+    @Transactional 
+    public ResponseEntity<String> currencyExchange(TransactionRequest transactionRequest){
+        if (transactionRequest.baseAndExchange() == null || transactionRequest.baseAndExchange().isBlank()) {
+            throw new IllegalArgumentException("Base and exchange currency pair is required");
+        }
+        
+        String baseAndExchange = transactionRequest.baseAndExchange();
+        String[] parts = baseAndExchange.split("/");
+        AccountsEntity account = accountsRepo.findById(transactionRequest.accountId()).orElseThrow(() -> new IllegalArgumentException("Account not found"));
+
+        if (parts.length < 2) throw new IllegalArgumentException("Invalid exchange rate format");
+        if (!parts[0].equals("USD")){
+            baseAndExchange = parts[1] + "/" + parts[0];
+            Integer instrumentId = instrumentRepo.findIdBySymbol(baseAndExchange);
+            if (instrumentId != null) {
+                var position = positionsRepo.findOpenForUpdate(transactionRequest.accountId(), instrumentId);
+                if (position.isPresent()) {
+                    if(position.get().getTotalPrice().compareTo(transactionRequest.amount()) < 0){
+                        return ResponseEntity.badRequest().body("You do not have enough currency in this exchange rate to make this exchange");
+                    }
+                }
+                else{
+                    return ResponseEntity.badRequest().body("You do not currently own any currency in this exchange rate");
+                }
+            }
+            else{
+                return ResponseEntity.badRequest().body("Foreign exchange chosen is not available for trade");
+            }
+            
+        }
+        else{
+            if (account.getBalance().compareTo(transactionRequest.amount()) < 0) {
+                return ResponseEntity.badRequest().body("You do not have enough balance in your account to make this exchange");
+            }
+        }
+        final String priceTicker = baseAndExchange;
+        BigDecimal price = currentPriceRepo.findPriceByTicker(priceTicker)
+            .orElseThrow(() -> new IllegalArgumentException("Price not found for " + priceTicker));
+        
+        if (!parts[0].equals("USD")) {
+            price = BigDecimal.ONE.divide(price, 10, RoundingMode.HALF_UP);
+            BigDecimal usd = account.getBalance().add(price.multiply(transactionRequest.amount()));
+            
+            Integer instrumentId = instrumentRepo.findIdBySymbol(baseAndExchange);
+            var position = positionsRepo.findOpenForUpdate(transactionRequest.accountId(), instrumentId);
+            BigDecimal newTotalPrice = position.get().getTotalPrice().subtract(transactionRequest.amount());
+            positionsRepo.update(position.get().getPositionId(), account.getAccountId(), instrumentId, position.get().getQuantity(), newTotalPrice, position.get().getAveragePrice(), position.get().getOpenedAt(), position.get().getClosedAt());
+            accountsRepo.update(account.getAccountId(), account.getOwnerUserId(), usd, account.getPortfolioSize().getValue(), account.getTradeType(), account.getAccountActive());
+        } else {
+            BigDecimal foreign = transactionRequest.amount().multiply(price);
+            BigDecimal usd = account.getBalance().subtract(transactionRequest.amount());
+            Integer instrumentId = instrumentRepo.findIdBySymbol(baseAndExchange);
+            var position = positionsRepo.findOpenForUpdate(transactionRequest.accountId(), instrumentId);
+            
+            if (position.isPresent()) {
+                BigDecimal newTotalPrice = position.get().getTotalPrice().add(foreign);
+                positionsRepo.update(position.get().getPositionId(), account.getAccountId(), instrumentId, position.get().getQuantity(), newTotalPrice, position.get().getAveragePrice(), position.get().getOpenedAt(), position.get().getClosedAt());
+            } else {
+                positionsRepo.insert(
+                    transactionRequest.accountId(),
+                    instrumentId,
+                    1, 
+                    foreign, 
+                    price, 
+                    LocalDateTime.now(), 
+                    null 
+                );
+            }
+            
+            accountsRepo.update(account.getAccountId(), account.getOwnerUserId(), usd, account.getPortfolioSize().getValue(), account.getTradeType(), account.getAccountActive());
+        }
+        
+        return ResponseEntity.ok("Transaction processed successfully");
     }
 }

@@ -1,4 +1,4 @@
-package main.repos;
+package repos;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -7,7 +7,7 @@ import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
-import main.entities.UserEntity;
+import entities.UserEntity;
 import java.util.Optional;
 import java.util.List;
 

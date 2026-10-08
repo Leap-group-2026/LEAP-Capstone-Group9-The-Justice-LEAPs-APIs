@@ -1,5 +1,3 @@
-package test;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -19,23 +17,24 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import main.Application;
-import main.dto.response.OrderSubmissionResponse;
-import main.entities.AccountsEntity;
-import main.entities.InstrumentEntity;
-import main.entities.UserEntity;
-import main.entities.PortfolioSize;
-import main.repos.AccountsRepo;
-import main.repos.InstrumentRepo;
+import dto.response.OrderSubmissionResponse;
+import entities.AccountsEntity;
+import entities.InstrumentEntity;
+import entities.UserEntity;
+import entities.PortfolioSize;
+import repos.AccountsRepo;
+import repos.InstrumentRepo;
 import org.springframework.jdbc.core.JdbcTemplate;
-import main.repos.OrdersRepo;
-import main.repos.UserRepo;
+import repos.OrdersRepo;
+import repos.UserRepo;
 import test.config.TestClockConfig;
+import test.config.TestSecurityConfig;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @SpringBootTest(classes = Application.class)
-@Import(TestClockConfig.class)
+@Import({TestClockConfig.class, TestSecurityConfig.class})
 @AutoConfigureMockMvc
 @Transactional
 @DisplayName("OrderController.createOrder() Tests")

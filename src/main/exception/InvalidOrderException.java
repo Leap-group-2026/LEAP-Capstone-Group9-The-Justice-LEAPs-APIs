@@ -1,4 +1,4 @@
-package main.exception;
+package exception;
 
 public class InvalidOrderException extends RuntimeException {
     private final String field;

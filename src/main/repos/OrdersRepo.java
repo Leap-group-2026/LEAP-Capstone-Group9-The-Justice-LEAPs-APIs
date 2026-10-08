@@ -1,4 +1,4 @@
-package main.repos;
+package repos;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -9,7 +9,8 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.ResultMap;
-import main.entities.OrderEntity;
+import entities.OrderEntity;
+import dto.response.OrderHistoryResponse;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -36,12 +37,48 @@ public interface OrdersRepo {
     @ResultMap("orderResult")
     List<OrderEntity> findAll();
 
+
+    @Select("SELECT o.* FROM orders o " +
+            "JOIN accounts a ON o.account_id = a.account_id " +
+            "WHERE a.user_id = #{userId} " +
+            "ORDER BY o.created_at DESC, o.order_id DESC")
+    @ResultMap("orderResult")
+    List<OrderEntity> findByUser(@Param("userId") Integer userId);
+
+    @Select("SELECT o.* FROM orders o " +
+            "JOIN accounts a ON o.account_id = a.account_id " +
+            "WHERE a.user_id = #{userId} AND o.status = 'CANCELED' " +
+            "ORDER BY o.updated_at DESC, o.order_id DESC")
+    @ResultMap("orderResult")
+    List<OrderEntity> findCanceledByUser(@Param("userId") Integer userId);
+
     @Select("SELECT order_id FROM orders WHERE status = 'PENDING' ORDER BY created_at ASC, order_id ASC")
     List<Integer> findPendingOrderIds();
 
     @Select("SELECT * from orders WHERE order_id = #{orderId} FOR UPDATE")
     @ResultMap("orderResult")
     Optional<OrderEntity> findByIdForUpdate(Integer orderId);
+
+    @Select("SELECT o.order_id, i.ticker, o.side, o.status, o.quantity, " +
+            "CAST(o.total_price / o.quantity AS NUMERIC(18,4)) AS price_per_unit, " +
+            "o.total_price, " +
+            "CASE WHEN o.status = 'FILLED' THEN o.updated_at END AS executed_at " +
+            "FROM orders o " +
+            "JOIN instruments i ON o.instrument_id = i.instrument_id " +
+            "WHERE o.account_id = #{accountId} " +
+            "ORDER BY o.created_at DESC, o.order_id DESC")
+    List<OrderHistoryResponse> findOrdersByAccountId(@Param("accountId") Integer accountId);
+
+    @Select("SELECT * FROM orders WHERE account_id = #{accountId}")
+    @ResultMap("orderResult")
+    List<OrderEntity> findAllByAccountId(@Param("accountId") Integer accountId);
+
+    @Select("SELECT COALESCE(SUM(total_price), 0) FROM orders " +
+            "WHERE account_id = #{accountId} AND side = 'BUY' AND status = 'FILLED' " +
+            "AND updated_at >= #{startInclusive} AND updated_at < #{endExclusive}")
+    BigDecimal sumFilledBuys(@Param("accountId") Integer accountId,
+                             @Param("startInclusive") LocalDateTime startInclusive,
+                             @Param("endExclusive") LocalDateTime endExclusive);
 
     @Insert("INSERT INTO orders (side, account_id, instrument_id, status, quantity, total_price) " +
             "VALUES (#{side}, #{accountId.accountId}, #{instrumentId.instrumentId}, #{status}, #{quantity}, #{totalPrice})")
@@ -57,4 +94,10 @@ public interface OrdersRepo {
                                 @Param("totalPrice") BigDecimal totalPrice,
                                 @Param("status") String status,
                                 @Param("updatedAt") LocalDateTime updatedAt);
+
+
+    @Update("UPDATE orders SET status = 'CANCELED', updated_at = #{updatedAt} " +
+            "WHERE order_id = #{orderId} and status = 'PENDING'")
+    int cancelOrder(@Param("orderId") Integer orderId,
+                     @Param("updatedAt") LocalDateTime updatedAt);
 }

@@ -1,4 +1,4 @@
-package main.entities;
+package entities;
 
 /**
  * Utility class for converting PortfolioSize enum to/from database values.

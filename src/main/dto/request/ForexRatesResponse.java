@@ -1,7 +1,6 @@
-package main.dto.request;
+package dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
 
 public class ForexRatesResponse extends java.util.ArrayList<ForexRatesResponse.ForexRate> {
     

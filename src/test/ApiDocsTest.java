@@ -1,5 +1,3 @@
-package test;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -13,6 +11,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import main.Application;
+import org.springframework.context.annotation.Import;
+import test.config.TestSecurityConfig;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -24,31 +24,46 @@ import java.util.Map;
  * Adding an endpoint means adding it to ENDPOINTS here, which is the point.
  */
 @SpringBootTest(classes = Application.class)
+@Import(TestSecurityConfig.class)
 @AutoConfigureMockMvc
 public class ApiDocsTest {
 
     // The order Swagger UI shows the groups in (set in OpenApiConfig)
-    private static final List<String> TAGS = List.of(
-        "Admin", "Users", "Accounts", "Orders", "Positions", "Order history");
+    private static final List<String> TAGS = List.of("Users", "Transactions", "Orders", "Accounts", "Instruments", "Positions", "Admin");
 
     // method -> path, one entry per endpoint found by scanning the controllers
     private static final List<Map.Entry<String, String>> ENDPOINTS = List.of(
         Map.entry("get", "/accounts/{id}"),
-        Map.entry("post", "/accounts/create"),
-        Map.entry("post", "/accounts/close/{id}"),
+        Map.entry("get", "/accounts/user/{userId}"),
+        Map.entry("get", "/accounts/orders/{accountId}"),
+        Map.entry("post", "/accounts"),
+        Map.entry("patch", "/accounts/close/{id}"),
         Map.entry("post", "/orders"),
+        Map.entry("get", "/orders/{orderId}"),
+        Map.entry("post", "/orders/{orderId}/cancel"),
+        Map.entry("get", "/orders/account/{accountId}"),
         Map.entry("get", "/orders/{orderId}/history"),
+        Map.entry("get", "/transactions/account/{accountId}"),
+        Map.entry("get", "/instruments/{ticker}"),
+        Map.entry("get", "/user/accounts"),
+        Map.entry("get", "/instruments"),
         Map.entry("get", "/positions/{id}"),
-        Map.entry("post", "/positions/create"),
-        Map.entry("post", "/admin/create"),
+        Map.entry("post", "/positions"),
+        Map.entry("get", "/positions/account/{accountId}"),
+        Map.entry("post", "/admin"),
         Map.entry("post", "/admin/login"),
-        Map.entry("post", "/user/create"),
+        Map.entry("get", "/admin/orders"),
+        Map.entry("get", "/admin/orders/{userId}"),
+        Map.entry("get", "/admin/orders/{userId}/cancelled"),
+        Map.entry("get", "/admin/accounts"),
+        Map.entry("get", "/admin/accounts/{userId}"),
+        Map.entry("get", "/admin/users"),
+        Map.entry("patch", "/user"),
+        Map.entry("post", "/user"),
         Map.entry("post", "/user/login"),
         Map.entry("post", "/user/resetpassword"),
         Map.entry("post", "/user/resetpassword/reset"),
-        Map.entry("patch", "/user/{id}/name"),
-        Map.entry("patch", "/user/{id}/email"),
-        Map.entry("patch", "/user/{id}/address"));
+        Map.entry("post", "/user/transactions/exchange"));
 
     @Autowired
     private MockMvc mockMvc;

@@ -1,32 +1,44 @@
-package main.services;
+package services;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import main.dto.request.CreateOrderRequest;
-import main.dto.response.OrderSubmissionResponse;
-import main.entities.OrderEntity;
-import main.entities.AccountsEntity;
-import main.entities.InstrumentEntity;
-import main.dto.InstrumentWithPrice;
-import main.repos.OrdersRepo;
-import main.repos.AccountsRepo;
-import main.repos.InstrumentRepo;
-import main.services.validation.BuyOrderValidator;
-import main.services.validation.SellOrderValidator;
-import main.services.calculation.OrderPriceCalculator;
-import main.services.resolver.AccountResolver;
-import main.services.resolver.InstrumentResolver;
+import dto.request.CreateOrderRequest;
+import dto.response.OrderSubmissionResponse;
+import dto.response.OrderAdminResponse;
+import entities.OrderEntity;
+import entities.AccountsEntity;
+import entities.InstrumentEntity;
+import entities.HistoricalOrdersEntity;
+import dto.InstrumentWithPrice;
+import repos.OrdersRepo;
+import repos.AccountsRepo;
+import repos.InstrumentRepo;
+import dto.response.OrderHistoryResponse;
+import events.OrderSubmittedEvent;
+import services.validation.BuyOrderValidator;
+import services.validation.SellOrderValidator;
+import services.calculation.OrderPriceCalculator;
+import services.resolver.AccountResolver;
+import services.resolver.InstrumentResolver;
+import exception.InvalidOrderException;
+import exception.ResourceNotFoundException;
+import java.util.stream.Collectors;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.Clock;
+import java.time.ZoneId;
 
 import java.util.List;
+import java.util.UUID;
 
 import java.time.ZonedDateTime;
 
 @Service
 public class OrderService {
+    private static final ZoneId EASTERN_ZONE = ZoneId.of("America/New_York");
+
     private final OrdersRepo ordersRepo;
     private final HistoricalOrdersService historicalOrdersService;
     private final BuyOrderValidator buyOrderValidator;
@@ -34,10 +46,13 @@ public class OrderService {
     private final OrderPriceCalculator priceCalculator;
     private final AccountResolver accountResolver;
     private final InstrumentResolver instrumentResolver;
+    private final InstrumentRepo instrumentRepo;
     private final Clock clock;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     public OrderService(OrdersRepo ordersRepo, HistoricalOrdersService historicalOrdersService, BuyOrderValidator buyOrderValidator, SellOrderValidator sellOrderValidator,
-                       OrderPriceCalculator priceCalculator, AccountResolver accountResolver, InstrumentResolver instrumentResolver, Clock clock) {
+                       OrderPriceCalculator priceCalculator, AccountResolver accountResolver, InstrumentResolver instrumentResolver, InstrumentRepo instrumentRepo, Clock clock,
+                       ApplicationEventPublisher applicationEventPublisher) {
         this.ordersRepo = ordersRepo;
         this.historicalOrdersService = historicalOrdersService;
         this.buyOrderValidator = buyOrderValidator;
@@ -45,7 +60,9 @@ public class OrderService {
         this.priceCalculator = priceCalculator;
         this.accountResolver = accountResolver;
         this.instrumentResolver = instrumentResolver;
+        this.instrumentRepo = instrumentRepo;
         this.clock = clock;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     // The order and its historical_orders snapshot commit together or not at all: the snapshot is a
@@ -84,11 +101,90 @@ public class OrderService {
 
         historicalOrdersService.captureOrderSnapshot(order);
 
+        applicationEventPublisher.publishEvent(new OrderSubmittedEvent(
+            UUID.randomUUID(),
+            order.getOrderId(),
+            account.getAccountId(),
+            instrument.getInstrumentId(),
+            order.getSide(),
+            order.getQuantity(),
+            order.getTotalPrice(),
+            order.getCreatedAt(),
+            1));
+
         return new OrderSubmissionResponse(order.getOrderId(), order.getCreatedAt());
     }
 
+    public List<OrderHistoryResponse> getOrderHistory(Integer accountId) {
+        accountResolver.resolve(accountId);
+        return ordersRepo.findOrdersByAccountId(accountId);
+    }
 
-    public List<main.entities.HistoricalOrdersEntity> getHistoricalOrders(Integer orderId) {
+
+    public List<HistoricalOrdersEntity> getHistoricalOrders(Integer orderId) {
         return historicalOrdersService.getHistoricalOrders(orderId);
+    }
+
+    public OrderHistoryResponse getByOrderId(Integer orderId)
+    {
+        OrderEntity order = ordersRepo.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("Order", orderId.toString()));
+        InstrumentEntity instrument = instrumentRepo.findEntityById(order.getInstrumentId().getInstrumentId());
+        OrderHistoryResponse response = new OrderHistoryResponse();
+        response.setOrderId(order.getOrderId());
+        response.setTicker(instrument.getTicker());
+        response.setSide(order.getSide());
+        response.setQuantity(order.getQuantity());
+        response.setPricePerUnit(order.getTotalPrice().divide(BigDecimal.valueOf(order.getQuantity())));
+        response.setStatus(order.getStatus());
+        response.setTotalPrice(order.getTotalPrice());
+        if ("FILLED".equals(order.getStatus())) {
+            response.setExecutedAt(order.getUpdatedAt());
+        }
+        return response;
+    }
+
+
+    @Transactional
+    public OrderHistoryResponse cancelOrder(Integer orderId) {
+        OrderEntity order = ordersRepo.findByIdForUpdate(orderId).orElseThrow(() -> new ResourceNotFoundException("Order", orderId.toString()));
+
+        if (!"PENDING".equals(order.getStatus())) {
+            throw new InvalidOrderException("status", "Only PENDING orders can be canceled; order " + orderId + " is " + order.getStatus());
+        }
+
+        LocalDateTime canceledAt = ZonedDateTime.now(clock).withZoneSameInstant(EASTERN_ZONE).toLocalDateTime();
+        ordersRepo.cancelOrder(orderId, canceledAt);
+
+        order.setStatus("CANCELED");
+        order.setUpdatedAt(canceledAt);
+        historicalOrdersService.captureOrderSnapshot(order, canceledAt);
+
+        return getByOrderId(orderId);
+    }
+
+    public List<OrderAdminResponse> getOrdersByUserID(Integer userId) {
+        return ordersRepo.findByUser(userId).stream()
+            .map(this::toAdminResponse)
+            .collect(Collectors.toList());
+    }
+
+    public List<OrderAdminResponse> getCancelledOrdersByUserID(Integer userId) {
+        return ordersRepo.findCanceledByUser(userId).stream()
+            .map(this::toAdminResponse)
+            .collect(Collectors.toList());
+    }
+
+    private OrderAdminResponse toAdminResponse(OrderEntity order) {
+        OrderAdminResponse response = new OrderAdminResponse();
+        response.setOrderId(order.getOrderId());
+        response.setSide(order.getSide());
+        response.setAccountId(order.getAccountId().getAccountId());
+        response.setInstrumentId(order.getInstrumentId().getInstrumentId());
+        response.setStatus(order.getStatus());
+        response.setQuantity(order.getQuantity());
+        response.setTotalPrice(order.getTotalPrice());
+        response.setCreatedAt(order.getCreatedAt());
+        response.setUpdatedAt(order.getUpdatedAt());
+        return response;
     }
 }

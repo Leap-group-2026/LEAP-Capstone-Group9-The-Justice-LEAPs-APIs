@@ -1,36 +1,39 @@
-package main.controllers;
+package controllers;
 
-import main.services.UserService;
-import main.dto.request.UserRegistrationRequest;
-import main.dto.request.VerifyPasswordReset;
-import main.dto.request.LoginRequest;
-import main.dto.request.UpdateNameRequest;
-import main.dto.request.UpdateEmailRequest;
-import main.dto.request.UpdateAddressRequest;
-import main.dto.response.UserResponse;
-import main.dto.response.UpdateNameResponse;
-import main.dto.response.UpdateEmailResponse;
-import main.dto.response.UpdateAddressResponse;
-import main.entities.UserEntity;
-import main.dto.request.VerifyPasswordReset;
+import services.UserService;
+import services.AccountService;
+import dto.request.UserRegistrationRequest;
+import dto.request.VerifyPasswordReset;
+import dto.request.LoginRequest;
+import dto.request.UpdateUserRequest;
+import dto.response.UserResponse;
+import dto.response.UpdateUserResponse;
+import dto.response.AccountResponse;
+import dto.request.TransactionRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import main.dto.response.ValidationError;
+import org.springframework.security.core.context.SecurityContextHolder;
+import dto.response.ValidationError;
+import java.util.List;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import dto.response.UserLoginResponse;
 
 @Tag(name = "Users")  // description and display order: OpenApiConfig
 @RestController 
 @RequestMapping("/user")
 public class UserController {
-    private UserService service; 
-    public UserController(UserService service){
-        this.service = service; 
+    private UserService service;
+    private AccountService accountService;
+    public UserController(UserService service, AccountService accountService){
+        this.service = service;
+        this.accountService = accountService; 
     }
 
     @Operation(summary = "Register a user",
@@ -42,7 +45,7 @@ public class UserController {
             + "\"SSN already exists.\") or password rule broken (e.g. \"Password must be a minimum of 12 characters.\")",
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Email already exists.")))
     })
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<UserResponse> createUser(@RequestBody UserRegistrationRequest request){
         //return service.saveUser(user);
         UserResponse response = service.registerUser(request);
@@ -75,57 +78,52 @@ public class UserController {
         return service.emailResetPassword(user);
     }
 
-    @Operation(summary = "User login", description = "Checks a user's email and password. No session or token is issued yet.")
+    @Operation(summary = "User login",
+        description = "Checks a client's email and password and returns their identity for the token service. "
+            + "Spring issues no token: the auth service signs one with role \"client\".")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Credentials valid", content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Login successful"))),
-        @ApiResponse(responseCode = "400", description = "Unknown email (\"Email doesn't exist\") or wrong password (\"Wrong password\")",
-            content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Wrong password")))
+        @ApiResponse(responseCode = "200", description = "Credentials valid; the body is the client's identity",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserLoginResponse.class))),
+        @ApiResponse(responseCode = "401", description = "Unknown email or wrong password (identical response for both)",
+            content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Invalid email or password")))
     })
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest request){
+    public UserLoginResponse login(@RequestBody LoginRequest request){
         return service.login(request);
     }
 
-    @Operation(summary = "Change a user's name")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Name updated"),
-        @ApiResponse(responseCode = "400", description = "Blank name", content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Name cannot be empty"))),
-        @ApiResponse(responseCode = "404", description = "No user with this id", content = @Content(schema = @Schema(implementation = ValidationError.class)))
-    })
-    @PatchMapping("/{id}/name")
-    public ResponseEntity<UpdateNameResponse> updateName(
-            @PathVariable Integer id,
-            @RequestBody UpdateNameRequest request) {
-        UpdateNameResponse response = service.updateUserName(id, request);
-        return ResponseEntity.ok(response);
+
+    @Operation(summary = "Currency exchange transaction")
+    @PostMapping("/transactions/exchange")
+    public ResponseEntity<String> currencyExchange(@Valid @RequestBody TransactionRequest transactionRequest){
+        return service.currencyExchange(transactionRequest);
     }
 
-    @Operation(summary = "Change a user's email", description = "The new email must be well-formed and not used by another user.")
+    @Operation(summary = "Retrieve all accounts for the current user",
+        description = "Returns a list of all active accounts owned by the authenticated user")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved user's accounts")
+    @GetMapping("/accounts")
+    public List<AccountResponse> getUserAccounts() {
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        return accountService.getAccountsByUserID(Integer.parseInt(userId));
+    }
+
+    @Operation(summary = "Update a user's profile",
+        description = "Updates one or more of the user's name, email, or address. At least one field must be provided. "
+            + "Email must be well-formed and not used by another user.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Email updated"),
-        @ApiResponse(responseCode = "400", description = "\"Email cannot be empty\", \"Invalid email format\" or \"Email already in use\"",
+        @ApiResponse(responseCode = "200", description = "Profile updated"),
+        @ApiResponse(responseCode = "400", description = "\"Email cannot be empty\", \"Invalid email format\", "
+            + "\"Email already in use\", or \"Name cannot be empty\", \"Address cannot be empty\"",
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Email already in use"))),
         @ApiResponse(responseCode = "404", description = "No user with this id", content = @Content(schema = @Schema(implementation = ValidationError.class)))
     })
-    @PatchMapping("/{id}/email")
-    public ResponseEntity<UpdateEmailResponse> updateEmail(
-            @PathVariable Integer id,
-            @RequestBody UpdateEmailRequest request) {
-        UpdateEmailResponse response = service.updateUserEmail(id, request);
+    @PatchMapping
+    public ResponseEntity<UpdateUserResponse> updateUser(
+            @RequestBody UpdateUserRequest request) {
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        UpdateUserResponse response = service.updateUser(Integer.parseInt(userId), request);
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Change a user's address")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Address updated"),
-        @ApiResponse(responseCode = "400", description = "Blank address", content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Address cannot be empty"))),
-        @ApiResponse(responseCode = "404", description = "No user with this id", content = @Content(schema = @Schema(implementation = ValidationError.class)))
-    })
-    @PatchMapping("/{id}/address")
-    public ResponseEntity<UpdateAddressResponse> updateAddress(
-            @PathVariable Integer id,
-            @RequestBody UpdateAddressRequest request) {
-        UpdateAddressResponse response = service.updateUserAddress(id, request);
-        return ResponseEntity.ok(response);
-    }
 }

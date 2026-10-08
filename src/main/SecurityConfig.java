@@ -12,6 +12,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import config.JwtAuthenticationFilter;
+import config.JwtAuthenticationEntryPoint;
 import java.time.Clock;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -20,6 +21,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class SecurityConfig {
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Autowired
+    private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
     public Clock clock(){
@@ -34,6 +38,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+            .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/admin/login").permitAll()
@@ -41,12 +46,10 @@ public class SecurityConfig {
                 .requestMatchers("/user").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/user/**").hasRole("CLIENT")
-                // Admin-only endpoints (must come before general patterns)
                 .requestMatchers("/positions/{id}").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/positions").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/accounts").hasRole("CLIENT")
                 .requestMatchers("/orders/{orderId}").hasRole("ADMIN")
-                // General endpoints that support both ADMIN and CLIENT
                 .requestMatchers("/transactions/account/**").hasAnyRole("ADMIN", "CLIENT")
                 .requestMatchers("/transactions/**").hasAnyRole("ADMIN", "CLIENT")
                 .requestMatchers("/positions/account/**").hasAnyRole("ADMIN", "CLIENT")

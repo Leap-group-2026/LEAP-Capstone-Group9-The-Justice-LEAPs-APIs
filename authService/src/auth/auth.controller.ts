@@ -1,8 +1,8 @@
 import { Controller, Post, Body, Get, UseGuards, Request, HttpCode, Res } from '@nestjs/common';
 import { Response } from 'express';
 import {
-  ApiBadGatewayResponse, ApiBadRequestResponse, ApiBearerAuth, ApiBody, ApiCreatedResponse, ApiOkResponse,
-  ApiOperation, ApiTags, ApiUnauthorizedResponse,
+  ApiBadGatewayResponse, ApiBadRequestResponse, ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiResponse,
+  ApiTags, ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -12,7 +12,6 @@ import { SpringUsersClient } from './spring-users.client';
 import { AccessTokenClaims } from './token-claims';
 import { MessageDto, RegisterBodyDto, SessionTokensDto, VerifyResponseDto } from './dto/docs.dto';
 import { ACCESS_TOKEN_SCHEME } from '../swagger';
-
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -25,7 +24,8 @@ export class AuthController {
   @Post('adminLogin')
   @HttpCode(200)
   @ApiOperation({ summary: 'Admin login', description: 'Checks the password with Spring and starts a new session for an admin (role admin).' })
-  @ApiOkResponse({ type: SessionTokensDto, description: 'Logged in' })
+  @ApiBody({ type: LoginDto })
+  @ApiOkResponse({ type: SessionTokensDto, description: 'Admin login successful' })
   @ApiBadRequestResponse({ description: 'email or password missing or blank' })
   @ApiUnauthorizedResponse({ description: 'Invalid email or password (same message for both, on purpose)' })
   @ApiBadGatewayResponse({ description: 'Spring is unreachable' })
@@ -35,8 +35,9 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Client login', description: 'Checks the password with Spring and starts a new session for a client (role client). Each login is its own session.' })
-  @ApiOkResponse({ type: SessionTokensDto, description: 'Logged in' })
+  @ApiOperation({ summary: 'User login', description: 'Checks the password with Spring and starts a new session for a client (role client). Each login is its own session.' })
+  @ApiBody({ type: LoginDto })
+  @ApiOkResponse({ type: SessionTokensDto, description: 'User login successful' })
   @ApiBadRequestResponse({ description: 'email or password missing or blank' })
   @ApiUnauthorizedResponse({ description: 'Invalid email or password (same message for both, on purpose)' })
   @ApiBadGatewayResponse({ description: 'Spring is unreachable' })
@@ -44,12 +45,11 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
-
   @Post('register')
-  @ApiOperation({ summary: 'Register a client', description: "Forwarded to Spring's POST /user unchanged; Spring's status and body come back as they are." })
+  @ApiOperation({ summary: 'User registration', description: "Forwarded to Spring's POST /user unchanged; Spring's status and body come back as they are." })
   @ApiBody({ type: RegisterBodyDto })
-  @ApiCreatedResponse({ description: 'Registered (Spring\'s response body)' })
-  @ApiBadRequestResponse({ description: "Spring rejected the details, e.g. a weak password; Spring's message is passed through" })
+  @ApiResponse({ status: 201, description: "User registered successfully (Spring's response body)" })
+  @ApiBadRequestResponse({ description: "Invalid registration data, e.g. a weak password; Spring's message is passed through" })
   @ApiBadGatewayResponse({ description: 'Spring is unreachable' })
   async register(@Body() body: Record<string, unknown>, @Res() res: Response) {
     const spring = await this.spring.register(body);
@@ -60,10 +60,10 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(200)
   @ApiOperation({
-    summary: 'Swap a refresh token for a new pair',
-    description: 'No Authorization header: works whether or not the access token has expired. The refresh token sent ' +
-      'is used up; keep the new one. Sending an already-used token again ends the whole session, since it means a ' +
-      'copy exists somewhere. Two refreshes with the same token at once therefore log the user out.',
+    summary: 'Refresh access token',
+    description: 'Swaps a refresh token for a new pair. No Authorization header: works whether or not the access token ' +
+      'has expired. The refresh token sent is used up; keep the new one. Sending an already-used token again ends the ' +
+      'whole session, since it means a copy exists somewhere. Two refreshes with the same token at once therefore log the user out.',
   })
   @ApiOkResponse({ type: SessionTokensDto, description: 'New access token and refresh token; same session, same 8-hour limit' })
   @ApiBadRequestResponse({ description: 'refreshToken missing, blank or not a string' })
@@ -74,13 +74,14 @@ export class AuthController {
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
+  @HttpCode(200)
   @ApiBearerAuth(ACCESS_TOKEN_SCHEME)
   @ApiOperation({
-    summary: 'End the session',
+    summary: 'User logout',
     description: 'Revokes every refresh token from this login; other logins stay signed in. The access token itself ' +
       'keeps working at Spring until it expires.',
   })
-  @ApiCreatedResponse({ type: MessageDto, description: 'Session ended' })
+  @ApiOkResponse({ type: MessageDto, description: 'Logout successful' })
   @ApiUnauthorizedResponse({ description: 'Missing, expired or invalid access token' })
   async logout(@Request() req: { user: AccessTokenClaims }) {
     await this.authService.logout(req.user.sid);
@@ -90,11 +91,10 @@ export class AuthController {
   @Get('verify')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth(ACCESS_TOKEN_SCHEME)
-  @ApiOperation({ summary: 'Read back an access token', description: 'Returns the claims of a valid access token.' })
-  @ApiOkResponse({ type: VerifyResponseDto })
-  @ApiUnauthorizedResponse({ description: 'Missing, expired or invalid access token' })
+  @ApiOperation({ summary: 'Verify JWT token validity', description: 'Returns the claims of a valid access token.' })
+  @ApiOkResponse({ type: VerifyResponseDto, description: 'Token is valid' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized - invalid or expired token' })
   async verifyToken(@Request() req: any) {
-    // verification lofic
     return { user: req.user };
   }
 }

@@ -2,7 +2,11 @@ import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 
 
-export const ACCESS_TOKEN_SCHEME = 'access-token';
+// The name @ApiBearerAuth refers to; dev's controllers use 'jwt'
+export const ACCESS_TOKEN_SCHEME = 'jwt';
+
+// Swagger UI here, the raw document at DOCS_PATH + '-json'
+export const DOCS_PATH = 'api/docs';
 
 export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
   const config = new DocumentBuilder()
@@ -19,11 +23,16 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
       { type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'The accessToken from login or refresh' },
       ACCESS_TOKEN_SCHEME,
     )
+    .addTag('Auth', 'Authentication operations')
+    .addTag('Health', 'Service health check')
     .build();
   return SwaggerModule.createDocument(app, config);
 }
 
 
 export function setupSwagger(app: INestApplication): void {
-  SwaggerModule.setup('docs', app, buildOpenApiDocument(app));
+  SwaggerModule.setup(DOCS_PATH, app, buildOpenApiDocument(app), {
+    // Keeps a pasted token across page reloads
+    swaggerOptions: { persistAuthorization: true },
+  });
 }

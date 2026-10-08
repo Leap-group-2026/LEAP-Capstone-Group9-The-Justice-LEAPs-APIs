@@ -230,7 +230,7 @@ describe('refresh tokens', () => {
     it('ends the session, so its refresh token stops working', async () => {
       const tokens = await login();
 
-      await logout(tokens.accessToken).expect(201);
+      await logout(tokens.accessToken).expect(200);
 
       expect(await liveRows()).toHaveLength(0);
       await refresh(tokens.refreshToken).expect(401);
@@ -240,7 +240,7 @@ describe('refresh tokens', () => {
       const laptop = await login();
       const phone = await login();
 
-      await logout(laptop.accessToken).expect(201);
+      await logout(laptop.accessToken).expect(200);
 
       await refresh(phone.refreshToken).expect(200);
     });

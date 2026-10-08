@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { EnvConfig } from './config/env.validation';
-import { setupSwagger } from './swagger';
+import { DOCS_PATH, setupSwagger } from './swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,7 +17,8 @@ async function bootstrap() {
 
   const port = config.get('PORT', { infer: true });
   await app.listen(port);
-  console.log(`Auth service running on port ${port} (API docs: /docs)`);
+  console.log(`Auth service running on port ${port}`);
+  console.log(`Swagger docs available at http://localhost:${port}/${DOCS_PATH}`);
 }
 
 bootstrap().catch(err => {

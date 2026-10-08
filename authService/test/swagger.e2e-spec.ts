@@ -12,10 +12,11 @@ const ENDPOINTS: [string, string][] = [
   ['post', '/auth/logout'],
   ['get', '/auth/verify'],
   ['get', '/health'],
+  ['get', '/'],
 ];
 const NEEDS_ACCESS_TOKEN = ['post /auth/logout', 'get /auth/verify'];
 
-describe('API docs (GET /docs-json)', () => {
+describe('API docs (GET /api/docs-json)', () => {
   let app: INestApplication;
   let doc: any;
 
@@ -29,7 +30,7 @@ describe('API docs (GET /docs-json)', () => {
     app = moduleRef.createNestApplication();
     setupSwagger(app);
     await app.init();
-    doc = (await request(app.getHttpServer()).get('/docs-json').expect(200)).body;
+    doc = (await request(app.getHttpServer()).get('/api/docs-json').expect(200)).body;
   });
 
   afterAll(() => app.close());

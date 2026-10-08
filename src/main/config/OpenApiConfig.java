@@ -27,7 +27,7 @@ public class OpenApiConfig {
                 + "service with `POST http://localhost:3001/auth/login` (clients) or `/auth/adminLogin` (admins), then "
                 + "click **Authorize** and paste the `accessToken`. It lasts 30 minutes; trade the `refreshToken` at "
                 + "`POST http://localhost:3001/auth/refresh` for a new one. The auth service's own docs are at "
-                + "http://localhost:3001/docs.")
+                + "http://localhost:3001/api/docs.")
             .version("1.0.0"))
             .components(new Components().addSecuritySchemes(BEARER_SCHEME, new SecurityScheme()
                 .type(SecurityScheme.Type.HTTP)

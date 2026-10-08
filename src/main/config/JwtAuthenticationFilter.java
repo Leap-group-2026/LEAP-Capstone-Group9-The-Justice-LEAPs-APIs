@@ -10,6 +10,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -21,6 +23,7 @@ import java.util.List;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
     static final int MIN_SECRET_BYTES = 32;
 
     private final SecretKey key;
@@ -54,9 +57,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private String extractToken(HttpServletRequest request) {
         String header = request.getHeader("Authorization");
-        return header != null && header.startsWith("Bearer ") ? header.substring(7) : null;
+        return header != null && header.startsWith("Bearer ") ? header.substring(7).trim() : null;
     }
-
 
     private Claims verifiedAccessClaims(String token) {
         if (token == null) {
@@ -66,6 +68,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
             return "access".equals(claims.get("type")) ? claims : null;
         } catch (JwtException | IllegalArgumentException e) {
+            logger.warn("Token validation failed: {}", e.getMessage());
             return null;
         }
     }

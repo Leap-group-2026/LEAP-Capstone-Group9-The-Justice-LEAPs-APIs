@@ -26,7 +26,7 @@ pipeline {
       steps {
         withSonarQubeEnv('my sonar qube for project') {
           sh '''
-            mvn sonar:sonar \
+            mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.11.0.3922:sonar \
               -Dsonar.projectKey=justice-leaps-api \
               -Dsonar.projectName="Justice LEAPs API" \
               -Dsonar.host.url=http://localhost:9000

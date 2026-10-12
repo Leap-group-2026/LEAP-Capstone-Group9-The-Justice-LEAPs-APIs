@@ -11,7 +11,11 @@ services:
       PORT: 3000
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-3600}
+      SPRINGBOOT_API_URL: ${SPRINGBOOT_API_URL:-http://host.docker.internal:8081}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4200}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "${AUTH_SERVICE_PORT:-3000}:3000"
     restart: unless-stopped

@@ -43,11 +43,15 @@ public class UserController {
 
     @Operation(summary = "Register a user",
         description = "Creates a customer and sends a welcome email to their address. Email and SSN must be unique; the SSN "
-            + "is stored only as a hash. Password rules: at least 12 characters, 2 uppercase, 2 special characters, no underscores.")
+            + "is stored only as a hash. SSN: 9 digits, as XXX-XX-XXXX or XXXXXXXXX (both count as the same SSN). Date of birth: "
+            + "YYYY-MM-DD, at least 18 and at most 120 years ago. Email is stored lowercase. "
+            + "Password rules: at least 12 characters, 2 uppercase, 2 special characters, no underscores.")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "User created"),
         @ApiResponse(responseCode = "400", description = "Missing field (e.g. \"Email is Required\"), duplicate (\"Email already exists.\", "
-            + "\"SSN already exists.\") or password rule broken (e.g. \"Password must be a minimum of 12 characters.\")",
+            + "\"SSN already exists.\"), bad format (\"Invalid email format\", \"SSN must be 9 digits (XXX-XX-XXXX or XXXXXXXXX)\"), "
+            + "age out of range (\"You must be at least 18 years old to register.\") or password rule broken (e.g. \"Password must be a minimum of 12 characters.\"). "
+            + "A date that is not YYYY-MM-DD, or a field of the wrong type, gets a JSON ValidationError naming the field instead.",
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Email already exists.")))
     })
     @SecurityRequirement(name = OpenApiConfig.INTERNAL_KEY_SCHEME)

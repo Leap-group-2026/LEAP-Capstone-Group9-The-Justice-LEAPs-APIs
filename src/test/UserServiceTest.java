@@ -19,7 +19,10 @@ import dto.response.UserResponse;
 import dto.response.UserLoginResponse;
 import exception.InvalidCredentialsException;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.security.MessageDigest;
 import java.util.Base64;
 
@@ -55,7 +58,8 @@ public class UserServiceTest {
         // Pass null for EmailService to avoid mocking issues; it's only used in welcome emails
         service = new UserService(mockUserRepo, null, mockPasswordEncoder, 
                                   mockAccountsRepo, mockCurrentPriceRepo, 
-                                  mockPositionsRepo, mockInstrumentRepo);
+                                  mockPositionsRepo, mockInstrumentRepo,
+                                  Clock.fixed(Instant.parse("2024-09-24T16:00:00Z"), ZoneOffset.UTC));
     }
 
     // Helper method to generate SHA-256 hash (matches service implementation)
@@ -83,7 +87,7 @@ public class UserServiceTest {
         request.setPassword("SecurePass@123#");
 
         when(mockUserRepo.existsByEmail("john@example.com")).thenReturn(false);
-        String ssnHash = generateSHA256Hash("123-45-6789");
+        String ssnHash = generateSHA256Hash("123456789");
         when(mockUserRepo.existsBySsnHash(ssnHash)).thenReturn(false);
         when(mockPasswordEncoder.encode("SecurePass@123#")).thenReturn("hashed_password");
 
@@ -122,7 +126,7 @@ public class UserServiceTest {
         request.setPassword("AnotherSecure@Pass1!");
 
         when(mockUserRepo.existsByEmail("jane@example.com")).thenReturn(false);
-        String ssnHash2 = generateSHA256Hash("987-65-4321");
+        String ssnHash2 = generateSHA256Hash("987654321");
         when(mockUserRepo.existsBySsnHash(ssnHash2)).thenReturn(false);
         when(mockPasswordEncoder.encode("AnotherSecure@Pass1!")).thenReturn("hashed_password_2");
 
@@ -384,7 +388,7 @@ public class UserServiceTest {
         request.setPassword("GoodPass@123!");
 
         when(mockUserRepo.existsByEmail("john@example.com")).thenReturn(false);
-        String ssnHashPass = generateSHA256Hash("123-45-6789");
+        String ssnHashPass = generateSHA256Hash("123456789");
         when(mockUserRepo.existsBySsnHash(ssnHashPass)).thenReturn(false);
         when(mockPasswordEncoder.encode("GoodPass@123!")).thenReturn("hashed_password");
 
@@ -438,11 +442,11 @@ public class UserServiceTest {
         request.setEmail("john@example.com");
         request.setDateOfBirth(LocalDate.of(1990, 1, 1));
         request.setAddress("123 Main St");
-        request.setSsn("existing-ssn");
+        request.setSsn("111-22-3333");
         request.setPassword("SecurePass@123#");
 
         when(mockUserRepo.existsByEmail("john@example.com")).thenReturn(false);
-        String existingSsnHash = generateSHA256Hash("existing-ssn");
+        String existingSsnHash = generateSHA256Hash("111223333");
         when(mockUserRepo.existsBySsnHash(existingSsnHash)).thenReturn(true);
 
         // Act & Assert
@@ -466,7 +470,7 @@ public class UserServiceTest {
         request.setPassword("SecurePass@123#");
 
         when(mockUserRepo.existsByEmail("john@example.com")).thenReturn(false);
-        String ssnHashTest = generateSHA256Hash("123-45-6789");
+        String ssnHashTest = generateSHA256Hash("123456789");
         when(mockUserRepo.existsBySsnHash(ssnHashTest)).thenReturn(false);
         when(mockPasswordEncoder.encode("SecurePass@123#")).thenReturn("hashed_password");
 
@@ -501,7 +505,7 @@ public class UserServiceTest {
         request.setPassword("SecurePass@123#");
 
         when(mockUserRepo.existsByEmail("john@example.com")).thenReturn(false);
-        String ssnHashPwd = generateSHA256Hash("123-45-6789");
+        String ssnHashPwd = generateSHA256Hash("123456789");
         when(mockUserRepo.existsBySsnHash(ssnHashPwd)).thenReturn(false);
         when(mockPasswordEncoder.encode("SecurePass@123#")).thenReturn("hashed_password");
 
@@ -536,7 +540,7 @@ public class UserServiceTest {
         request.setPassword("SecurePass@123#");
 
         when(mockUserRepo.existsByEmail("john@example.com")).thenReturn(false);
-        String ssnHashEmail = generateSHA256Hash("123-45-6789");
+        String ssnHashEmail = generateSHA256Hash("123456789");
         when(mockUserRepo.existsBySsnHash(ssnHashEmail)).thenReturn(false);
         when(mockPasswordEncoder.encode("SecurePass@123#")).thenReturn("hashed_password");
 

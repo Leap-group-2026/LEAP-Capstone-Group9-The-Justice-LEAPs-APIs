@@ -31,13 +31,13 @@ public interface UserRepo {
     @Delete("DELETE FROM user_info WHERE user_id = #{userId}")
     void delete(Integer userId);
 
-    @Select("SELECT EXISTS(SELECT 1 FROM user_info WHERE email = #{email})")
+    @Select("SELECT EXISTS(SELECT 1 FROM user_info WHERE LOWER(email) = LOWER(#{email}))")
     boolean existsByEmail(String email);
 
     @Select("SELECT EXISTS(SELECT 1 FROM user_info WHERE ssn_hash = #{ssnHash})")
     boolean existsBySsnHash(String ssnHash);
 
-    @Select("SELECT * FROM user_info WHERE email = #{email}")
+    @Select("SELECT * FROM user_info WHERE LOWER(email) = LOWER(#{email})")
     Optional<UserEntity> findByEmail(String email);
 
     @Update("UPDATE user_info SET pass_hash=#{passHash} WHERE user_id=#{userId}")

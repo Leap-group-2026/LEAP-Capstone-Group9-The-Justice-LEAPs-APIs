@@ -5,6 +5,9 @@ import entities.HistoricalOrdersEntity;
 import dto.response.HistoricalOrderResponse;
 import dto.OrderSnapshot;
 import repos.HistoricalOrdersRepo;
+import repos.OrdersRepo;
+import services.AccountService;
+import config.AuthorizationUtil;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,11 +30,18 @@ public class HistoricalOrdersController {
     private final OrderService orderService;
     private final HistoricalOrdersRepo historicalOrdersRepo;
     private final ObjectMapper objectMapper;
+    private final OrdersRepo ordersRepo;
+    private final AccountService accountService;
+    private final AuthorizationUtil authorizationUtil;
     
-    public HistoricalOrdersController(OrderService orderService, HistoricalOrdersRepo historicalOrdersRepo, ObjectMapper objectMapper){
+    public HistoricalOrdersController(OrderService orderService, HistoricalOrdersRepo historicalOrdersRepo, ObjectMapper objectMapper,
+                                      OrdersRepo ordersRepo, AccountService accountService, AuthorizationUtil authorizationUtil){
         this.orderService = orderService;
         this.historicalOrdersRepo = historicalOrdersRepo;
         this.objectMapper = objectMapper;
+        this.ordersRepo = ordersRepo;
+        this.accountService = accountService;
+        this.authorizationUtil = authorizationUtil;
     }
     
 
@@ -48,7 +58,10 @@ public class HistoricalOrdersController {
     @GetMapping("/{orderId}/history")
     public ResponseEntity<List<HistoricalOrderResponse>> getOrderHistory(
             @PathVariable Integer orderId) {
-        // Retrieve history regardless of whether order exists; return empty list if none
+        ordersRepo.findById(orderId)
+            .flatMap(order -> accountService.findIfPresent(order.getAccountId().getAccountId()))
+            .filter(account -> account.getUserId() != null)
+            .ifPresent(account -> authorizationUtil.checkAccountAccess(account.getAccountId(), account.getUserId().getUserId()));
         List<HistoricalOrdersEntity> entities = historicalOrdersRepo.findByOrderId_OrderIdOrderByCreatedAtAsc(orderId);
         
         List<HistoricalOrderResponse> dtos = entities.stream()

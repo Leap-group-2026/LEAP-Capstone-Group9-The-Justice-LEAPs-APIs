@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AppService } from './app.service';
 
 @ApiTags('Health')
@@ -9,14 +9,14 @@ export class AppController {
 
   @Get()
   @ApiOperation({ summary: 'Health check endpoint' })
-  @ApiResponse({ status: 200, description: 'Service is running' })
+  @ApiOkResponse({ description: 'Service is running' })
   getHello(): string {
     return this.appService.getHello();
   }
 
   @Get('health')
   @ApiOperation({ summary: 'Get service health status' })
-  @ApiResponse({ status: 200, description: 'Service health status', schema: { properties: { status: { type: 'string', example: 'OK' } } } })
+  @ApiOkResponse({ description: 'Service health status', schema: { properties: { status: { type: 'string', example: 'OK' } } } })
   health(): { status: string } {
     return { status: 'OK' };
   }

@@ -2,6 +2,7 @@ package controllers;
 
 import services.UserService;
 import services.AccountService;
+import config.AuthorizationUtil;
 import dto.request.UserRegistrationRequest;
 import dto.request.VerifyPasswordReset;
 import dto.request.LoginRequest;
@@ -17,6 +18,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import dto.response.ValidationError;
 import java.util.List;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import config.OpenApiConfig;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -31,20 +34,27 @@ import dto.response.UserLoginResponse;
 public class UserController {
     private UserService service;
     private AccountService accountService;
-    public UserController(UserService service, AccountService accountService){
+    private AuthorizationUtil authorizationUtil;
+    public UserController(UserService service, AccountService accountService, AuthorizationUtil authorizationUtil){
         this.service = service;
         this.accountService = accountService; 
+        this.authorizationUtil = authorizationUtil;
     }
 
     @Operation(summary = "Register a user",
         description = "Creates a customer and sends a welcome email to their address. Email and SSN must be unique; the SSN "
-            + "is stored only as a hash. Password rules: at least 12 characters, 2 uppercase, 2 special characters, no underscores.")
+            + "is stored only as a hash. SSN: 9 digits, as XXX-XX-XXXX or XXXXXXXXX (both count as the same SSN). Date of birth: "
+            + "YYYY-MM-DD, at least 18 and at most 120 years ago. Email is stored lowercase. "
+            + "Password rules: at least 12 characters, 2 uppercase, 2 special characters, no underscores.")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "User created"),
         @ApiResponse(responseCode = "400", description = "Missing field (e.g. \"Email is Required\"), duplicate (\"Email already exists.\", "
-            + "\"SSN already exists.\") or password rule broken (e.g. \"Password must be a minimum of 12 characters.\")",
+            + "\"SSN already exists.\"), bad format (\"Invalid email format\", \"SSN must be 9 digits (XXX-XX-XXXX or XXXXXXXXX)\"), "
+            + "age out of range (\"You must be at least 18 years old to register.\") or password rule broken (e.g. \"Password must be a minimum of 12 characters.\"). "
+            + "A date that is not YYYY-MM-DD, or a field of the wrong type, gets a JSON ValidationError naming the field instead.",
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Email already exists.")))
     })
+    @SecurityRequirement(name = OpenApiConfig.INTERNAL_KEY_SCHEME)
     @PostMapping
     public ResponseEntity<UserResponse> createUser(@RequestBody UserRegistrationRequest request){
         //return service.saveUser(user);
@@ -87,6 +97,7 @@ public class UserController {
         @ApiResponse(responseCode = "401", description = "Unknown email or wrong password (identical response for both)",
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Invalid email or password")))
     })
+    @SecurityRequirement(name = OpenApiConfig.INTERNAL_KEY_SCHEME)  
     @PostMapping("/login")
     public UserLoginResponse login(@RequestBody LoginRequest request){
         return service.login(request);
@@ -96,6 +107,9 @@ public class UserController {
     @Operation(summary = "Currency exchange transaction")
     @PostMapping("/transactions/exchange")
     public ResponseEntity<String> currencyExchange(@Valid @RequestBody TransactionRequest transactionRequest){
+        accountService.findIfPresent(transactionRequest.accountId())
+            .filter(account -> account.getUserId() != null)
+            .ifPresent(account -> authorizationUtil.checkAccountAccess(account.getAccountId(), account.getUserId().getUserId()));
         return service.currencyExchange(transactionRequest);
     }
 

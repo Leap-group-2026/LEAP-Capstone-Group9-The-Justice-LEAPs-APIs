@@ -135,7 +135,7 @@ public class AccountActiveFilteringTest {
         String body = "{\"side\":\"BUY\",\"accountId\":" + CLOSED_ACCOUNT_ID
             + ",\"instrumentId\":" + PRICED_INSTRUMENT_ID + ",\"quantity\":1}";
 
-        mockMvc.perform(post("/orders").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post("/orders").with(user("" + USER_ID)).contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isNotFound());
 
         Integer orders = jdbcTemplate.queryForObject(
@@ -171,7 +171,7 @@ public class AccountActiveFilteringTest {
     @Test
     void closingTwiceGivesExplicitErrorSecondTime() throws Exception {
         mockMvc.perform(patch("/accounts/close/" + ZERO_BALANCE_ACCOUNT_ID)
-            .with(user("" + USER_ID))
+            .with(user("" + USER_ID).roles("CLIENT"))
             .contentType(MediaType.APPLICATION_JSON)
             .content("{}"))
             .andExpect(status().isOk())
@@ -182,7 +182,7 @@ public class AccountActiveFilteringTest {
         assertFalse(active);
 
         mockMvc.perform(patch("/accounts/close/" + ZERO_BALANCE_ACCOUNT_ID)
-            .with(user("" + USER_ID))
+            .with(user("" + USER_ID).roles("CLIENT"))
             .contentType(MediaType.APPLICATION_JSON)
             .content("{}"))
             .andExpect(status().isBadRequest())
@@ -197,7 +197,7 @@ public class AccountActiveFilteringTest {
             + "\"portfolioSize\":\"LOW\",\"tradeType\":\"Active\"}";
 
         MvcResult result = mockMvc.perform(post("/accounts")
-            .with(user("" + USER_ID))
+            .with(user("" + USER_ID).roles("CLIENT"))
             .contentType(MediaType.APPLICATION_JSON)
             .content(body))
             .andExpect(status().isOk())
@@ -213,7 +213,7 @@ public class AccountActiveFilteringTest {
     @Test
     void closeAccountSuccessfully() throws Exception {
         mockMvc.perform(patch("/accounts/close/" + ZERO_BALANCE_ACCOUNT_ID)
-            .with(user("" + USER_ID))
+            .with(user("" + USER_ID).roles("CLIENT"))
             .contentType(MediaType.APPLICATION_JSON)
             .content("{}"))
             .andExpect(status().isOk())
@@ -268,7 +268,7 @@ public class AccountActiveFilteringTest {
         String body = "{\"side\":\"BUY\",\"accountId\":" + ACTIVE_ACCOUNT_ID
             + ",\"instrumentId\":" + UNPRICED_INSTRUMENT_ID + ",\"quantity\":1}";
 
-        mockMvc.perform(post("/orders").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post("/orders").with(user("" + USER_ID)).contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.fieldMessage", containsString("no current price")));
     }

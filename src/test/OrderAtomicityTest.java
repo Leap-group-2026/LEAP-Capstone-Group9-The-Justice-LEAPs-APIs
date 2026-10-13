@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 import main.Application;
 import repos.HistoricalOrdersRepo;
@@ -84,7 +85,7 @@ public class OrderAtomicityTest {
 
         // The unhandled failure surfaces as a servlet exception (a 500 in the running app)
         assertThrows(Exception.class, () ->
-            mockMvc.perform(post("/orders").contentType(MediaType.APPLICATION_JSON).content(body)));
+            mockMvc.perform(post("/orders").with(user(String.valueOf(USER_ID))).contentType(MediaType.APPLICATION_JSON).content(body)));
 
         Integer orders = jdbcTemplate.queryForObject(
             "SELECT count(*) FROM orders WHERE account_id = ?", Integer.class, ACCOUNT_ID);

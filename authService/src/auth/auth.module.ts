@@ -8,16 +8,20 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { SpringUsersClient } from './spring-users.client';
 import { EnvConfig } from '../config/env.validation';
+import { DatabaseModule } from '../database/database.module';
+import { RefreshTokenStore } from './refresh-token.store';
 
 @Module({
   imports: [
     PassportModule,
+    DatabaseModule,
     HttpModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService<EnvConfig, true>) => ({
         baseURL: config.get('SPRINGBOOT_API_URL', { infer: true }),
         timeout: 5000,
         validateStatus: () => true,
+        headers: { 'X-Internal-Api-Key': config.get('INTERNAL_API_KEY', { infer: true }) },
       }),
     }),
     JwtModule.registerAsync({
@@ -28,7 +32,7 @@ import { EnvConfig } from '../config/env.validation';
       }),
     }),
   ],
-  providers: [AuthService, JwtStrategy, SpringUsersClient],
+  providers: [AuthService, JwtStrategy, SpringUsersClient, RefreshTokenStore],
   controllers: [AuthController],
   exports: [AuthService],
 })

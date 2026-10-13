@@ -357,6 +357,19 @@ public class OrderProcessingServiceTest {
     }
 
     @Test
+    void theSweeperLeavesAnOrderAloneUntilItsFillDelayHasPassed() {
+        insertPendingOrder(ORDER_ID, ACCOUNT_ID, INSTRUMENT_ID, "BUY", 1);
+        insertPendingOrder(SECOND_ORDER_ID, ACCOUNT_ID, INSTRUMENT_ID, "BUY", 1);
+        // Placed just now on the database clock, so still inside the 5-second fill delay
+        jdbcTemplate.update("UPDATE orders SET created_at = LOCALTIMESTAMP WHERE order_id = ?", SECOND_ORDER_ID);
+
+        scheduledOrdersCheck.processOrders();
+
+        assertEquals("FILLED", orderStatus(ORDER_ID));
+        assertEquals("PENDING", orderStatus(SECOND_ORDER_ID), "the sweeper filled an order before its fill delay");
+    }
+
+    @Test
     void anOrderFilledMeanwhileIsNotOverwrittenWithFailed() {
         insertPendingOrder(ACCOUNT_ID, INSTRUMENT_ID, "BUY", 3);
         // Simulates a Kafka delivery filling the order while the sweeper's attempt fails

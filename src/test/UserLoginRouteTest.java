@@ -1,4 +1,6 @@
 import org.junit.jupiter.api.BeforeEach;
+import config.InternalApiKeyFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -26,6 +28,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Transactional
 public class UserLoginRouteTest {
+
+    // The auth service's key; these endpoints refuse requests without it
+    @Value("${internal.api.key}")
+    private String internalApiKey;
     private static final int USER_ID = 9101;
 
     @Autowired
@@ -45,6 +51,7 @@ public class UserLoginRouteTest {
 
     private ResultActions login(String email, String password) throws Exception {
         return mockMvc.perform(post("/user/login")
+            .header(InternalApiKeyFilter.HEADER, internalApiKey)
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}"));
     }

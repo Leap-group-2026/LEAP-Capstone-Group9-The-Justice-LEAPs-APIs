@@ -1,5 +1,6 @@
 package controllers;
 
+import org.springframework.security.access.AccessDeniedException;
 import java.util.List;
 import services.AccountService;
 import config.AuthorizationUtil;
@@ -15,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import dto.response.ValidationError;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -49,9 +49,12 @@ public class AccountController {
     })
     @PostMapping
     public AccountsEntity saveAccount(@RequestBody @Valid CreateAccountRequest request) {
-        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        Integer clientId = authorizationUtil.getCurrentClientId();
+        if (clientId == null) {
+            throw new AccessDeniedException("Only a client can open an account for themselves");
+        }
         UserEntity owner = new UserEntity();
-        owner.setUserId(Integer.parseInt(userId));
+        owner.setUserId(clientId);
 
         AccountsEntity account = new AccountsEntity();
         account.setUserId(owner);
@@ -80,8 +83,16 @@ public class AccountController {
     @PatchMapping("/close/{id}")
     public ResponseEntity<String> closeAccount(@PathVariable Integer id) {
         try {
-            String userId = SecurityContextHolder.getContext().getAuthentication().getName();
-            String result = accountService.closeAccount(id, Integer.parseInt(userId));
+            String result;
+            if (authorizationUtil.isAdmin()) {
+                result = accountService.closeAccountAsAdmin(id);
+            } else {
+                Integer clientId = authorizationUtil.getCurrentClientId();
+                if (clientId == null) {
+                    throw new AccessDeniedException("Only the account's owner or an admin can close it");
+                }
+                result = accountService.closeAccount(id, clientId);
+            }
             return ResponseEntity.ok(result);
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -94,6 +105,7 @@ public class AccountController {
     @GetMapping("/user/{userId}")
     public List<AccountResponse> getAccountsbyUserId(@PathVariable int userId)
     {
+        authorizationUtil.checkUserAccess(userId);
         return accountService.getAccountsByUserID(userId);
     }
 

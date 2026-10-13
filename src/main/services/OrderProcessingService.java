@@ -23,6 +23,7 @@ import services.calculation.OrderPriceCalculator;
 @Service
 public class OrderProcessingService {
     private static final Logger logger = LoggerFactory.getLogger(OrderProcessingService.class);
+    public static final String FILL_DELAY = "${app.orders.fill-delay:5s}";
     private static final BigDecimal MAX_SINGLE_BUY = new BigDecimal("1000000");
     private static final BigDecimal MAX_DAILY_BUY = new BigDecimal("3000000");
     private static final ZoneId EASTERN_ZONE = ZoneId.of("America/New_York");

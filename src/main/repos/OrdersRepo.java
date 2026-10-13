@@ -52,8 +52,11 @@ public interface OrdersRepo {
     @ResultMap("orderResult")
     List<OrderEntity> findCanceledByUser(@Param("userId") Integer userId);
 
-    @Select("SELECT order_id FROM orders WHERE status = 'PENDING' ORDER BY created_at ASC, order_id ASC")
-    List<Integer> findPendingOrderIds();
+
+    @Select("SELECT order_id FROM orders WHERE status = 'PENDING' " +
+            "AND created_at <= LOCALTIMESTAMP - CAST(#{minAgeSeconds} AS BIGINT) * INTERVAL '1' SECOND " +
+            "ORDER BY created_at ASC, order_id ASC")
+    List<Integer> findPendingOrderIds(@Param("minAgeSeconds") long minAgeSeconds);
 
     @Select("SELECT * from orders WHERE order_id = #{orderId} FOR UPDATE")
     @ResultMap("orderResult")

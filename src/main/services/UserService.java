@@ -31,6 +31,8 @@ import java.util.Base64;
 import java.util.Random;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Clock;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
@@ -42,13 +44,18 @@ public class UserService {
     private AccountsRepo accountsRepo;
     private PositionsRepo positionsRepo;
     private InstrumentRepo instrumentRepo;
+    private Clock clock;
     private static final Random random = new Random();
+
+    static final int MIN_AGE_YEARS = 18;
+    static final int MAX_AGE_YEARS = 120;
     
     @Autowired
     public UserService(UserRepo repo, EmailService emailService, PasswordEncoder passwordEncoder, 
                        AccountsRepo accountsRepo, CurrentPriceRepo currentPriceRepo, 
-                       PositionsRepo positionsRepo, InstrumentRepo instrumentRepo){
+                       PositionsRepo positionsRepo, InstrumentRepo instrumentRepo, Clock clock){
         this.repo = repo; 
+        this.clock = clock;
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
         this.accountsRepo = accountsRepo;
@@ -61,6 +68,11 @@ public class UserService {
         validateRequired(request);
         
         String email = request.getEmail().trim().toLowerCase();
+        if (!isValidEmail(email)) {
+            throw new IllegalArgumentException("Invalid email format");
+        }
+        String ssn = normalizeSsn(request.getSsn());
+        validateDateOfBirth(request.getDateOfBirth());
 
         if(repo.existsByEmail(email)){
             throw new IllegalArgumentException("Email already exists.");
@@ -68,7 +80,7 @@ public class UserService {
 
         validatePass(request.getPassword());
 
-        String ssnHash = generateSHA256Hash(request.getSsn());
+        String ssnHash = generateSHA256Hash(ssn);
 
         if(repo.existsBySsnHash(ssnHash)){
             throw new IllegalArgumentException("SSN already exists.");
@@ -77,7 +89,7 @@ public class UserService {
         UserEntity user = new UserEntity(); 
 
         user.setName(request.getName().trim());
-        user.setEmail(request.getEmail().trim());
+        user.setEmail(email);
         user.setDateOfBirth(request.getDateOfBirth());
         user.setAddress(request.getAddress().trim());
         user.setSsnHash(ssnHash);
@@ -138,6 +150,25 @@ public class UserService {
         }
         if (request.getPassword() == null || request.getPassword().isBlank()){
             throw new IllegalArgumentException("Password is Required");
+        }
+    }
+
+    // XXX-XX-XXXX or XXXXXXXXX; only the digits are hashed, so both spellings of one SSN count as the same SSN
+    String normalizeSsn(String ssn){
+        String trimmed = ssn.trim();
+        if (!trimmed.matches("\\d{3}-\\d{2}-\\d{4}|\\d{9}")) {
+            throw new IllegalArgumentException("SSN must be 9 digits (XXX-XX-XXXX or XXXXXXXXX)");
+        }
+        return trimmed.replace("-", "");
+    }
+
+    void validateDateOfBirth(LocalDate dateOfBirth){
+        LocalDate today = LocalDate.now(clock);
+        if (dateOfBirth.isAfter(today.minusYears(MIN_AGE_YEARS))) {
+            throw new IllegalArgumentException("You must be at least " + MIN_AGE_YEARS + " years old to register.");
+        }
+        if (dateOfBirth.isBefore(today.minusYears(MAX_AGE_YEARS))) {
+            throw new IllegalArgumentException("Date of birth cannot be more than " + MAX_AGE_YEARS + " years ago.");
         }
     }
 
@@ -258,7 +289,8 @@ public class UserService {
     }
 
     private boolean isValidEmail(String email) {
-        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
+        // Needs a dot in the domain, so "jo@example" is rejected
+        String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*\\.[A-Za-z]{2,}$";
         return email.matches(emailRegex) && email.length() <= 255;
     }
     @Transactional 

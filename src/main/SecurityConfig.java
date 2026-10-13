@@ -6,6 +6,10 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
@@ -56,6 +60,8 @@ public class SecurityConfig {
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/user/**").hasRole("CLIENT")
                 .requestMatchers("/positions/{id}").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/positions").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/accounts").hasRole("CLIENT")
                 .requestMatchers("/orders/{orderId}").hasRole("ADMIN")
                 .requestMatchers("/transactions/account/**").hasAnyRole("ADMIN", "CLIENT")
                 .requestMatchers("/transactions/**").hasAnyRole("ADMIN", "CLIENT")
@@ -70,6 +76,8 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .csrf(csrf -> csrf.disable());
         return http.build();
     }

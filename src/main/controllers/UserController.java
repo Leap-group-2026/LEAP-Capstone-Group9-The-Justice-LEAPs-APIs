@@ -27,6 +27,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import dto.response.UserLoginResponse;
+import dto.response.UserInfoDisplayed;
 
 @Tag(name = "Users")  // description and display order: OpenApiConfig
 @RestController 
@@ -120,6 +121,14 @@ public class UserController {
     public List<AccountResponse> getUserAccounts() {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         return accountService.getAccountsByUserID(Integer.parseInt(userId));
+    }
+
+    @Operation(summary = "Retrieve the current user's profile")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved the user's profile")
+    @GetMapping
+    public ResponseEntity<UserInfoDisplayed> getUsersInfoForDisplay(){
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        return service.getUsersInfoForDisplay(userId);
     }
 
     @Operation(summary = "Update a user's profile",

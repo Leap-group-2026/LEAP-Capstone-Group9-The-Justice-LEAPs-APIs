@@ -18,6 +18,7 @@ import dto.request.VerifyPasswordReset;
 import dto.request.UpdateUserRequest;
 import dto.response.UserResponse;
 import dto.response.UpdateUserResponse;
+import dto.response.UserInfoDisplayed;
 import repos.InstrumentRepo;
 import repos.AccountsRepo;
 import repos.PositionsRepo;
@@ -127,6 +128,17 @@ public class UserService {
                 && passwordEncoder.matches(request.getPassword(), u.getPassHash()))
             .orElseThrow(InvalidCredentialsException::new);
         return new UserLoginResponse(user.getUserId());
+    }
+
+    public ResponseEntity<UserInfoDisplayed> getUsersInfoForDisplay(String userId) {
+        UserEntity user = repo.findById(Integer.parseInt(userId))
+            .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        return ResponseEntity.ok(new UserInfoDisplayed(
+            user.getName(),
+            user.getEmail(),
+            user.getAddress()
+        ));
     }
 
 

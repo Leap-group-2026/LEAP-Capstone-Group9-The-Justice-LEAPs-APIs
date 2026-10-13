@@ -23,8 +23,8 @@ import config.JwtAuthenticationEntryPoint;
 
 @Configuration
 public class SecurityConfig {
-    @Value("${app.cors.allowed-origin}")
-    private String allowedOrigin;
+    @Value("${app.cors.web-app-origin}")
+    private String webAppOrigin;
 
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -77,7 +77,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
-        cfg.setAllowedOrigins(List.of(allowedOrigin));
+        cfg.setAllowedOrigins(List.of(webAppOrigin));
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         cfg.setAllowedHeaders(List.of("*"));
         cfg.setAllowCredentials(true);

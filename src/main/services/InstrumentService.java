@@ -78,6 +78,7 @@ public class InstrumentService {
             .queryParam("timeframe", timeframe)
             .queryParam("start", start)
             .queryParam("end", end)
+            .queryParam("feed", "iex")
             .toUriString();
 
         HttpHeaders headers = new HttpHeaders();

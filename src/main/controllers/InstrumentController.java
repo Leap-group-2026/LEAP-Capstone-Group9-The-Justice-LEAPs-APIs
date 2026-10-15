@@ -11,7 +11,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import services.InstrumentService;
 import dto.InstrumentWithPrice;
+import dto.request.ForeignExchangePriceRequest;
 import dto.response.ValidationError;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
@@ -32,8 +34,8 @@ public class InstrumentController {
         @ApiResponse(responseCode = "404", description = "Instrument ticker not found",
             content = @Content(schema = @Schema(implementation = ValidationError.class)))
     })
-    @GetMapping("/ticker/price")
-    public InstrumentWithPrice getByTicker(@RequestParam String ticker) {
+    @GetMapping("/{ticker}")
+    public InstrumentWithPrice getByTicker(@PathVariable String ticker) {
         return service.getTickerPrice(ticker);
     }
 
@@ -64,6 +66,12 @@ public class InstrumentController {
         @Parameter(description = "End date in YYYY-MM-DD format", example = "2026-10-01")
         @RequestParam String end) {
         return service.getBarNumbers(symbols, timeframe, start, end);
+    }
+
+    @Operation(summary = "Get a foreign exchange price from a JSON currency pair")
+    @PostMapping("/forex/price")
+    public InstrumentWithPrice getForexPrice(@Valid @RequestBody ForeignExchangePriceRequest request) {
+        return service.getForexPrice(request.currencyPair());
     }
 }
 

@@ -66,6 +66,14 @@ public class InstrumentService {
         return repo.findByTicker(ticker).orElseThrow(() -> new ResourceNotFoundException("Instrument", ticker));
     }
 
+    public InstrumentWithPrice getForexPrice(String currencyPair) {
+        if (currencyPair == null || !currencyPair.matches("[A-Z]{3}/[A-Z]{3}")) {
+            throw new IllegalArgumentException("Currency pair must use the format USD/GBP");
+        }
+        return repo.findForexByTicker(currencyPair)
+            .orElseThrow(() -> new ResourceNotFoundException("Foreign exchange pair", currencyPair));
+    }
+
     public List<InstrumentWithPrice> getAllInstruments(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize) {
         PageHelper.startPage(pageNum, pageSize);
         return repo.findAll();

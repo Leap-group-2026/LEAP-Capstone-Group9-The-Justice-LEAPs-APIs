@@ -14,7 +14,8 @@ import repos.UserRepo;
 import entities.UserEntity; 
 import dto.request.UserRegistrationRequest;
 import dto.request.LoginRequest;
-import dto.request.VerifyPasswordReset;
+import dto.request.EmailResetRequest;
+import dto.request.PasswordResetRequest;
 import dto.request.UpdateUserRequest;
 import dto.response.UserResponse;
 import dto.response.UpdateUserResponse;
@@ -218,8 +219,8 @@ public class UserService {
         }
     }
 
-    public ResponseEntity<String> emailResetPassword(UserResponse entity){
-        String email = entity.getEmail();
+    public ResponseEntity<String> emailResetPassword(EmailResetRequest request){
+        String email = request.getEmail();
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("Email is required");
         }
@@ -254,16 +255,16 @@ public class UserService {
         return ResponseEntity.ok("Email sent successfully");
     }
 
-    public ResponseEntity<String> resetPassword(VerifyPasswordReset user){
-        String email = user.getEmail();
+    public ResponseEntity<String> resetPassword(PasswordResetRequest request){
+        String email = request.getEmail();
         UserEntity userInDb = repo.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
         
-        if(userInDb.getCode() == null || !userInDb.getCode().equals(user.getCode())){
+        if(userInDb.getCode() == null || !userInDb.getCode().equals(request.getCode())){
             return ResponseEntity.badRequest().body("Incorrect reset code");
         }
         else{
-            validatePass(user.getPassword());
-            String encodedPassword = passwordEncoder.encode(user.getPassword());
+            validatePass(request.getPassword());
+            String encodedPassword = passwordEncoder.encode(request.getPassword());
             repo.updatePassword(userInDb.getUserId(), encodedPassword);
             return ResponseEntity.ok("Password reset successfully");
         }

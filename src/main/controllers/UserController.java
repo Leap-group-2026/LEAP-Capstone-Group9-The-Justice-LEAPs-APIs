@@ -4,7 +4,8 @@ import services.UserService;
 import services.AccountService;
 import config.AuthorizationUtil;
 import dto.request.UserRegistrationRequest;
-import dto.request.VerifyPasswordReset;
+import dto.request.EmailResetRequest;
+import dto.request.PasswordResetRequest;
 import dto.request.LoginRequest;
 import dto.request.UpdateUserRequest;
 import dto.response.UserResponse;
@@ -73,8 +74,8 @@ public class UserController {
         @ApiResponse(responseCode = "500", description = "Known issue: the user has never been issued a reset code", content = @Content)
     })
     @PostMapping("/resetpassword/reset")
-    public ResponseEntity<String> resetPassword(@RequestBody VerifyPasswordReset user){
-        return service.resetPassword(user);
+    public ResponseEntity<String> resetPassword(@RequestBody PasswordResetRequest request){
+        return service.resetPassword(request);
     }
 
     @Operation(summary = "Request a reset code",
@@ -85,8 +86,8 @@ public class UserController {
         @ApiResponse(responseCode = "400", description = "No user with this email", content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "User not found")))
     })
     @PostMapping("/resetpassword")
-    public ResponseEntity<String> emailResetPassword(@RequestBody UserResponse user){
-        return service.emailResetPassword(user);
+    public ResponseEntity<String> emailResetPassword(@RequestBody EmailResetRequest request){
+        return service.emailResetPassword(request);
     }
 
     @Operation(summary = "User login",

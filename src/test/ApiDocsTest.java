@@ -44,6 +44,8 @@ public class ApiDocsTest {
         Map.entry("get", "/orders/account/{accountId}"),
         Map.entry("get", "/orders/{orderId}/history"),
         Map.entry("get", "/transactions/account/{accountId}"),
+        Map.entry("post", "/transactions/account/{accountId}/deposit"),
+        Map.entry("post", "/transactions/account/{accountId}/withdraw"),
         Map.entry("get", "/instruments/{ticker}"),
         Map.entry("get", "/user/accounts"),
         Map.entry("get", "/instruments"),

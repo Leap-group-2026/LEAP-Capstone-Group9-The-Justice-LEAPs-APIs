@@ -21,6 +21,9 @@ public class TransactionsEntity{
     public Integer getTransactionId() {
         return transactionId;
     }
+    public void setTransactionId(Integer transactionId) {
+        this.transactionId = transactionId;
+    }
     public BigDecimal getAmount() {
         return amount;
     }

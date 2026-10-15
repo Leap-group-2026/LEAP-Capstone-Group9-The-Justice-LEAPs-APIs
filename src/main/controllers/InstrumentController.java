@@ -32,7 +32,7 @@ public class InstrumentController {
         @ApiResponse(responseCode = "404", description = "Instrument ticker not found",
             content = @Content(schema = @Schema(implementation = ValidationError.class)))
     })
-    @GetMapping
+    @GetMapping("/ticker/price")
     public InstrumentWithPrice getByTicker(@RequestParam String ticker) {
         return service.getTickerPrice(ticker);
     }

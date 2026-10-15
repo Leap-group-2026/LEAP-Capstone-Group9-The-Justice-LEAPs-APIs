@@ -121,6 +121,18 @@ public interface AccountsRepo {
     @Select("SELECT account_id, balance, account_active FROM accounts WHERE account_id = #{accountId} FOR UPDATE")
     Optional<AccountsEntity> findByIdForUpdate(Integer accountId);
 
+
+    @Select("SELECT account_id, user_id, balance, account_active FROM accounts " +
+            "WHERE account_id = #{accountId} AND user_id = #{userId} AND account_active = true FOR UPDATE")
+    @Results({
+        @Result(column = "account_id", property = "accountId", id = true),
+        @Result(column = "balance", property = "balance"),
+        @Result(column = "account_active", property = "accountActive"),
+        @Result(column = "user_id", property = "user.userId")
+    })
+    Optional<AccountsEntity> findOwnedActiveByIdForUpdate(@Param("accountId") Integer accountId,
+                                                          @Param("userId") Integer userId);
+
     @Update("UPDATE accounts SET balance = #{balance} WHERE account_id = #{accountId}")
     void updateBalance(@Param("accountId") Integer accountId, @Param("balance") BigDecimal balance);
 }

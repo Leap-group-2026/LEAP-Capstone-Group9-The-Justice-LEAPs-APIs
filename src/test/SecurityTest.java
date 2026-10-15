@@ -412,4 +412,77 @@ public class SecurityTest {
 
         assertTrue(isActive(OTHER_ACCOUNT));
     }
+
+    // ---- Deposits and withdrawals: a client moves money in and out of their own account only ----
+
+    private static final String FUNDS = "{\"amount\":100,\"fundingMethod\":\"bank\"}";
+
+    private void assertUntouched(int accountId) {
+        assertEquals(0, new BigDecimal("10000").compareTo(balance(accountId)), "balance of " + accountId + " moved: " + balance(accountId));
+        assertEquals(0, count("SELECT count(*) FROM transactions WHERE account_id = ?", accountId),
+            "a transaction row was written on " + accountId);
+    }
+
+    @Test
+    void aClientCanDepositIntoTheirOwnAccount() throws Exception {
+        mockMvc.perform(as(clientToken(OWNER_ID), json(post("/transactions/account/" + OWNER_ACCOUNT + "/deposit"), FUNDS)))
+            .andExpect(status().isOk());
+
+        assertEquals(0, new BigDecimal("10100").compareTo(balance(OWNER_ACCOUNT)));
+    }
+
+    @Test
+    void aClientCanWithdrawFromTheirOwnAccount() throws Exception {
+        mockMvc.perform(as(clientToken(OWNER_ID), json(post("/transactions/account/" + OWNER_ACCOUNT + "/withdraw"), FUNDS)))
+            .andExpect(status().isOk());
+
+        assertEquals(0, new BigDecimal("9900").compareTo(balance(OWNER_ACCOUNT)));
+    }
+
+    @Test
+    void aClientCannotDepositIntoAnotherClientsAccount() throws Exception {
+        mockMvc.perform(as(clientToken(OWNER_ID), json(post("/transactions/account/" + OTHER_ACCOUNT + "/deposit"), FUNDS)))
+            .andExpect(status().isNotFound());
+
+        assertUntouched(OTHER_ACCOUNT);
+    }
+
+    @Test
+    void aClientCannotWithdrawFromAnotherClientsAccount() throws Exception {
+        mockMvc.perform(as(clientToken(OWNER_ID), json(post("/transactions/account/" + OTHER_ACCOUNT + "/withdraw"), FUNDS)))
+            .andExpect(status().isNotFound());
+
+        assertUntouched(OTHER_ACCOUNT);
+    }
+
+    // Admin 920101 shares its sub with client 920101, the owner of OWNER_ACCOUNT
+    @Test
+    void anAdminCannotDepositOrWithdrawEvenWithTheOwnersId() throws Exception {
+        for (String action : new String[] {"deposit", "withdraw"}) {
+            mockMvc.perform(as(adminToken(OWNER_ID), json(post("/transactions/account/" + OWNER_ACCOUNT + "/" + action), FUNDS)))
+                .andExpect(status().isForbidden());
+        }
+
+        assertUntouched(OWNER_ACCOUNT);
+    }
+
+    // The controller refuses non-clients too, so a plain 403 can't show the security rule exists. An invalid body can:
+    // the rule refuses before the body is read, while the controller would answer the failed validation with 400
+    @Test
+    void theSecurityRuleRefusesAnAdminBeforeTheBodyIsValidated() throws Exception {
+        for (String action : new String[] {"deposit", "withdraw"}) {
+            mockMvc.perform(as(adminToken(1), json(post("/transactions/account/" + OWNER_ACCOUNT + "/" + action), "{\"amount\":0}")))
+                .andExpect(status().isForbidden());
+        }
+    }
+
+    @Test
+    void depositAndWithdrawWithoutATokenGet401() throws Exception {
+        for (String action : new String[] {"deposit", "withdraw"}) {
+            mockMvc.perform(json(post("/transactions/account/" + OWNER_ACCOUNT + "/" + action), FUNDS))
+                .andExpect(status().isUnauthorized());
+        }
+
+        assertUntouched(OWNER_ACCOUNT);
+    }
 }

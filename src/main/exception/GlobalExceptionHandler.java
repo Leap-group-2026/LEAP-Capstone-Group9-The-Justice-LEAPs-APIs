@@ -95,6 +95,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(error);
     }
 
+    @ExceptionHandler(InsufficientFundsException.class)
+    public ResponseEntity<ValidationError> handleInsufficientFunds(InsufficientFundsException ex) {
+        ValidationError error = new ValidationError(
+            HttpStatus.BAD_REQUEST.value(),
+            "Validation failed",
+            LocalDateTime.now(),
+            "balance",
+            ex.getRequested(),
+            ex.getMessage()
+        );
+        return ResponseEntity.badRequest().body(error);
+    }
+
     @ExceptionHandler(TransactionProcessingException.class)
     public ResponseEntity<ValidationError> handleTransactionProcessing(TransactionProcessingException ex) {
         ValidationError error = new ValidationError(

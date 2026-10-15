@@ -63,6 +63,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/positions").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/accounts").hasRole("CLIENT")
                 .requestMatchers("/orders/{orderId}").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/transactions/account/{accountId}/deposit",
+                    "/transactions/account/{accountId}/withdraw").hasRole("CLIENT")
                 .requestMatchers("/transactions/account/**").hasAnyRole("ADMIN", "CLIENT")
                 .requestMatchers("/transactions/**").hasAnyRole("ADMIN", "CLIENT")
                 .requestMatchers("/positions/account/**").hasAnyRole("ADMIN", "CLIENT")

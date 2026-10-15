@@ -313,6 +313,7 @@ public class UserService {
         
         String baseAndExchange = transactionRequest.baseAndExchange();
         String[] parts = baseAndExchange.split("/");
+        accountsRepo.findByIdForUpdate(transactionRequest.accountId());
         AccountsEntity account = accountsRepo.findById(transactionRequest.accountId()).orElseThrow(() -> new IllegalArgumentException("Account not found"));
 
         if (parts.length < 2) throw new IllegalArgumentException("Invalid exchange rate format");

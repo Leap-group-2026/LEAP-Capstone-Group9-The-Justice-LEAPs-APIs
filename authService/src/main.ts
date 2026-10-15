@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { EnvConfig } from './config/env.validation';
+import { DOCS_PATH, setupSwagger } from './swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,34 +13,12 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Swagger setup
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('Justice LEAPs Auth Service')
-    .setDescription('Authentication and Token Generation Service API')
-    .setVersion('1.0.0')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-      },
-      'jwt',
-    )
-    .addTag('Auth', 'Authentication operations')
-    .addTag('Health', 'Service health check')
-    .build();
-
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api/docs', app, document, {
-    swaggerOptions: {
-      persistAuthorization: true,
-    },
-  });
+  setupSwagger(app);
 
   const port = config.get('PORT', { infer: true });
   await app.listen(port);
   console.log(`Auth service running on port ${port}`);
-  console.log(`Swagger docs available at http://localhost:${port}/api/docs`);
+  console.log(`Swagger docs available at http://localhost:${port}/${DOCS_PATH}`);
 }
 
 bootstrap().catch(err => {

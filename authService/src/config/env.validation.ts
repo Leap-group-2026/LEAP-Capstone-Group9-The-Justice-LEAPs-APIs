@@ -4,7 +4,13 @@ export interface EnvConfig {
   JWT_EXPIRATION: number;
   SPRINGBOOT_API_URL: string;
   CORS_ORIGIN: string;
+  JWT_MAX_SESSION: number;
+  DATABASE_URL: string;
+  INTERNAL_API_KEY: string;
 }
+
+
+const MIN_INTERNAL_API_KEY_LENGTH = 32;
 
 
 export function validateEnv(env: Record<string, unknown>): EnvConfig {
@@ -13,12 +19,26 @@ export function validateEnv(env: Record<string, unknown>): EnvConfig {
     throw new Error('JWT_SECRET is not set. Add it to authService/.env (see .env.example).');
   }
 
+  const databaseUrl = env.DATABASE_URL;
+  if (typeof databaseUrl !== 'string' || databaseUrl.trim() === '') {
+    throw new Error('DATABASE_URL is not set. Add it to authService/.env (see .env.example).');
+  }
+
+  const internalApiKey = env.INTERNAL_API_KEY;
+  if (typeof internalApiKey !== 'string' || internalApiKey.length < MIN_INTERNAL_API_KEY_LENGTH) {
+    throw new Error(`INTERNAL_API_KEY is missing or shorter than ${MIN_INTERNAL_API_KEY_LENGTH} characters. `
+      + 'Add it to authService/.env and give Spring the same value (see .env.example).');
+  }
+
   return {
     PORT: toPositiveInt(env, 'PORT', 3001),
     JWT_SECRET: secret,
     JWT_EXPIRATION: toPositiveInt(env, 'JWT_EXPIRATION', 1800),
     SPRINGBOOT_API_URL: toText(env, 'SPRINGBOOT_API_URL', 'http://localhost:8081'),
     CORS_ORIGIN: toText(env, 'CORS_ORIGIN', 'http://localhost:4200'),
+    JWT_MAX_SESSION: toPositiveInt(env, 'JWT_MAX_SESSION', 28800),
+    DATABASE_URL: databaseUrl,
+    INTERNAL_API_KEY: internalApiKey,
   };
 }
 

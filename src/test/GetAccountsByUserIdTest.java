@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 import main.Application;
 import test.config.TestClockConfig;
@@ -76,7 +77,7 @@ public class GetAccountsByUserIdTest {
     @Test
     @DisplayName("Should return only active accounts for the user")
     void returnsOnlyActiveAccountsForUser() throws Exception {
-        mockMvc.perform(get("/accounts/user/" + USER_ID))
+        mockMvc.perform(get("/accounts/user/" + USER_ID).with(user(String.valueOf(USER_ID))))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(1)))
             .andExpect(jsonPath("$[0].accountId").value(ACTIVE_ACCOUNT_ID))
@@ -93,7 +94,7 @@ public class GetAccountsByUserIdTest {
         // Add another active account for USER_ID
         insertAccount(900504, USER_ID, "3000.0000", "LOW", "Conservative", true);
         
-        mockMvc.perform(get("/accounts/user/" + USER_ID))
+        mockMvc.perform(get("/accounts/user/" + USER_ID).with(user(String.valueOf(USER_ID))))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(2)))
             .andExpect(jsonPath("$[*].accountId", containsInAnyOrder(ACTIVE_ACCOUNT_ID, 900504)))
@@ -104,7 +105,7 @@ public class GetAccountsByUserIdTest {
     @Test
     @DisplayName("Should not include nested user objects in response")
     void responseDoesNotIncludeNestedUserObject() throws Exception {
-        mockMvc.perform(get("/accounts/user/" + USER_ID))
+        mockMvc.perform(get("/accounts/user/" + USER_ID).with(user(String.valueOf(USER_ID))))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0]").exists())
             // Verify fields that should exist
@@ -126,7 +127,7 @@ public class GetAccountsByUserIdTest {
             "VALUES (?, 'Empty User', 'empty@example.com', DATE '1992-03-03', '3 Test St', 'SSN_HASH_3', 'PASS_HASH_3')",
             newUserId);
         
-        mockMvc.perform(get("/accounts/user/" + newUserId))
+        mockMvc.perform(get("/accounts/user/" + newUserId).with(user(String.valueOf(newUserId))))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(0)));
     }
@@ -134,7 +135,7 @@ public class GetAccountsByUserIdTest {
     @Test
     @DisplayName("Should return empty list for nonexistent user")
     void returnsEmptyListForNonexistentUser() throws Exception {
-        mockMvc.perform(get("/accounts/user/" + NONEXISTENT_USER_ID))
+        mockMvc.perform(get("/accounts/user/" + NONEXISTENT_USER_ID).with(user(String.valueOf(NONEXISTENT_USER_ID))))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(0)));
     }
@@ -142,7 +143,7 @@ public class GetAccountsByUserIdTest {
     @Test
     @DisplayName("Should return correct DTO fields in response")
     void responseIncludesAllDtoFields() throws Exception {
-        mockMvc.perform(get("/accounts/user/" + USER_ID))
+        mockMvc.perform(get("/accounts/user/" + USER_ID).with(user(String.valueOf(USER_ID))))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].accountId").isNumber())
             .andExpect(jsonPath("$[0].userId").isNumber())
@@ -156,7 +157,7 @@ public class GetAccountsByUserIdTest {
     @Test
     @DisplayName("Should not return closed accounts even if they exist")
     void doesNotReturnClosedAccounts() throws Exception {
-        mockMvc.perform(get("/accounts/user/" + USER_ID))
+        mockMvc.perform(get("/accounts/user/" + USER_ID).with(user(String.valueOf(USER_ID))))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(1)))
             .andExpect(jsonPath("$[*].accountId", not(hasItem(CLOSED_ACCOUNT_ID))));
@@ -165,7 +166,7 @@ public class GetAccountsByUserIdTest {
     @Test
     @DisplayName("Should return only accounts belonging to the specified user")
     void returnsOnlyAccountsForSpecifiedUser() throws Exception {
-        mockMvc.perform(get("/accounts/user/" + USER_ID))
+        mockMvc.perform(get("/accounts/user/" + USER_ID).with(user(String.valueOf(USER_ID))))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(1)))
             .andExpect(jsonPath("$[*].userId", everyItem(equalTo(USER_ID))))

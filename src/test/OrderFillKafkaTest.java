@@ -30,6 +30,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 import main.Application;
 import entities.OrderEntity;
@@ -67,7 +68,8 @@ import java.util.UUID;
     "spring.kafka.consumer.properties.spring.deserializer.value.delegate.class=org.springframework.kafka.support.serializer.JsonDeserializer",
     "spring.kafka.consumer.properties.spring.json.value.default.type=events.OrderSubmittedEvent",
     "spring.kafka.consumer.properties.spring.json.trusted.packages=events",
-    "spring.kafka.consumer.auto-offset-reset=earliest"
+    "spring.kafka.consumer.auto-offset-reset=earliest",
+    "app.orders.fill-delay=2s"
 })
 @EmbeddedKafka(partitions = 3, topics = {"order.submitted", "order.submitted.DLT"})
 @Import({TestClockConfig.class, TestSecurityConfig.class})
@@ -79,6 +81,8 @@ public class OrderFillKafkaTest {
     private static final int ACCOUNT_ID = 901101;
     private static final int INSTRUMENT_ID = 901101;
     private static final int ORDER_ID = 901101;
+    // Matches app.orders.fill-delay above; production uses 5s, shortened here to keep the suite quick
+    private static final Duration FILL_DELAY = Duration.ofSeconds(2);
 
     @Autowired
     private KafkaTemplate<String, OrderSubmittedEvent> kafkaTemplate;
@@ -186,7 +190,7 @@ public class OrderFillKafkaTest {
     private int placeOrder(String side, int quantity) throws Exception {
         String body = "{\"side\":\"" + side + "\",\"accountId\":" + ACCOUNT_ID
             + ",\"instrumentId\":" + INSTRUMENT_ID + ",\"quantity\":" + quantity + "}";
-        String response = mockMvc.perform(post("/orders").contentType(MediaType.APPLICATION_JSON).content(body))
+        String response = mockMvc.perform(post("/orders").with(user(String.valueOf(USER_ID))).contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isOk())
             .andReturn().getResponse().getContentAsString();
         int orderId = objectMapper.readTree(response).path("order_id").asInt();
@@ -194,10 +198,17 @@ public class OrderFillKafkaTest {
         return orderId;
     }
 
-    // The story's promise: filled within 5 seconds of being placed
-    private void awaitFilledWithinFiveSeconds(int orderId) {
-        await().atMost(Duration.ofSeconds(5)).pollInterval(Duration.ofMillis(100)).until(() -> "FILLED".equals(
-            jdbcTemplate.queryForObject("SELECT status FROM orders WHERE order_id = ?", String.class, orderId)));
+    private String orderStatus(int orderId) {
+        return jdbcTemplate.queryForObject("SELECT status FROM orders WHERE order_id = ?", String.class, orderId);
+    }
+
+    // The story: an order sits PENDING for the fill delay, then fills. Checking the PENDING half is what
+    // proves the delay exists; checking FILLED alone would also pass if orders filled instantly.
+    private void awaitFilledAfterTheDelay(int orderId) {
+        await().during(FILL_DELAY.minusMillis(500)).atMost(FILL_DELAY).pollInterval(Duration.ofMillis(100))
+            .until(() -> "PENDING".equals(orderStatus(orderId)));
+        await().atMost(Duration.ofSeconds(3)).pollInterval(Duration.ofMillis(100))
+            .until(() -> "FILLED".equals(orderStatus(orderId)));
     }
 
     private BigDecimal balance() {
@@ -214,9 +225,12 @@ public class OrderFillKafkaTest {
         kafkaTemplate.send(TOPIC, String.valueOf(ACCOUNT_ID), event).get();
         kafkaTemplate.send(TOPIC, String.valueOf(ACCOUNT_ID), event).get();
         awaitConsumed("order-fill", before + 2);
+        // Both deliveries schedule a fill; wait for the first, then give the second time to run and be absorbed
+        await().atMost(FILL_DELAY.plusSeconds(3)).until(() -> "FILLED".equals(orderStatus(ORDER_ID)));
+        await().during(Duration.ofSeconds(1)).atMost(Duration.ofSeconds(2))
+            .until(() -> new BigDecimal("970").compareTo(balance()) == 0);
 
-        assertEquals("FILLED", jdbcTemplate.queryForObject(
-            "SELECT status FROM orders WHERE order_id = ?", String.class, ORDER_ID));
+        assertEquals("FILLED", orderStatus(ORDER_ID));
         assertEquals(0, new BigDecimal("970").compareTo(balance()), "balance moved more than once: " + balance());
         assertEquals(1, jdbcTemplate.queryForObject(
             "SELECT count(*) FROM historical_orders WHERE order_id = ?", Integer.class, ORDER_ID),
@@ -225,11 +239,11 @@ public class OrderFillKafkaTest {
     }
 
     @Test
-    void buyPlacedThroughTheApiIsPublishedOnceAndFilledWithinFiveSeconds() throws Exception {
+    void buyPlacedThroughTheApiIsPublishedOnceAndFilledAfterTheDelay() throws Exception {
         long publishedBefore = publishedCount();
 
         int orderId = placeOrder("BUY", 3);
-        awaitFilledWithinFiveSeconds(orderId);
+        awaitFilledAfterTheDelay(orderId);
 
         assertEquals(publishedBefore + 1, publishedCount(), "each order must publish exactly one message");
         assertEquals(0, new BigDecimal("970").compareTo(balance()));
@@ -239,14 +253,14 @@ public class OrderFillKafkaTest {
     }
 
     @Test
-    void sellPlacedThroughTheApiIsFilledWithinFiveSeconds() throws Exception {
+    void sellPlacedThroughTheApiIsFilledAfterTheDelay() throws Exception {
         jdbcTemplate.update(
             "INSERT INTO positions (account_id, instrument_id, quantity, total_price, average_price, opened_at) " +
             "VALUES (?, ?, 5, 40.0000, 8.0000, TIMESTAMP '2024-09-01 10:00:00')",
             ACCOUNT_ID, INSTRUMENT_ID);
 
         int orderId = placeOrder("SELL", 2);
-        awaitFilledWithinFiveSeconds(orderId);
+        awaitFilledAfterTheDelay(orderId);
 
         assertEquals(0, new BigDecimal("1020").compareTo(balance()));
         assertEquals(3, jdbcTemplate.queryForObject(
@@ -276,7 +290,7 @@ public class OrderFillKafkaTest {
 
         // The unhandled failure surfaces as a servlet exception (a 500 in the running app)
         assertThrows(Exception.class, () ->
-            mockMvc.perform(post("/orders").contentType(MediaType.APPLICATION_JSON).content(body)));
+            mockMvc.perform(post("/orders").with(user(String.valueOf(USER_ID))).contentType(MediaType.APPLICATION_JSON).content(body)));
 
         assertEquals(0, jdbcTemplate.queryForObject(
             "SELECT count(*) FROM orders WHERE account_id = ?", Integer.class, ACCOUNT_ID), "the order should have rolled back");
@@ -322,7 +336,7 @@ public class OrderFillKafkaTest {
                 + ",\"instrumentId\":" + INSTRUMENT_ID + ",\"quantity\":3}";
 
             long start = System.nanoTime();
-            String response = mockMvc.perform(post("/orders").contentType(MediaType.APPLICATION_JSON).content(body))
+            String response = mockMvc.perform(post("/orders").with(user(String.valueOf(USER_ID))).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
             long elapsedMillis = Duration.ofNanos(System.nanoTime() - start).toMillis();

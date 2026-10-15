@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Options;
 import entities.TransactionsEntity;
 import dto.response.TransactionHistoryResponse;
 import java.util.Optional;
@@ -41,4 +42,13 @@ public interface TransactionsRepo {
              "FROM transactions t WHERE t.account_id = #{accountId} " +
              "ORDER BY t.happened_at DESC, t.transaction_id DESC")
      List<TransactionHistoryResponse> getTransactionsByAccountId(@Param("accountId") Integer accountId);
+
+    @Insert("INSERT INTO transactions (amount, side, account_id, transaction_type, happened_at) " +
+            "VALUES (#{amount}, #{side}, #{accountId.accountId}, #{transactionType}, #{happenedAt})")
+    @Options(useGeneratedKeys = true, keyProperty = "transactionId", keyColumn = "transaction_id")
+    void insertReturningId(TransactionsEntity entity);
+
+    @Select("SELECT t.transaction_id, t.transaction_type, t.amount, t.side, t.account_id, t.happened_at " +
+            "FROM transactions t WHERE t.transaction_id = #{transactionId}")
+    Optional<TransactionHistoryResponse> findHistoryById(@Param("transactionId") Integer transactionId);
 }

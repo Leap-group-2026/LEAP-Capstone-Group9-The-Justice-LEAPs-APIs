@@ -44,9 +44,12 @@ public class ApiDocsTest {
         Map.entry("get", "/orders/account/{accountId}"),
         Map.entry("get", "/orders/{orderId}/history"),
         Map.entry("get", "/transactions/account/{accountId}"),
+        Map.entry("post", "/transactions/account/{accountId}/deposit"),
+        Map.entry("post", "/transactions/account/{accountId}/withdraw"),
         Map.entry("get", "/instruments/{ticker}"),
         Map.entry("get", "/user/accounts"),
         Map.entry("get", "/instruments"),
+        Map.entry("get", "/instruments/bars"),
         Map.entry("get", "/positions/{id}"),
         Map.entry("post", "/positions"),
         Map.entry("get", "/positions/account/{accountId}"),
@@ -59,11 +62,18 @@ public class ApiDocsTest {
         Map.entry("get", "/admin/accounts/{userId}"),
         Map.entry("get", "/admin/users"),
         Map.entry("patch", "/user"),
+        Map.entry("get", "/user"),
         Map.entry("post", "/user"),
         Map.entry("post", "/user/login"),
         Map.entry("post", "/user/resetpassword"),
         Map.entry("post", "/user/resetpassword/reset"),
         Map.entry("post", "/user/transactions/exchange"));
+
+    // The endpoints only the auth service calls: they take the internal API key instead of a token (InternalApiKeyFilter)
+    private static final List<Map.Entry<String, String>> INTERNAL_ENDPOINTS = List.of(
+        Map.entry("post", "/user"),
+        Map.entry("post", "/user/login"),
+        Map.entry("post", "/admin/login"));
 
     @Autowired
     private MockMvc mockMvc;
@@ -103,6 +113,38 @@ public class ApiDocsTest {
             assertFalse(op.isMissingNode(), "not documented: " + name);
             assertEquals(1, op.path("tags").size(), name + " should be in exactly one group, has " + op.path("tags"));
             assertFalse(op.path("summary").asText().isBlank(), name + " has no summary");
+        }
+    }
+
+    @Test
+    void definesTheBearerSchemeAndRequiresItByDefault() throws Exception {
+        JsonNode docs = apiDocs();
+
+        JsonNode scheme = docs.path("components").path("securitySchemes").path("bearerAuth");
+        assertEquals("http", scheme.path("type").asText());
+        assertEquals("bearer", scheme.path("scheme").asText());
+        assertTrue(docs.path("security").toString().contains("bearerAuth"), "bearerAuth is not the default: " + docs.path("security"));
+    }
+
+    @Test
+    void theAuthServiceEndpointsAskForTheInternalKeyAndEveryOtherForAToken() throws Exception {
+        JsonNode docs = apiDocs();
+        JsonNode keyScheme = docs.path("components").path("securitySchemes").path("internalApiKey");
+        assertEquals("apiKey", keyScheme.path("type").asText());
+        assertEquals("header", keyScheme.path("in").asText());
+        assertEquals("X-Internal-Api-Key", keyScheme.path("name").asText());
+
+        JsonNode paths = docs.path("paths");
+        for (Map.Entry<String, String> e : ENDPOINTS) {
+            JsonNode op = paths.path(e.getValue()).path(e.getKey());
+            String name = e.getKey().toUpperCase() + " " + e.getValue();
+            if (INTERNAL_ENDPOINTS.contains(e)) {
+                // Exactly the internal key, and no bearer token
+                assertEquals("[{\"internalApiKey\":[]}]", op.path("security").toString(), name + " should ask for the internal key only");
+            } else {
+                // No security of its own, so it inherits the global bearer requirement
+                assertFalse(op.has("security"), name + " should need an access token, has " + op.path("security"));
+            }
         }
     }
 }

@@ -6,9 +6,14 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.validation.FieldError;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 
 import dto.response.ValidationError;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -25,6 +30,37 @@ public class GlobalExceptionHandler {
             fieldError.getDefaultMessage()
         );
 
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    // Jackson fails before any validation runs, e.g. "dateOfBirth": "01/15/1990" or "name": {}. Without this,
+    // Spring's default error page answered with no field name.
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ValidationError> handleNotReadable(HttpMessageNotReadableException ex) {
+        String field = null;
+        Object rejected = null;
+        String reason = "Request body is not valid JSON";
+
+        if (ex.getCause() instanceof MismatchedInputException mismatch && !mismatch.getPath().isEmpty()) {
+            field = mismatch.getPath().stream()
+                .map(ref -> ref.getFieldName() != null ? ref.getFieldName() : "[" + ref.getIndex() + "]")
+                .collect(Collectors.joining("."));
+            if (mismatch instanceof InvalidFormatException invalid) {
+                rejected = invalid.getValue();
+            }
+            reason = mismatch.getTargetType() == LocalDate.class
+                ? field + " must be a valid date in YYYY-MM-DD format"
+                : field + " has the wrong type";
+        }
+
+        ValidationError error = new ValidationError(
+            HttpStatus.BAD_REQUEST.value(),
+            "Validation failed",
+            LocalDateTime.now(),
+            field,
+            rejected,
+            reason
+        );
         return ResponseEntity.badRequest().body(error);
     }
 
@@ -55,6 +91,19 @@ public class GlobalExceptionHandler {
             ex.getField(),
             null,
             ex.getReason()
+        );
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(InsufficientFundsException.class)
+    public ResponseEntity<ValidationError> handleInsufficientFunds(InsufficientFundsException ex) {
+        ValidationError error = new ValidationError(
+            HttpStatus.BAD_REQUEST.value(),
+            "Validation failed",
+            LocalDateTime.now(),
+            "balance",
+            ex.getRequested(),
+            ex.getMessage()
         );
         return ResponseEntity.badRequest().body(error);
     }

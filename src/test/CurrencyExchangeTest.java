@@ -133,7 +133,7 @@ public class CurrencyExchangeTest {
             "EXCHANGE"
         );
 
-        mockMvc.perform(post("/user/transactions/exchange")
+        mockMvc.perform(post("/user/transactions/exchange").with(user(String.valueOf(testAccount.getUserId().getUserId())))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -151,7 +151,7 @@ public class CurrencyExchangeTest {
             "EXCHANGE"
         );
 
-        mockMvc.perform(post("/user/transactions/exchange")
+        mockMvc.perform(post("/user/transactions/exchange").with(user(String.valueOf(testAccount.getUserId().getUserId())))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -169,7 +169,7 @@ public class CurrencyExchangeTest {
             "EXCHANGE"
         );
 
-        mockMvc.perform(post("/user/transactions/exchange")
+        mockMvc.perform(post("/user/transactions/exchange").with(user(String.valueOf(testAccount.getUserId().getUserId())))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -189,7 +189,7 @@ public class CurrencyExchangeTest {
             "EXCHANGE"
         );
 
-        mockMvc.perform(post("/user/transactions/exchange")
+        mockMvc.perform(post("/user/transactions/exchange").with(user(String.valueOf(testAccount.getUserId().getUserId())))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -207,7 +207,7 @@ public class CurrencyExchangeTest {
             "EXCHANGE"
         );
 
-        mockMvc.perform(post("/user/transactions/exchange")
+        mockMvc.perform(post("/user/transactions/exchange").with(user(String.valueOf(testAccount.getUserId().getUserId())))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -225,7 +225,7 @@ public class CurrencyExchangeTest {
             "EXCHANGE"
         );
 
-        mockMvc.perform(post("/user/transactions/exchange")
+        mockMvc.perform(post("/user/transactions/exchange").with(user(String.valueOf(testAccount.getUserId().getUserId())))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -243,7 +243,7 @@ public class CurrencyExchangeTest {
             "EXCHANGE"
         );
 
-        mockMvc.perform(post("/user/transactions/exchange")
+        mockMvc.perform(post("/user/transactions/exchange").with(user(String.valueOf(testAccount.getUserId().getUserId())))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())

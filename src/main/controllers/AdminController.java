@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.List;
 import dto.response.AdminLoginResponse;
+import dto.response.TopBoughtStockResponse;
 
 @Tag(name = "Admin")  // description and display order: OpenApiConfig
 @RestController
@@ -119,5 +120,12 @@ public class AdminController {
     @GetMapping("/users")
     public List<UserEntity> getAllUsers() {
         return service.getAllUsers();
+    }
+
+    @Operation(summary = "Retrieve the top bought stocks from the data warehouse")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved top bought stocks")
+    @GetMapping("/analytics/top-bought")
+    public List<TopBoughtStockResponse> getTopBoughtStocks() {
+        return service.getTopBoughtStocks();
     }
 }

@@ -26,6 +26,7 @@ public class InternalApiKeyFilter extends OncePerRequestFilter {
 
 
     private static final Set<String> INTERNAL_ENDPOINTS = Set.of("POST /user/login", "POST /admin/login", "POST /user");
+    static final String INTERNAL_PREFIX = "/internal/";
 
     private final byte[] expectedKey;
 
@@ -42,7 +43,10 @@ public class InternalApiKeyFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI().substring(request.getContextPath().length());
-        return !INTERNAL_ENDPOINTS.contains(request.getMethod() + " " + path);
+        // Runs before Spring Security's firewall, so check the normalised path too
+        String normalised = request.getServletPath() + (request.getPathInfo() == null ? "" : request.getPathInfo());
+        boolean internal = path.startsWith(INTERNAL_PREFIX) || normalised.startsWith(INTERNAL_PREFIX);
+        return !internal && !INTERNAL_ENDPOINTS.contains(request.getMethod() + " " + path);
     }
 
     @Override

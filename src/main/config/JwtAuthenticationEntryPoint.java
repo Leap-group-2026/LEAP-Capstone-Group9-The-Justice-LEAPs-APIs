@@ -11,28 +11,29 @@ import java.io.IOException;
 
 @Component
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
+    public static final String UNAUTHENTICATED = "unauthenticated";
+    public static final String TOKEN_EXPIRED = "token_expired";
+    public static final String TOKEN_INVALID = "token_invalid";
+
+    private static final String REASON = JwtAuthenticationEntryPoint.class.getName() + ".REASON";
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    record AuthError(String error, String message) {}
+
+    static void reject(HttpServletRequest request, String code, String message) {
+        request.setAttribute(REASON, new AuthError(code, message));
+    }
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException authException) throws IOException, ServletException {
+        Object reason = request.getAttribute(REASON);
+        AuthError error = reason instanceof AuthError recorded
+            ? recorded
+            : new AuthError(UNAUTHENTICATED, "Log in to use this endpoint");
+
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
-        
-        ObjectMapper mapper = new ObjectMapper();
-        response.getWriter().write(mapper.writeValueAsString(
-            new ErrorResponse("Unauthorized", "Invalid or expired token", 401)
-        ));
-    }
-
-    static class ErrorResponse {
-        public String message;
-        public String details;
-        public int status;
-        
-        public ErrorResponse(String message, String details, int status) {
-            this.message = message;
-            this.details = details;
-            this.status = status;
-        }
+        response.getWriter().write(MAPPER.writeValueAsString(error));
     }
 }

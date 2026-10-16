@@ -16,7 +16,8 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
       '1. Log in with `/auth/login` (clients) or `/auth/adminLogin` (admins) to get an `accessToken` and a `refreshToken`.\n' +
       '2. Send the access token to Spring as `Authorization: Bearer <accessToken>`. It lasts `JWT_EXPIRATION` seconds (30 minutes by default).\n' +
       '3. Trade the refresh token at `/auth/refresh` for a new pair, before or after the access token expires. Each refresh token works once.\n\n' +
-      'A session ends `JWT_MAX_SESSION` seconds after login (8 hours by default), at logout, or as soon as a used refresh token is sent again.',
+      'Spring owns the session: it ends 8 hours after login at the latest, after 30 minutes without activity, at logout ' +
+      '(immediately, at Spring too), on a password reset or admin force-logout, or as soon as a used refresh token is sent again.',
     )
     .setVersion('1.0.0')
     .addBearerAuth(

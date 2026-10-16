@@ -20,6 +20,7 @@ public class AdminService {
     private AdminRepo repo;
     private UserRepo userRepo;
     private PasswordEncoder passwordEncoder;
+    private SessionService sessionService;
 
     private static final Map<String, String> TOKEN_ROLES = Map.of(
         "SUPER ADMIN", "superadmin",
@@ -27,10 +28,11 @@ public class AdminService {
         "REPORTER/ANALYST", "analyst"
     );
 
-    public AdminService(AdminRepo repo, UserRepo userRepo, PasswordEncoder passwordEncoder){
+    public AdminService(AdminRepo repo, UserRepo userRepo, PasswordEncoder passwordEncoder, SessionService sessionService){
         this.repo = repo;
         this.userRepo = userRepo;
         this.passwordEncoder = passwordEncoder;
+        this.sessionService = sessionService;
     }
 
     public AdminEntity saveAdmin(AdminEntity entity){
@@ -66,7 +68,8 @@ public class AdminService {
         if (role == null) {
             throw new AdminRoleNotAssignedException();
         }
-        return new AdminLoginResponse(admin.getAdminId(), role);
+        SessionService.Grant session = sessionService.create(role, admin.getAdminId());
+        return new AdminLoginResponse(admin.getAdminId(), role, session.sid(), session.expiresAt().toString());
     }
     public List<OrderAdminResponse> getAllOrders() {
         return repo.getAllOrders();

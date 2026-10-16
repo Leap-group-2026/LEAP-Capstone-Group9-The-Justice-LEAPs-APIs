@@ -57,12 +57,12 @@ describe('API docs (GET /api/docs-json)', () => {
     expect(secured.sort()).toEqual([...NEEDS_ACCESS_TOKEN].sort());
   });
 
-  it('documents refresh as taking a required refreshToken in the body, with 200, 400 and 401', () => {
+  it('documents refresh as taking a required refreshToken in the body, with 200, 400, 401 and 502', () => {
     const refresh = operation('post', '/auth/refresh');
     const body = schemaOf(refresh.requestBody.content['application/json'].schema.$ref);
 
     expect(body.required).toEqual(['refreshToken']);
-    expect(Object.keys(refresh.responses).sort()).toEqual(['200', '400', '401']);
+    expect(Object.keys(refresh.responses).sort()).toEqual(['200', '400', '401', '502']);
   });
 
   it.each([['/auth/login'], ['/auth/adminLogin'], ['/auth/refresh']])('documents %s as returning both tokens', (path) => {

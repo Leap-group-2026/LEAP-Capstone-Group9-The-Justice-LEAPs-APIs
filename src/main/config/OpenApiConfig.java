@@ -27,7 +27,11 @@ public class OpenApiConfig {
                 + "service with `POST http://localhost:3001/auth/login` (clients) or `/auth/adminLogin` (admins), then "
                 + "click **Authorize** and paste the `accessToken`. It lasts 30 minutes; trade the `refreshToken` at "
                 + "`POST http://localhost:3001/auth/refresh` for a new one. The auth service's own docs are at "
-                + "http://localhost:3001/api/docs.")
+                + "http://localhost:3001/api/docs.\n\n"
+                + "Every request also needs the token's session to be live: a session ends at logout, on a password reset or "
+                + "admin force-logout, after 30 minutes without activity, and 8 hours after login. A 401 body is "
+                + "`{ \"error\": \"<code>\", \"message\": \"...\" }`; codes starting `session_` mean log in again. "
+                + "503 `session_store_unavailable` means the check could not run: retry, the session has not ended.")
             .version("1.0.0"))
             .components(new Components().addSecuritySchemes(BEARER_SCHEME, new SecurityScheme()
                 .type(SecurityScheme.Type.HTTP)
@@ -48,7 +52,8 @@ public class OpenApiConfig {
                 new Tag().name("Orders").description("Place BUY and SELL orders against an account"),
                 new Tag().name("Instruments").description("Tradable instruments (reference data)"),
                 new Tag().name("Positions").description("Holdings of an instrument within an account"),
-                new Tag().name("Transactions").description("Deposits, withdrawals and trade settlements recorded against an account")
+                new Tag().name("Transactions").description("Deposits, withdrawals and trade settlements recorded against an account"),
+                new Tag().name("Sessions (internal)").description("Session checks for the auth service only; they need the internal API key, not a token")
             ));
     }
 }

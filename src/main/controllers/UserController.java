@@ -20,6 +20,7 @@ import dto.response.ValidationError;
 import java.util.List;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import config.OpenApiConfig;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -73,6 +74,7 @@ public class UserController {
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Incorrect reset code"))),
         @ApiResponse(responseCode = "500", description = "Known issue: the user has never been issued a reset code", content = @Content)
     })
+    @SecurityRequirements
     @PostMapping("/resetpassword/reset")
     public ResponseEntity<String> resetPassword(@RequestBody PasswordResetRequest request){
         return service.resetPassword(request);
@@ -85,16 +87,18 @@ public class UserController {
         @ApiResponse(responseCode = "200", description = "Code generated", content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Email sent successfully"))),
         @ApiResponse(responseCode = "400", description = "No user with this email", content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "User not found")))
     })
+    @SecurityRequirements
     @PostMapping("/resetpassword")
     public ResponseEntity<String> emailResetPassword(@RequestBody EmailResetRequest request){
         return service.emailResetPassword(request);
     }
 
     @Operation(summary = "User login",
-        description = "Checks a client's email and password and returns their identity for the token service. "
-            + "Spring issues no token: the auth service signs one with role \"client\".")
+        description = "Checks a client's email and password, starts a new session and returns the client's id, the session id "
+            + "(sid) and when the session ends at the latest (expiresAt, 8 hours after login). Spring issues no token: the auth "
+            + "service signs one with role \"client\" and this sid. Every login is its own session.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Credentials valid; the body is the client's identity",
+        @ApiResponse(responseCode = "200", description = "Credentials valid; the body is the client's id and new session",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserLoginResponse.class))),
         @ApiResponse(responseCode = "401", description = "Unknown email or wrong password (identical response for both)",
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Invalid email or password")))

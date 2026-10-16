@@ -47,9 +47,10 @@ describe('AuthService token signing', () => {
     const session = springSession(600);
     spring.adminLogin.mockResolvedValue({ status: 200, data: { id: 7, role: 'admin', ...session } });
 
-    const { accessToken } = await service.adminLogin({ email: 'admin@example.com', password: 'Secret' });
+    const { accessToken, role } = await service.adminLogin({ email: 'admin@example.com', password: 'Secret' });
 
     expect(jwt.decode(accessToken).exp).toBe(Math.floor(new Date(session.expiresAt).getTime() / 1000));
+    expect(role).toBe('admin');
   });
 
   it.each([

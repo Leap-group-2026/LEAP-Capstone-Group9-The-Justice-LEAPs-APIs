@@ -23,6 +23,7 @@ import repos.InstrumentRepo;
 import repos.AccountsRepo;
 import repos.PositionsRepo;
 import repos.CurrentPriceRepo;
+import repos.TransactionsRepo;
 import exception.ResourceNotFoundException;
 import dto.response.UserLoginResponse;
 import exception.InvalidCredentialsException;
@@ -45,6 +46,7 @@ public class UserService {
     private AccountsRepo accountsRepo;
     private PositionsRepo positionsRepo;
     private InstrumentRepo instrumentRepo;
+    private TransactionsRepo transactionsRepo;
     private Clock clock;
     private SessionService sessionService;
     private static final Random random = new Random();
@@ -56,7 +58,7 @@ public class UserService {
     public UserService(UserRepo repo, EmailService emailService, PasswordEncoder passwordEncoder, 
                        AccountsRepo accountsRepo, CurrentPriceRepo currentPriceRepo, 
                        PositionsRepo positionsRepo, InstrumentRepo instrumentRepo, Clock clock,
-                       SessionService sessionService){
+                       SessionService sessionService, TransactionsRepo transactionsRepo){
         this.repo = repo;
         this.clock = clock;
         this.sessionService = sessionService;
@@ -66,6 +68,15 @@ public class UserService {
         this.currentPriceRepo = currentPriceRepo;
         this.positionsRepo = positionsRepo;
         this.instrumentRepo = instrumentRepo;
+        this.transactionsRepo = transactionsRepo;
+    }
+
+    public UserService(UserRepo repo, EmailService emailService, PasswordEncoder passwordEncoder,
+                       AccountsRepo accountsRepo, CurrentPriceRepo currentPriceRepo,
+                       PositionsRepo positionsRepo, InstrumentRepo instrumentRepo, Clock clock,
+                       SessionService sessionService) {
+        this(repo, emailService, passwordEncoder, accountsRepo, currentPriceRepo,
+             positionsRepo, instrumentRepo, clock, sessionService, null);
     }
 
     public UserResponse registerUser(UserRegistrationRequest request){
@@ -383,6 +394,14 @@ public class UserService {
             
             accountsRepo.update(account.getAccountId(), account.getOwnerUserId(), usd, account.getPortfolioSize().getValue(), account.getTradeType(), account.getAccountActive());
         }
+
+        transactionsRepo.insert(
+            transactionRequest.amount(),
+            "EXCHANGE",
+            account.getAccountId(),
+            "CURRENCY EXCHANGE",
+            LocalDateTime.now(clock)
+        );
         
         return ResponseEntity.ok("Transaction processed successfully");
     }

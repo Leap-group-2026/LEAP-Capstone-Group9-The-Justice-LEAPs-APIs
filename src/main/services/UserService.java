@@ -47,6 +47,7 @@ public class UserService {
     private PositionsRepo positionsRepo;
     private InstrumentRepo instrumentRepo;
     private Clock clock;
+    private SessionService sessionService;
     private static final Random random = new Random();
 
     static final int MIN_AGE_YEARS = 18;
@@ -55,9 +56,11 @@ public class UserService {
     @Autowired
     public UserService(UserRepo repo, EmailService emailService, PasswordEncoder passwordEncoder, 
                        AccountsRepo accountsRepo, CurrentPriceRepo currentPriceRepo, 
-                       PositionsRepo positionsRepo, InstrumentRepo instrumentRepo, Clock clock){
-        this.repo = repo; 
+                       PositionsRepo positionsRepo, InstrumentRepo instrumentRepo, Clock clock,
+                       SessionService sessionService){
+        this.repo = repo;
         this.clock = clock;
+        this.sessionService = sessionService;
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
         this.accountsRepo = accountsRepo;
@@ -128,7 +131,8 @@ public class UserService {
             .filter(u -> request.getPassword() != null
                 && passwordEncoder.matches(request.getPassword(), u.getPassHash()))
             .orElseThrow(InvalidCredentialsException::new);
-        return new UserLoginResponse(user.getUserId());
+        SessionService.Grant session = sessionService.create(SessionService.CLIENT_ROLE, user.getUserId());
+        return new UserLoginResponse(user.getUserId(), session.sid(), session.expiresAt().toString());
     }
 
     public ResponseEntity<UserInfoDisplayed> getUsersInfoForDisplay(String userId) {
@@ -255,6 +259,7 @@ public class UserService {
         return ResponseEntity.ok("Email sent successfully");
     }
 
+    @Transactional
     public ResponseEntity<String> resetPassword(PasswordResetRequest request){
         String email = request.getEmail();
         UserEntity userInDb = repo.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
@@ -266,6 +271,7 @@ public class UserService {
             validatePass(request.getPassword());
             String encodedPassword = passwordEncoder.encode(request.getPassword());
             repo.updatePassword(userInDb.getUserId(), encodedPassword);
+            sessionService.revokeAllForUser(userInDb.getUserId(), "password_reset");
             return ResponseEntity.ok("Password reset successfully");
         }
     }

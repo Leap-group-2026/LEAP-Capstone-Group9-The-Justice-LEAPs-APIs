@@ -4,6 +4,7 @@ import services.AdminService;
 import services.EmailService;
 import services.AccountService;
 import services.OrderService;
+import services.SessionService;
 import entities.AdminEntity;
 import entities.UserEntity;
 import dto.request.AdminCreation;
@@ -32,12 +33,14 @@ public class AdminController {
     private EmailService emailService;
     private AccountService accountService;
     private OrderService orderService;
-    public AdminController(AdminService service, PasswordEncoder passwordEncoder, EmailService emailService, AccountService accountService, OrderService orderService){
+    private SessionService sessionService;
+    public AdminController(AdminService service, PasswordEncoder passwordEncoder, EmailService emailService, AccountService accountService, OrderService orderService, SessionService sessionService){
         this.service = service;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.accountService = accountService;
         this.orderService = orderService;
+        this.sessionService = sessionService;
     }
     @Operation(summary = "Create an admin",
         description = "Creates an administrator with a bcrypt-hashed password. The username must be unique "
@@ -57,10 +60,11 @@ public class AdminController {
         return service.saveAdmin(adminEntity);
     }
     @Operation(summary = "Admin login",
-        description = "Checks an admin's email and password and returns their identity and token role for the token service. "
-            + "Spring issues no token. Roles map as SUPER ADMIN -> superadmin, ADMIN -> admin, REPORTER/ANALYST -> analyst.")
+        description = "Checks an admin's email and password, starts a new session and returns the admin's id, token role, "
+            + "session id (sid) and when the session ends at the latest (expiresAt). Spring issues no token. "
+            + "Roles map as SUPER ADMIN -> superadmin, ADMIN -> admin, REPORTER/ANALYST -> analyst.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Credentials valid; the body is the admin's identity and token role",
+        @ApiResponse(responseCode = "200", description = "Credentials valid; the body is the admin's id, token role and new session",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = AdminLoginResponse.class))),
         @ApiResponse(responseCode = "401", description = "Unknown email or wrong password (identical response for both)",
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Invalid email or password"))),
@@ -111,6 +115,20 @@ public class AdminController {
     @GetMapping("/orders/{userId}/cancelled")
     public List<OrderAdminResponse> getUserCancelledOrders(@PathVariable Integer userId) {
         return orderService.getCancelledOrdersByUserID(userId);
+    }
+
+    @Operation(summary = "Log a client out everywhere",
+        description = "Revokes every session of the client with this user_id, so all their tokens stop working on the next "
+            + "request (401 session_revoked). Their refresh tokens fail at the next refresh. Answers 204 even if the client "
+            + "had no live session.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Every session of the client is revoked"),
+        @ApiResponse(responseCode = "403", description = "The caller is not an admin", content = @Content)
+    })
+    @PostMapping("/users/{id}/logout")
+    public ResponseEntity<Void> forceLogout(@PathVariable Integer id) {
+        sessionService.revokeAllForUser(id, "admin_force_logout");
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Retrieve all users",

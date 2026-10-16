@@ -16,7 +16,14 @@ import main.Application;
 import org.springframework.context.annotation.Import;
 import test.config.TestSecurityConfig;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -57,10 +64,45 @@ public class UserLoginRouteTest {
     }
 
     @Test
-    void correctCredentialsReturnOnlyTheId() throws Exception {
-        login("login.test@example.com", "CorrectPass@@12")
+    void correctCredentialsReturnTheIdAndANewSessionOnly() throws Exception {
+        String body = login("login.test@example.com", "CorrectPass@@12")
             .andExpect(status().isOk())
-            .andExpect(content().json("{\"id\":" + USER_ID + "}", true));
+            .andExpect(jsonPath("$.id").value(USER_ID))
+            .andExpect(jsonPath("$.sid").isString())
+            .andExpect(jsonPath("$.expiresAt").isString())
+            .andExpect(jsonPath("$.passHash").doesNotExist())
+            .andReturn().getResponse().getContentAsString();
+
+        JsonNode json = new ObjectMapper().readTree(body);
+        assertEquals(3, json.size(), "unexpected fields in " + body);
+        UUID sid = UUID.fromString(json.get("sid").asText());
+        Instant expiresAt = Instant.parse(json.get("expiresAt").asText());
+
+        Map<String, Object> row = jdbcTemplate.queryForMap(
+            "SELECT user_id, admin_id, role, expires_at, revoked_at FROM user_sessions WHERE session_id = ?", sid);
+        assertEquals(USER_ID, ((Number) row.get("USER_ID")).intValue());
+        assertNull(row.get("ADMIN_ID"));
+        assertEquals("client", row.get("ROLE"));
+        assertNull(row.get("REVOKED_AT"));
+        assertEquals(expiresAt, jdbcTemplate.queryForObject(
+            "SELECT expires_at FROM user_sessions WHERE session_id = ?", Timestamp.class, sid).toInstant());
+        assertTrue(json.get("expiresAt").asText().endsWith("Z"), "expiresAt is not UTC: " + body);
+    }
+
+    @Test
+    void everyLoginStartsItsOwnSession() throws Exception {
+        String first = login("login.test@example.com", "CorrectPass@@12").andReturn().getResponse().getContentAsString();
+        String second = login("login.test@example.com", "CorrectPass@@12").andReturn().getResponse().getContentAsString();
+
+        assertNotEquals(new ObjectMapper().readTree(first).get("sid"), new ObjectMapper().readTree(second).get("sid"));
+        assertEquals(2, jdbcTemplate.queryForObject("SELECT count(*) FROM user_sessions WHERE user_id = ?", Integer.class, USER_ID));
+    }
+
+    @Test
+    void aFailedLoginStartsNoSession() throws Exception {
+        login("login.test@example.com", "WrongPass@@1234").andExpect(status().isUnauthorized());
+
+        assertEquals(0, jdbcTemplate.queryForObject("SELECT count(*) FROM user_sessions WHERE user_id = ?", Integer.class, USER_ID));
     }
 
     @Test

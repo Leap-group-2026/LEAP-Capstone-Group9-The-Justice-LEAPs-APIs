@@ -39,6 +39,19 @@ public class InstrumentController {
         return service.getTickerPrice(ticker);
     }
 
+    @Operation(summary = "Get instrument price by a ticker containing a slash",
+        description = "Same as GET /instruments/{ticker}, for forex and crypto tickers such as USD/EUR or BTC/USD: "
+            + "call /instruments/USD/EUR. An encoded slash (USD%2FEUR) is refused by the server.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Instrument found with current price"),
+        @ApiResponse(responseCode = "404", description = "Instrument ticker not found",
+            content = @Content(schema = @Schema(implementation = ValidationError.class)))
+    })
+    @GetMapping("/{base}/{quote}")
+    public InstrumentWithPrice getByPairTicker(@PathVariable String base, @PathVariable String quote) {
+        return service.getTickerPrice(base + "/" + quote);
+    }
+
     @Operation(summary = "Retrieve all available instruments", 
                description = "Returns a list of all tradable instruments with their current prices")
     @ApiResponse(responseCode = "200", 

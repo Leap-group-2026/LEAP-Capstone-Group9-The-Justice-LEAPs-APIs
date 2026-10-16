@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { createServer, IncomingHttpHeaders, Server } from 'http';
 import { AddressInfo } from 'net';
 import request from 'supertest';
+import { SpringUsersClient } from '../src/auth/spring-users.client';
 
 const INTERNAL_API_KEY = 'test-only-internal-api-key-0123456789-abcdef';
 
@@ -47,6 +48,19 @@ describe('calls to Spring carry the internal API key', () => {
     ['/auth/register', '/user'],
   ])('%s sends X-Internal-Api-Key to Spring\'s %s', async (route, springPath) => {
     await request(app.getHttpServer()).post(route).send(credentials);
+
+    expect(received).toHaveLength(1);
+    expect(received[0].url).toBe(springPath);
+    expect(received[0].headers['x-internal-api-key']).toBe(INTERNAL_API_KEY);
+  });
+
+  const SID = '3f2c1d6e-8a4b-4c1d-9e2f-0a1b2c3d4e5f';
+
+  it.each([
+    ['checkSession', (spring: SpringUsersClient) => spring.checkSession(SID), `/internal/sessions/${SID}/check`],
+    ['revokeSession', (spring: SpringUsersClient) => spring.revokeSession(SID, 'logout'), `/internal/sessions/${SID}/revoke`],
+  ])('%s sends X-Internal-Api-Key to Spring', async (_name, call, springPath) => {
+    await call(app.get(SpringUsersClient));
 
     expect(received).toHaveLength(1);
     expect(received[0].url).toBe(springPath);

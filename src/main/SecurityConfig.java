@@ -1,15 +1,14 @@
 package main;
 
-import java.time.Clock;
 import java.util.List;
+
+import jakarta.servlet.DispatcherType;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
@@ -37,11 +36,6 @@ public class SecurityConfig {
     private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
-    public Clock clock(){
-        return Clock.systemUTC();
-    }
-
-    @Bean
     public PasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();
     }
@@ -52,12 +46,15 @@ public class SecurityConfig {
             .cors(Customizer.withDefaults())
             .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
             .authorizeHttpRequests(authz -> authz
+                // Error dispatches carry no authentication; requiring it turned every error response into a 401
+                .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers("/internal/**").permitAll()
                 .requestMatchers("/admin/login").permitAll()
                 .requestMatchers("/user/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/user/resetpassword", "/user/resetpassword/reset").permitAll()
-                .requestMatchers("/user").permitAll()
+                .requestMatchers(HttpMethod.POST, "/user").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/user/**").hasRole("CLIENT")
                 .requestMatchers("/positions/{id}").hasRole("ADMIN")
@@ -79,7 +76,6 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .csrf(csrf -> csrf.disable());
         return http.build();

@@ -12,6 +12,14 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -72,6 +80,38 @@ public class AdminRouteTest {
             .andExpect(jsonPath("$.passHash").doesNotExist())
             .andExpect(jsonPath("$.pass_hash").doesNotExist())
             .andExpect(jsonPath("$.token").doesNotExist());
+    }
+
+    @Test
+    public void loginStartsASessionOwnedByTheAdmin() throws Exception {
+        int id = insertAdmin("aryann", "secret", "ADMIN");
+
+        String body = login("aryann", "secret")
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.sid").isString())
+            .andExpect(jsonPath("$.expiresAt").isString())
+            .andReturn().getResponse().getContentAsString();
+        JsonNode json = new ObjectMapper().readTree(body);
+        UUID sid = UUID.fromString(json.get("sid").asText());
+
+        Map<String, Object> row = jdbcTemplate.queryForMap(
+            "SELECT user_id, admin_id, role FROM user_sessions WHERE session_id = ?", sid);
+        assertEquals(id, ((Number) row.get("ADMIN_ID")).intValue());
+        assertNull(row.get("USER_ID"));
+        assertEquals("admin", row.get("ROLE"));
+        assertEquals(Instant.parse(json.get("expiresAt").asText()), jdbcTemplate.queryForObject(
+            "SELECT expires_at FROM user_sessions WHERE session_id = ?", Timestamp.class, sid).toInstant());
+    }
+
+    @Test
+    public void aRejectedAdminLoginStartsNoSession() throws Exception {
+        int id = insertAdmin("aryann", "secret", "ADMIN");
+        insertAdmin("bob", "secret", "placeholder");
+
+        login("aryann", "wrong").andExpect(status().isUnauthorized());
+        login("bob", "secret").andExpect(status().isForbidden());
+
+        assertEquals(0, jdbcTemplate.queryForObject("SELECT count(*) FROM user_sessions", Integer.class));
     }
 
     @Test

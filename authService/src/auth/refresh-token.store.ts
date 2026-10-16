@@ -65,9 +65,17 @@ export class RefreshTokenStore {
 
 
   async findForUpdate(tx: PoolClient, rawToken: string): Promise<RefreshTokenRecord | null> {
-    const { rows } = await tx.query(
+    return this.select(tx, rawToken, true);
+  }
+
+  async find(rawToken: string): Promise<RefreshTokenRecord | null> {
+    return this.select(this.pool, rawToken, false);
+  }
+
+  private async select(db: Queryable, rawToken: string, forUpdate: boolean): Promise<RefreshTokenRecord | null> {
+    const { rows } = await db.query(
       `SELECT session_id, user_id, admin_id, auth_time, expires_at, revoked_at
-       FROM refresh_tokens WHERE token_hash = $1 FOR UPDATE`,
+       FROM refresh_tokens WHERE token_hash = $1${forUpdate ? ' FOR UPDATE' : ''}`,
       [hashRefreshToken(rawToken)],
     );
     if (rows.length === 0) return null;

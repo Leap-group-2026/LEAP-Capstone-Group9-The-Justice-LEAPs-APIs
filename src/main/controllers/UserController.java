@@ -1,5 +1,6 @@
 package controllers;
 
+<<<<<<< Updated upstream
 import services.UserService;
 import services.AccountService;
 import config.AuthorizationUtil;
@@ -12,6 +13,19 @@ import dto.response.UserResponse;
 import dto.response.UpdateUserResponse;
 import dto.response.AccountResponse;
 import dto.request.TransactionRequest;
+=======
+import main.services.UserService;
+import main.dto.request.UserRegistrationRequest;
+import main.dto.request.LoginRequest;
+import main.dto.request.UpdateNameRequest;
+import main.dto.request.UpdateEmailRequest;
+import main.dto.request.UpdateAddressRequest;
+import main.dto.response.UserResponse;
+import main.dto.response.UpdateNameResponse;
+import main.dto.response.UpdateEmailResponse;
+import main.dto.response.UpdateAddressResponse;
+import main.entities.UserEntity;
+>>>>>>> Stashed changes
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +34,7 @@ import dto.response.ValidationError;
 import java.util.List;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import config.OpenApiConfig;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -73,6 +88,7 @@ public class UserController {
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Incorrect reset code"))),
         @ApiResponse(responseCode = "500", description = "Known issue: the user has never been issued a reset code", content = @Content)
     })
+    @SecurityRequirements
     @PostMapping("/resetpassword/reset")
     public ResponseEntity<String> resetPassword(@RequestBody PasswordResetRequest request){
         return service.resetPassword(request);
@@ -85,16 +101,18 @@ public class UserController {
         @ApiResponse(responseCode = "200", description = "Code generated", content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Email sent successfully"))),
         @ApiResponse(responseCode = "400", description = "No user with this email", content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "User not found")))
     })
+    @SecurityRequirements
     @PostMapping("/resetpassword")
     public ResponseEntity<String> emailResetPassword(@RequestBody EmailResetRequest request){
         return service.emailResetPassword(request);
     }
 
     @Operation(summary = "User login",
-        description = "Checks a client's email and password and returns their identity for the token service. "
-            + "Spring issues no token: the auth service signs one with role \"client\".")
+        description = "Checks a client's email and password, starts a new session and returns the client's id, the session id "
+            + "(sid) and when the session ends at the latest (expiresAt, 8 hours after login). Spring issues no token: the auth "
+            + "service signs one with role \"client\" and this sid. Every login is its own session.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Credentials valid; the body is the client's identity",
+        @ApiResponse(responseCode = "200", description = "Credentials valid; the body is the client's id and new session",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserLoginResponse.class))),
         @ApiResponse(responseCode = "401", description = "Unknown email or wrong password (identical response for both)",
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Invalid email or password")))
@@ -105,6 +123,7 @@ public class UserController {
         return service.login(request);
     }
 
+<<<<<<< Updated upstream
 
     @Operation(summary = "Currency exchange transaction")
     @PostMapping("/transactions/exchange")
@@ -151,3 +170,29 @@ public class UserController {
     }
 
 }
+=======
+    @PatchMapping("/{id}/name")
+    public ResponseEntity<UpdateNameResponse> updateName(
+            @PathVariable Integer id,
+            @RequestBody UpdateNameRequest request) {
+        UpdateNameResponse response = service.updateUserName(id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}/email")
+    public ResponseEntity<UpdateEmailResponse> updateEmail(
+            @PathVariable Integer id,
+            @RequestBody UpdateEmailRequest request) {
+        UpdateEmailResponse response = service.updateUserEmail(id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}/address")
+    public ResponseEntity<UpdateAddressResponse> updateAddress(
+            @PathVariable Integer id,
+            @RequestBody UpdateAddressRequest request) {
+        UpdateAddressResponse response = service.updateUserAddress(id, request);
+        return ResponseEntity.ok(response);
+    }
+}
+>>>>>>> Stashed changes

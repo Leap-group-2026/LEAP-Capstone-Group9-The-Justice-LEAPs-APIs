@@ -7,6 +7,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import services.UserService;
+import services.SessionService;
 import repos.UserRepo;
 import repos.AccountsRepo;
 import repos.CurrentPriceRepo;
@@ -53,13 +54,17 @@ public class UserServiceTest {
     @Mock
     private InstrumentRepo mockInstrumentRepo;
 
+    @Mock
+    private SessionService mockSessionService;
+
     @BeforeEach
     public void setUp() {
         // Pass null for EmailService to avoid mocking issues; it's only used in welcome emails
         service = new UserService(mockUserRepo, null, mockPasswordEncoder, 
                                   mockAccountsRepo, mockCurrentPriceRepo, 
                                   mockPositionsRepo, mockInstrumentRepo,
-                                  Clock.fixed(Instant.parse("2024-09-24T16:00:00Z"), ZoneOffset.UTC));
+                                  Clock.fixed(Instant.parse("2024-09-24T16:00:00Z"), ZoneOffset.UTC),
+                                  mockSessionService);
     }
 
     // Helper method to generate SHA-256 hash (matches service implementation)
@@ -580,12 +585,16 @@ public class UserServiceTest {
 
         when(mockUserRepo.findByEmail("john@example.com")).thenReturn(java.util.Optional.of(existingUser));
         when(mockPasswordEncoder.matches("SecurePass@123#", "hashed_password")).thenReturn(true);
+        when(mockSessionService.create("client", 1)).thenReturn(new SessionService.Grant(
+            "3f2c1d6e-8a4b-4c1d-9e2f-0a1b2c3d4e5f", Instant.parse("2024-09-25T00:00:00Z")));
 
         // Act
         UserLoginResponse response = service.login(loginRequest);
 
         // Assert
         assertEquals(1, response.getId());
+        assertEquals("3f2c1d6e-8a4b-4c1d-9e2f-0a1b2c3d4e5f", response.getSid());
+        assertEquals("2024-09-25T00:00:00Z", response.getExpiresAt());
     }
 
     @Test
@@ -604,6 +613,7 @@ public class UserServiceTest {
         });
         assertEquals("Invalid email or password", exception.getMessage());
         verify(mockPasswordEncoder, never()).matches(any(), any());
+        verify(mockSessionService, never()).create(any(), any());
     }
 
     @Test
@@ -627,6 +637,7 @@ public class UserServiceTest {
             service.login(loginRequest);
         });
         assertEquals("Invalid email or password", exception.getMessage());
+        verify(mockSessionService, never()).create(any(), any());
     }
 
     @Test

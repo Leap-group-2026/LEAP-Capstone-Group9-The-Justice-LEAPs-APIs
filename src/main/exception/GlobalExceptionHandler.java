@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import dto.response.ValidationError;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -129,5 +130,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<String> handleInvalidCredentials(InvalidCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(SessionRejectedException.class)
+    public ResponseEntity<Map<String, String>> handleSessionRejected(SessionRejectedException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", ex.getCode(), "message", ex.getMessage()));
     }
 }

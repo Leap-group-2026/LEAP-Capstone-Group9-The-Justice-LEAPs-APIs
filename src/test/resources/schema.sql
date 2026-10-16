@@ -85,3 +85,19 @@ CREATE TABLE IF NOT EXISTS historical_orders(
     order_information_json  VARCHAR(4000) NOT NULL,
     created_at              TIMESTAMP NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS user_sessions (
+	session_id			UUID PRIMARY KEY,
+	user_id				INT NULL REFERENCES user_info(user_id) ON DELETE CASCADE,
+	admin_id			INT NULL REFERENCES admin(admin_id) ON DELETE CASCADE,
+	role				TEXT NOT NULL,
+	created_at			TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+	last_activity_at	TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+	expires_at			TIMESTAMP WITH TIME ZONE NOT NULL,
+	revoked_at			TIMESTAMP WITH TIME ZONE NULL,
+	revoked_reason		TEXT NULL,
+	CHECK ((user_id IS NULL AND admin_id IS NOT NULL) OR (user_id IS NOT NULL AND admin_id IS NULL))
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_admin_id ON user_sessions(admin_id);

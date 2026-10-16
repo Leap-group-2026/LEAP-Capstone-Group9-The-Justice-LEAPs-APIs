@@ -9,6 +9,7 @@ import entities.AccountsEntity;
 import dto.request.TransactionRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
+<<<<<<< Updated upstream
 
 import repos.UserRepo;
 import entities.UserEntity; 
@@ -27,6 +28,21 @@ import repos.CurrentPriceRepo;
 import exception.ResourceNotFoundException;
 import dto.response.UserLoginResponse;
 import exception.InvalidCredentialsException;
+=======
+import main.repos.UserRepo;
+import main.entities.UserEntity; 
+import main.dto.request.UserRegistrationRequest;
+import main.dto.request.LoginRequest;
+import main.dto.request.UpdateNameRequest;
+import main.dto.request.UpdateEmailRequest;
+import main.dto.request.UpdateAddressRequest;
+import main.dto.response.UserResponse;
+import main.dto.response.UpdateNameResponse;
+import main.dto.response.UpdateEmailResponse;
+import main.dto.response.UpdateAddressResponse;
+import main.services.EmailService;
+import main.exception.ResourceNotFoundException;
+>>>>>>> Stashed changes
 
 import java.security.MessageDigest;
 import java.util.Base64;
@@ -47,6 +63,7 @@ public class UserService {
     private PositionsRepo positionsRepo;
     private InstrumentRepo instrumentRepo;
     private Clock clock;
+    private SessionService sessionService;
     private static final Random random = new Random();
 
     static final int MIN_AGE_YEARS = 18;
@@ -55,9 +72,11 @@ public class UserService {
     @Autowired
     public UserService(UserRepo repo, EmailService emailService, PasswordEncoder passwordEncoder, 
                        AccountsRepo accountsRepo, CurrentPriceRepo currentPriceRepo, 
-                       PositionsRepo positionsRepo, InstrumentRepo instrumentRepo, Clock clock){
-        this.repo = repo; 
+                       PositionsRepo positionsRepo, InstrumentRepo instrumentRepo, Clock clock,
+                       SessionService sessionService){
+        this.repo = repo;
         this.clock = clock;
+        this.sessionService = sessionService;
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
         this.accountsRepo = accountsRepo;
@@ -128,7 +147,8 @@ public class UserService {
             .filter(u -> request.getPassword() != null
                 && passwordEncoder.matches(request.getPassword(), u.getPassHash()))
             .orElseThrow(InvalidCredentialsException::new);
-        return new UserLoginResponse(user.getUserId());
+        SessionService.Grant session = sessionService.create(SessionService.CLIENT_ROLE, user.getUserId());
+        return new UserLoginResponse(user.getUserId(), session.sid(), session.expiresAt().toString());
     }
 
     public ResponseEntity<UserInfoDisplayed> getUsersInfoForDisplay(String userId) {
@@ -255,6 +275,7 @@ public class UserService {
         return ResponseEntity.ok("Email sent successfully");
     }
 
+    @Transactional
     public ResponseEntity<String> resetPassword(PasswordResetRequest request){
         String email = request.getEmail();
         UserEntity userInDb = repo.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
@@ -266,10 +287,12 @@ public class UserService {
             validatePass(request.getPassword());
             String encodedPassword = passwordEncoder.encode(request.getPassword());
             repo.updatePassword(userInDb.getUserId(), encodedPassword);
+            sessionService.revokeAllForUser(userInDb.getUserId(), "password_reset");
             return ResponseEntity.ok("Password reset successfully");
         }
     }
 
+<<<<<<< Updated upstream
     public UpdateUserResponse updateUser(Integer userId, UpdateUserRequest request) {
         UserEntity user = repo.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User", userId.toString()));
@@ -382,3 +405,62 @@ public class UserService {
         return ResponseEntity.ok("Transaction processed successfully");
     }
 }
+=======
+    public UpdateNameResponse updateUserName(Integer userId, UpdateNameRequest request) {
+        if (request.name() == null || request.name().isBlank()) {
+            throw new IllegalArgumentException("Name cannot be empty");
+        }
+
+        UserEntity user = repo.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", userId.toString()));
+
+        user.setName(request.name().trim());
+        repo.update(user);
+
+        return new UpdateNameResponse(user.getUserId(), user.getName());
+    }
+
+    public UpdateEmailResponse updateUserEmail(Integer userId, UpdateEmailRequest request) {
+        if (request.email() == null || request.email().isBlank()) {
+            throw new IllegalArgumentException("Email cannot be empty");
+        }
+
+        String newEmail = request.email().trim().toLowerCase();
+        
+        if (!isValidEmail(newEmail)) {
+            throw new IllegalArgumentException("Invalid email format");
+        }
+
+        UserEntity user = repo.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", userId.toString()));
+
+        if (repo.existsByEmail(newEmail) && !user.getEmail().equalsIgnoreCase(newEmail)) {
+            throw new IllegalArgumentException("Email already in use");
+        }
+
+        user.setEmail(newEmail);
+        repo.update(user);
+
+        return new UpdateEmailResponse(user.getUserId(), user.getEmail());
+    }
+
+    public UpdateAddressResponse updateUserAddress(Integer userId, UpdateAddressRequest request) {
+        if (request.address() == null || request.address().isBlank()) {
+            throw new IllegalArgumentException("Address cannot be empty");
+        }
+
+        UserEntity user = repo.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", userId.toString()));
+
+        user.setAddress(request.address().trim());
+        repo.update(user);
+
+        return new UpdateAddressResponse(user.getUserId(), user.getAddress());
+    }
+
+    private boolean isValidEmail(String email) {
+        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
+        return email.matches(emailRegex) && email.length() <= 255;
+    }
+}
+>>>>>>> Stashed changes

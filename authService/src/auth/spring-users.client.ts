@@ -19,7 +19,15 @@ export class SpringUsersClient {
     return this.send('post', '/user', body);
   }
 
-  private async send(method: 'post', url: string, body: unknown): Promise<AxiosResponse> {
+  checkSession(sid: string) {
+    return this.send('post', `/internal/sessions/${encodeURIComponent(sid)}/check`);
+  }
+
+  revokeSession(sid: string, reason: string) {
+    return this.send('post', `/internal/sessions/${encodeURIComponent(sid)}/revoke`, { reason });
+  }
+
+  private async send(method: 'post', url: string, body?: unknown): Promise<AxiosResponse> {
     try {
       return await firstValueFrom(this.http.request({ method, url, data: body }));
     } catch {

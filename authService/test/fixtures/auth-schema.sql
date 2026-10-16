@@ -20,6 +20,22 @@ CREATE TABLE admin(
 	created_at 		TIMESTAMP NOT NULL DEFAULT now()
 );
 
+CREATE TABLE user_sessions (
+	session_id			UUID PRIMARY KEY,
+	user_id				INT NULL REFERENCES user_info(user_id) ON DELETE CASCADE,
+	admin_id			INT NULL REFERENCES admin(admin_id) ON DELETE CASCADE,
+	role				TEXT NOT NULL,
+	created_at			TIMESTAMPTZ NOT NULL DEFAULT now(),
+	last_activity_at	TIMESTAMPTZ NOT NULL DEFAULT now(),
+	expires_at			TIMESTAMPTZ NOT NULL,
+	revoked_at			TIMESTAMPTZ NULL,
+	revoked_reason		TEXT NULL,
+	CHECK (num_nonnulls(user_id, admin_id) = 1)
+);
+
+CREATE INDEX idx_user_sessions_user_id ON user_sessions(user_id);
+CREATE INDEX idx_user_sessions_admin_id ON user_sessions(admin_id);
+
 CREATE TABLE refresh_tokens (
 	token_hash		TEXT PRIMARY KEY CHECK (char_length(token_hash) = 64),
 	session_id		UUID NOT NULL,

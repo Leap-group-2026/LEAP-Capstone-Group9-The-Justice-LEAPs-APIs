@@ -10,7 +10,7 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { SpringUsersClient } from './spring-users.client';
 import { AccessTokenClaims } from './token-claims';
-import { MessageDto, RegisterBodyDto, SessionTokensDto, VerifyResponseDto } from './dto/docs.dto';
+import { AdminSessionTokensDto, MessageDto, RegisterBodyDto, SessionTokensDto, VerifyResponseDto } from './dto/docs.dto';
 import { ACCESS_TOKEN_SCHEME } from '../swagger';
 
 @ApiTags('Auth')
@@ -25,7 +25,7 @@ export class AuthController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Admin login', description: 'Checks the password with Spring and starts a new session for an admin (role admin).' })
   @ApiBody({ type: LoginDto })
-  @ApiOkResponse({ type: SessionTokensDto, description: 'Admin login successful' })
+  @ApiOkResponse({ type: AdminSessionTokensDto, description: 'Admin login successful' })
   @ApiBadRequestResponse({ description: 'email or password missing or blank' })
   @ApiUnauthorizedResponse({ description: 'Invalid email or password (same message for both, on purpose)' })
   @ApiBadGatewayResponse({ description: 'Spring is unreachable' })

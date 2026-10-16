@@ -11,6 +11,10 @@ export interface SessionTokens {
   refreshToken: string;
 }
 
+export interface AdminSessionTokens extends SessionTokens {
+  role: string;
+}
+
 interface SpringSession {
   sid: string;
   expiresAt: Date;
@@ -71,11 +75,12 @@ export class AuthService {
     return { sid: data.sid, expiresAt };
   }
 
-  async adminLogin({ email, password }: LoginDto): Promise<SessionTokens> {
+  async adminLogin({ email, password }: LoginDto): Promise<AdminSessionTokens> {
     const res = await this.spring.adminLogin(email, password);
 
     if (res.status === 200 && Number.isInteger(res.data?.id)) {
-      return this.startSession({ role: 'admin', id: res.data.id }, this.sessionFrom(res.data));
+      const tokens = await this.startSession({ role: 'admin', id: res.data.id }, this.sessionFrom(res.data));
+      return { ...tokens, role: res.data.role };
     }
     if (res.status === 401) {
       throw new UnauthorizedException('Invalid email or password');

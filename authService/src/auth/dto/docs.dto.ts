@@ -10,6 +10,11 @@ export class SessionTokensDto {
     refreshToken!: string;
 }
 
+export class AdminSessionTokensDto extends SessionTokensDto {
+    @ApiProperty({ description: 'The role returned by Spring for the authenticated admin', example: 'admin' })
+    role!: string;
+}
+
 export class MessageDto {
     @ApiProperty({ example: 'Logout successful' })
     message!: string;

@@ -7,6 +7,7 @@ import repos.AdminRepo;
 import repos.UserRepo;
 import dto.response.OrderAdminResponse;
 import dto.response.AdminLoginResponse;
+import dto.response.TopBoughtStockResponse;
 import exception.InvalidCredentialsException;
 import exception.AdminRoleNotAssignedException;
 import entities.AdminEntity;
@@ -20,6 +21,7 @@ public class AdminService {
     private AdminRepo repo;
     private UserRepo userRepo;
     private PasswordEncoder passwordEncoder;
+    private WarehouseAnalyticsService warehouseAnalyticsService;
     private SessionService sessionService;
 
     private static final Map<String, String> TOKEN_ROLES = Map.of(
@@ -28,10 +30,16 @@ public class AdminService {
         "REPORTER/ANALYST", "analyst"
     );
 
-    public AdminService(AdminRepo repo, UserRepo userRepo, PasswordEncoder passwordEncoder, SessionService sessionService){
+    public AdminService(
+        AdminRepo repo,
+        UserRepo userRepo,
+        PasswordEncoder passwordEncoder,
+        WarehouseAnalyticsService warehouseAnalyticsService
+    , SessionService sessionService){
         this.repo = repo;
         this.userRepo = userRepo;
         this.passwordEncoder = passwordEncoder;
+        this.warehouseAnalyticsService = warehouseAnalyticsService;
         this.sessionService = sessionService;
     }
 
@@ -77,5 +85,9 @@ public class AdminService {
 
     public List<UserEntity> getAllUsers() {
         return userRepo.findAll();
+    }
+
+    public List<TopBoughtStockResponse> getTopBoughtStocks() {
+        return warehouseAnalyticsService.getTopBoughtStocks();
     }
 }

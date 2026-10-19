@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Options;
 
 import dto.response.OrderAdminResponse;
+import dto.response.TransactionHistoryResponse;
 import entities.AdminEntity;
 import java.util.Optional;
 import java.util.List;
@@ -40,4 +41,16 @@ public interface AdminRepo {
 
     @Select("SELECT * FROM orders")
     List<OrderAdminResponse> getAllOrders(); 
+
+        @Select("SELECT * FROM orders WHERE account_id = #{accountId} ORDER BY created_at DESC, order_id DESC")
+        List<OrderAdminResponse> getOrdersByAccountId(Integer accountId);
+
+        @Select("SELECT t.transaction_id, t.transaction_type, t.amount, t.side, t.account_id, t.happened_at " +
+            "FROM transactions t ORDER BY t.happened_at DESC, t.transaction_id DESC")
+        List<TransactionHistoryResponse> getAllTransactions();
+
+        @Select("SELECT t.transaction_id, t.transaction_type, t.amount, t.side, t.account_id, t.happened_at " +
+            "FROM transactions t WHERE t.account_id = #{accountId} " +
+            "ORDER BY t.happened_at DESC, t.transaction_id DESC")
+        List<TransactionHistoryResponse> getTransactionsByAccountId(Integer accountId);
 }

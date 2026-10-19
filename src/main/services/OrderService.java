@@ -137,6 +137,7 @@ public class OrderService {
         response.setPricePerUnit(order.getTotalPrice().divide(BigDecimal.valueOf(order.getQuantity())));
         response.setStatus(order.getStatus());
         response.setTotalPrice(order.getTotalPrice());
+        response.setCreatedAt(order.getCreatedAt());
         if ("FILLED".equals(order.getStatus())) {
             response.setExecutedAt(order.getUpdatedAt());
         }

@@ -65,6 +65,7 @@ public interface OrdersRepo {
     @Select("SELECT o.order_id, i.ticker, o.side, o.status, o.quantity, " +
             "CAST(o.total_price / o.quantity AS NUMERIC(18,4)) AS price_per_unit, " +
             "o.total_price, " +
+            "o.created_at, " +
             "CASE WHEN o.status = 'FILLED' THEN o.updated_at END AS executed_at " +
             "FROM orders o " +
             "JOIN instruments i ON o.instrument_id = i.instrument_id " +

@@ -1,6 +1,7 @@
 package services;
 
 import dto.response.TopBoughtStockResponse;
+import dto.response.ActiveAccountAnalyticsResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -59,6 +60,41 @@ public class WarehouseAnalyticsService {
             return stocks;
         } catch (SQLException exception) {
             throw new IllegalStateException("Unable to load warehouse analytics", exception);
+        }
+    }
+
+    public List<ActiveAccountAnalyticsResponse> getMostActiveAccounts() {
+        String sql = """
+            SELECT account_id,
+                   COUNT(*) AS order_count,
+                   COALESCE(SUM(quantity) FILTER (WHERE status = 'FILLED'), 0) AS filled_quantity,
+                   COALESCE(SUM(total_price) FILTER (WHERE status = 'FILLED'), 0) AS total_traded_value,
+                   COUNT(*) FILTER (WHERE side = 'BUY') AS buy_count,
+                   COUNT(*) FILTER (WHERE side = 'SELL') AS sell_count
+            FROM dw.ribbit_trade_activity
+            GROUP BY account_id
+            ORDER BY total_traded_value DESC, filled_quantity DESC, account_id
+            """;
+        List<ActiveAccountAnalyticsResponse> accounts = new ArrayList<>();
+
+        try (
+            Connection connection = DriverManager.getConnection(warehouseUrl, warehouseUsername, warehousePassword);
+            PreparedStatement statement = connection.prepareStatement(sql);
+            ResultSet results = statement.executeQuery()
+        ) {
+            while (results.next()) {
+                accounts.add(new ActiveAccountAnalyticsResponse(
+                    results.getInt("account_id"),
+                    results.getLong("order_count"),
+                    results.getLong("filled_quantity"),
+                    results.getBigDecimal("total_traded_value"),
+                    results.getLong("buy_count"),
+                    results.getLong("sell_count")
+                ));
+            }
+            return accounts;
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Unable to load active account analytics", exception);
         }
     }
 }

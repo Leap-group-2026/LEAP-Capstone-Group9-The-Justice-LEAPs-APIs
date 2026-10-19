@@ -56,6 +56,13 @@ CREATE TABLE IF NOT EXISTS positions (
 	average_price	NUMERIC(18, 4) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS portfolio_snapshot(
+	portfolio_snapshot_id SERIAL PRIMARY KEY,
+	account_id INTEGER NOT NULL REFERENCES accounts(account_id),
+	portfolio_value NUMERIC(19, 4) NOT NULL,
+	snapshot_date DATE NOT NULL
+);
+
 
 CREATE TABLE IF NOT EXISTS orders (
 	order_id		SERIAL PRIMARY KEY,

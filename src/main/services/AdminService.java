@@ -8,6 +8,8 @@ import repos.UserRepo;
 import dto.response.OrderAdminResponse;
 import dto.response.AdminLoginResponse;
 import dto.response.TopBoughtStockResponse;
+import dto.response.TransactionHistoryResponse;
+import dto.response.AdminUserLookupResponse;
 import exception.InvalidCredentialsException;
 import exception.AdminRoleNotAssignedException;
 import entities.AdminEntity;
@@ -83,11 +85,36 @@ public class AdminService {
         return repo.getAllOrders();
     }
 
+    public List<OrderAdminResponse> getOrdersByAccountId(Integer accountId) {
+        return repo.getOrdersByAccountId(accountId);
+    }
+
+    public List<TransactionHistoryResponse> getAllTransactions() {
+        return repo.getAllTransactions();
+    }
+
+    public List<TransactionHistoryResponse> getTransactionsByAccountId(Integer accountId) {
+        return repo.getTransactionsByAccountId(accountId);
+    }
+
     public List<UserEntity> getAllUsers() {
         return userRepo.findAll();
     }
 
     public List<TopBoughtStockResponse> getTopBoughtStocks() {
         return warehouseAnalyticsService.getTopBoughtStocks();
+    }
+
+    public AdminUserLookupResponse findUserByEmail(String email, AccountService accountService) {
+        UserEntity user = userRepo.findByEmail(email.trim())
+            .orElseThrow(() -> new exception.ResourceNotFoundException("User", email));
+        return new AdminUserLookupResponse(
+            user.getUserId(),
+            user.getName(),
+            user.getEmail(),
+            user.getDateOfBirth(),
+            user.getAddress(),
+            accountService.getAccountsByUserID(user.getUserId())
+        );
     }
 }

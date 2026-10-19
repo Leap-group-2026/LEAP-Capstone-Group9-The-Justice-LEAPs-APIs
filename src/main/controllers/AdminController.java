@@ -24,6 +24,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.List;
 import dto.response.AdminLoginResponse;
 import dto.response.TopBoughtStockResponse;
+import dto.response.TransactionHistoryResponse;
+import dto.response.AdminUserLookupResponse;
 
 @Tag(name = "Admin")  // description and display order: OpenApiConfig
 @RestController
@@ -86,6 +88,27 @@ public class AdminController {
         return service.getAllOrders();
     }
 
+    @Operation(summary = "Retrieve orders for an account")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved the account's orders")
+    @GetMapping("/orders/account/{accountId}")
+    public List<OrderAdminResponse> getAccountOrders(@PathVariable Integer accountId) {
+        return service.getOrdersByAccountId(accountId);
+    }
+
+    @Operation(summary = "Retrieve all transactions across all accounts")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved all transactions")
+    @GetMapping("/transactions")
+    public List<TransactionHistoryResponse> getAllTransactions() {
+        return service.getAllTransactions();
+    }
+
+    @Operation(summary = "Retrieve transactions for an account")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved the account's transactions")
+    @GetMapping("/transactions/account/{accountId}")
+    public List<TransactionHistoryResponse> getAccountTransactions(@PathVariable Integer accountId) {
+        return service.getTransactionsByAccountId(accountId);
+    }
+
     @Operation(summary = "Retrieve all accounts across all users",
         description = "Returns a list of all active accounts for admin monitoring and auditing")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved all accounts")
@@ -145,5 +168,15 @@ public class AdminController {
     @GetMapping("/analytics/top-bought")
     public List<TopBoughtStockResponse> getTopBoughtStocks() {
         return service.getTopBoughtStocks();
+    }
+
+    @Operation(summary = "Find a user by email with their accounts")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "User and accounts retrieved"),
+        @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    @GetMapping("/users/by-email")
+    public AdminUserLookupResponse getUserByEmail(@RequestParam String email) {
+        return service.findUserByEmail(email, accountService);
     }
 }

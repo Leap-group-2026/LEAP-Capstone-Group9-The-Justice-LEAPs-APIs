@@ -43,6 +43,10 @@ public interface TransactionsRepo {
              "ORDER BY t.happened_at DESC, t.transaction_id DESC")
      List<TransactionHistoryResponse> getTransactionsByAccountId(@Param("accountId") Integer accountId);
 
+    @Select("SELECT t.transaction_id, t.transaction_type, t.amount, t.side, t.account_id, t.happened_at " +
+            "FROM transactions t ORDER BY t.happened_at DESC, t.transaction_id DESC")
+    List<TransactionHistoryResponse> getAllTransactionHistory();
+
     @Insert("INSERT INTO transactions (amount, side, account_id, transaction_type, happened_at) " +
             "VALUES (#{amount}, #{side}, #{accountId.accountId}, #{transactionType}, #{happenedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "transactionId", keyColumn = "transaction_id")

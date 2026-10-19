@@ -65,15 +65,17 @@ public class AccountController {
     }
     
     @Operation(summary = "Close an account",
-        description = "Soft-deletes the account (account_active = false) for the authenticated user. "
-            + "The balance must be exactly 0. Closing an account that is already closed is rejected "
-            + "with an explicit message.")
+        description = "For a client, soft-deletes the account only when its balance is exactly 0. "
+            + "For an admin, automatically liquidates open positions at current prices, withdraws the remaining "
+            + "balance to the bank account on file, and then soft-deletes the account. "
+            + "Closing an account that is already closed is rejected with an explicit message.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Account closed",
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Success"))),
         @ApiResponse(responseCode = "400", description = "Rejected. Plain-text bodies: \"Account is already closed\", "
             + "\"Not a valid user\" (no account with this id), \"You are unauthorized to close this account, it does not belong to you\", "
             + "\"In order to close an account your balance must be exactly $0, please sell your holdings\", "
+            + "\"No current price is available for instrument ...\", "
             + "\"Account user information is missing\".",
             content = {
                 @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Account is already closed")),

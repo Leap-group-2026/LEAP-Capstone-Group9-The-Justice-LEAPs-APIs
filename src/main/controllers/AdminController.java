@@ -24,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.List;
 import dto.response.AdminLoginResponse;
 import dto.response.TopBoughtStockResponse;
+import dto.response.ActiveAccountAnalyticsResponse;
 import dto.response.DailyMoneyMovedResponse;
 import services.OrderAnalyticsService;
 import dto.response.TransactionHistoryResponse;
@@ -171,6 +172,13 @@ public class AdminController {
     @GetMapping("/analytics/top-bought")
     public List<TopBoughtStockResponse> getTopBoughtStocks() {
         return service.getTopBoughtStocks();
+    }
+
+    @Operation(summary = "Retrieve most active accounts from the data warehouse")
+    @ApiResponse(responseCode = "200", description = "Account activity metrics retrieved")
+    @GetMapping("/analytics/active-accounts")
+    public List<ActiveAccountAnalyticsResponse> getMostActiveAccounts() {
+        return service.getMostActiveAccounts();
     }
 
     @Operation(summary = "Money moved by filled orders per day",

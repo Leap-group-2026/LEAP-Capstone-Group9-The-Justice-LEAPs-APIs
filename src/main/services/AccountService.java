@@ -82,52 +82,7 @@ public class AccountService {
 
     @Transactional
     public String closeAccountAsAdmin(Integer accountId) {
-        AccountsEntity source = repo.findByIdIncludingInactiveForUpdate(accountId)
-            .orElseThrow(() -> new IllegalStateException("Not a valid user"));
-        validateClosable(source);
-
-        Integer userId = source.getUserId().getUserId();
-
-        LocalDateTime happenedAt = ZonedDateTime.now(clock)
-            .withZoneSameInstant(ZoneId.of("America/New_York"))
-            .toLocalDateTime();
-        BigDecimal liquidationValue = BigDecimal.ZERO;
-
-        for (PositionsEntity position : positionsRepo.findOpenByAccountForUpdate(accountId)) {
-            Integer quantity = position.getQuantity();
-            Integer instrumentId = position.getInstrumentId().getInstrumentId();
-            BigDecimal price = currentPriceRepo.findByInstrumentId(instrumentId)
-                .orElseThrow(() -> new IllegalStateException("No current price is available for instrument " + instrumentId))
-                .getPrice();
-            BigDecimal proceeds = price.multiply(BigDecimal.valueOf(quantity));
-            liquidationValue = liquidationValue.add(proceeds);
-
-            OrderEntity liquidationOrder = new OrderEntity();
-            liquidationOrder.setSide("SELL");
-            liquidationOrder.setAccountId(source);
-            InstrumentEntity instrument = new InstrumentEntity();
-            instrument.setInstrumentId(instrumentId);
-            liquidationOrder.setInstrumentId(instrument);
-            liquidationOrder.setStatus("FILLED");
-            liquidationOrder.setQuantity(quantity);
-            liquidationOrder.setTotalPrice(proceeds);
-            liquidationOrder.setCreatedAt(happenedAt);
-            liquidationOrder.setUpdatedAt(happenedAt);
-            ordersRepo.insert(liquidationOrder);
-            historicalOrdersService.captureOrderSnapshot(liquidationOrder, happenedAt);
-
-            positionsRepo.update(position.getPositionId(), accountId, instrumentId, 0,
-                BigDecimal.ZERO, position.getAveragePrice(), position.getOpenedAt(), happenedAt);
-        }
-
-        BigDecimal sourceBalance = source.getBalance().add(liquidationValue);
-        if (sourceBalance.compareTo(BigDecimal.ZERO) > 0) {
-            transactionsRepo.insertTransfer(sourceBalance, "OUT", accountId, "WITHDRAWAL", happenedAt);
-        }
-
-        repo.update(accountId, userId, BigDecimal.ZERO, source.getPortfolioSize().getValue(),
-            source.getTradeType(), false);
-        return "Success";
+        return close(accountId, null, true);
     }
 
     private void validateClosable(AccountsEntity account) {

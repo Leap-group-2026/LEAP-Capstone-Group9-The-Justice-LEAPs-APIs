@@ -18,6 +18,7 @@ import io.github.cdimascio.dotenv.DotenvException;
 
 import repos.InstrumentRepo;
 import dto.InstrumentWithPrice;
+import dto.response.NewsArticle;
 import entities.InstrumentEntity;
 import exception.ResourceNotFoundException;
 import java.math.BigDecimal;
@@ -109,6 +110,32 @@ public class InstrumentService {
             return closingPrices;
         } catch (Exception e) {
             throw new IllegalStateException("Unable to retrieve stock bars from Alpaca", e);
+        }
+    }
+
+    public List<NewsArticle> getNews() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("APCA-API-KEY-ID", getEnvValue("ALPACA_KEY"));
+        headers.set("APCA-API-SECRET-KEY", getEnvValue("ALPACA_SECRET"));
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        try {
+            ResponseEntity<String> response = template.exchange(
+                "https://data.alpaca.markets/v1beta1/news?limit=10",
+                HttpMethod.GET,
+                entity,
+                String.class);
+            JsonNode news = objectMapper.readTree(response.getBody()).path("news");
+            List<NewsArticle> articles = new ArrayList<>();
+
+            news.forEach(article -> articles.add(new NewsArticle(
+                article.path("author").asText(),
+                article.path("headline").asText(),
+                article.path("url").asText())));
+
+            return articles;
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to retrieve market news from Alpaca", e);
         }
     }
 }

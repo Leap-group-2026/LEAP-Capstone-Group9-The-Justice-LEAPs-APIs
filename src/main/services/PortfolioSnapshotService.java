@@ -3,6 +3,7 @@ package services;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -11,6 +12,7 @@ import entities.AccountsEntity;
 import repos.AccountsRepo;
 import repos.PortfolioSnapshotRepo;
 import repos.PositionsRepo;
+import entities.PortfolioSnapshotEntity;
 
 @Service
 public class PortfolioSnapshotService {
@@ -36,5 +38,13 @@ public class PortfolioSnapshotService {
             BigDecimal portfolioValue = positionsRepo.findCurrentPortfolioValue(account.getAccountId());
             portfolioSnapshotRepo.insert(account.getAccountId(), portfolioValue, snapshotDate);
         }
+    }
+
+    public List<PortfolioSnapshotEntity> findAll() {
+        return portfolioSnapshotRepo.findAll();
+    }
+
+    public List<PortfolioSnapshotEntity> findByAccountId(Integer accountId) {
+        return portfolioSnapshotRepo.findByAccountId(accountId);
     }
 }

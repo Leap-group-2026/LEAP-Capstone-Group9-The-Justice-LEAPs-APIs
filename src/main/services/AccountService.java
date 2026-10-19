@@ -86,6 +86,10 @@ public class AccountService {
             .orElseThrow(() -> new IllegalStateException("Not a valid user"));
         validateClosable(source);
 
+        if (source.getBalance().compareTo(BigDecimal.ZERO) != 0) {
+            throw new IllegalStateException("In order to close an account your balance must be exactly $0, please sell your holdings");
+        }
+
         Integer userId = source.getUserId().getUserId();
 
         LocalDateTime happenedAt = ZonedDateTime.now(clock)

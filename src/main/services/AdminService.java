@@ -8,6 +8,7 @@ import repos.UserRepo;
 import dto.response.OrderAdminResponse;
 import dto.response.AdminLoginResponse;
 import dto.response.TopBoughtStockResponse;
+import dto.response.ActiveAccountAnalyticsResponse;
 import dto.response.TransactionHistoryResponse;
 import dto.response.AdminUserLookupResponse;
 import exception.InvalidCredentialsException;
@@ -56,7 +57,7 @@ public class AdminService {
         }
         switch(email.toLowerCase().charAt(0)) {
             case 's':
-                entity.setRole("SUPER ADMIN");
+            entity.setRole("SUPER ADMIN");
                 break;
             case 'a':
                 entity.setRole("ADMIN");
@@ -103,6 +104,10 @@ public class AdminService {
 
     public List<TopBoughtStockResponse> getTopBoughtStocks() {
         return warehouseAnalyticsService.getTopBoughtStocks();
+    }
+
+    public List<ActiveAccountAnalyticsResponse> getMostActiveAccounts() {
+        return warehouseAnalyticsService.getMostActiveAccounts();
     }
 
     public AdminUserLookupResponse findUserByEmail(String email, AccountService accountService) {

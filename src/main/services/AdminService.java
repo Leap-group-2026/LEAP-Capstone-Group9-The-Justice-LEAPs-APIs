@@ -56,7 +56,7 @@ public class AdminService {
         }
         switch(email.toLowerCase().charAt(0)) {
             case 's':
-                entity.setRole("SUPER ADMIN");
+            entity.setRole("SUPER ADMIN");
                 break;
             case 'a':
                 entity.setRole("ADMIN");

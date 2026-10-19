@@ -108,7 +108,6 @@ public class AdminController {
     public List<TransactionHistoryResponse> getAccountTransactions(@PathVariable Integer accountId) {
         return service.getTransactionsByAccountId(accountId);
     }
-
     @Operation(summary = "Retrieve all accounts across all users",
         description = "Returns a list of all active accounts for admin monitoring and auditing")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved all accounts")

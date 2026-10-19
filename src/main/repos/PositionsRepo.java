@@ -56,6 +56,19 @@ public interface PositionsRepo {
             "WHERE a.account_id = #{accountId} " +
             "GROUP BY a.balance")
     BigDecimal findCurrentPortfolioValue(@Param("accountId") Integer accountId);
+        @Select("SELECT p.* FROM positions p WHERE p.account_id = #{accountId} AND p.closed_at IS NULL " +
+                        "ORDER BY p.position_id ASC FOR UPDATE")
+        @Results({
+                @Result(column = "position_id", property = "positionId"),
+                @Result(column = "account_id", property = "account.accountId"),
+                @Result(column = "instrument_id", property = "instrument.instrumentId"),
+                @Result(column = "quantity", property = "quantity"),
+                @Result(column = "opened_at", property = "openedAt"),
+                @Result(column = "closed_at", property = "closedAt"),
+                @Result(column = "total_price", property = "totalPrice"),
+                @Result(column = "average_price", property = "averagePrice")
+        })
+        List<PositionsEntity> findOpenByAccountForUpdate(@Param("accountId") Integer accountId);
 
     @Select("SELECT p.position_id, p.account_id, " +
             "i.instrument_id, i.ticker, i.asset_name, i.asset_type, i.currency, " +

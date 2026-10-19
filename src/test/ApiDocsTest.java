@@ -29,7 +29,7 @@ import java.util.Map;
 public class ApiDocsTest {
 
     // The order Swagger UI shows the groups in (set in OpenApiConfig)
-    private static final List<String> TAGS = List.of("Users", "Transactions", "Orders", "Accounts", "Instruments", "Positions", "Sessions (internal)", "Admin");
+    private static final List<String> TAGS = List.of("Users", "Transactions", "Orders", "Accounts", "Instruments", "Positions", "Portfolio Snapshots", "Sessions (internal)", "Admin");
 
     // method -> path, one entry per endpoint found by scanning the controllers
     private static final List<Map.Entry<String, String>> ENDPOINTS = List.of(
@@ -55,6 +55,8 @@ public class ApiDocsTest {
         Map.entry("get", "/positions/{id}"),
         Map.entry("post", "/positions"),
         Map.entry("get", "/positions/account/{accountId}"),
+        Map.entry("get", "/portfolio-snapshots"),
+        Map.entry("get", "/portfolio-snapshots/account/{accountId}"),
         Map.entry("post", "/admin"),
         Map.entry("post", "/admin/login"),
         Map.entry("get", "/admin/orders"),

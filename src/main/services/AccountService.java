@@ -3,16 +3,26 @@ package services;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import repos.AccountsRepo;
 import repos.UserRepo;
 import repos.OrdersRepo;
 import repos.InstrumentRepo;
+import repos.PositionsRepo;
+import repos.CurrentPriceRepo;
+import repos.TransactionsRepo;
 import entities.AccountsEntity;
 import entities.OrderEntity;
+import entities.InstrumentEntity;
+import entities.PositionsEntity;
 import dto.response.AccountResponse;
 import dto.response.OrderAccountResponse;
 import exception.ResourceNotFoundException;
 import java.time.LocalDateTime;
+import java.time.Clock;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,12 +32,24 @@ public class AccountService {
     private UserRepo userRepository;
     private OrdersRepo ordersRepo;
     private InstrumentRepo instrumentRepo;
+    private PositionsRepo positionsRepo;
+    private CurrentPriceRepo currentPriceRepo;
+    private TransactionsRepo transactionsRepo;
+    private HistoricalOrdersService historicalOrdersService;
+    private Clock clock;
     
-    public AccountService(AccountsRepo repo, UserRepo userRepository, OrdersRepo ordersRepo, InstrumentRepo instrumentRepo) {
+    public AccountService(AccountsRepo repo, UserRepo userRepository, OrdersRepo ordersRepo, InstrumentRepo instrumentRepo,
+                          PositionsRepo positionsRepo, CurrentPriceRepo currentPriceRepo, TransactionsRepo transactionsRepo,
+                          HistoricalOrdersService historicalOrdersService, Clock clock) {
         this.repo = repo;
         this.userRepository = userRepository;
         this.ordersRepo = ordersRepo;
         this.instrumentRepo = instrumentRepo;
+        this.positionsRepo = positionsRepo;
+        this.currentPriceRepo = currentPriceRepo;
+        this.transactionsRepo = transactionsRepo;
+        this.historicalOrdersService = historicalOrdersService;
+        this.clock = clock;
     }
 
     public AccountsEntity findById(Integer id) {
@@ -58,8 +80,63 @@ public class AccountService {
     }
 
 
+    @Transactional
     public String closeAccountAsAdmin(Integer accountId) {
-        return close(accountId, null, true);
+        AccountsEntity source = repo.findByIdIncludingInactiveForUpdate(accountId)
+            .orElseThrow(() -> new IllegalStateException("Not a valid user"));
+        validateClosable(source);
+
+        Integer userId = source.getUserId().getUserId();
+
+        LocalDateTime happenedAt = ZonedDateTime.now(clock)
+            .withZoneSameInstant(ZoneId.of("America/New_York"))
+            .toLocalDateTime();
+        BigDecimal liquidationValue = BigDecimal.ZERO;
+
+        for (PositionsEntity position : positionsRepo.findOpenByAccountForUpdate(accountId)) {
+            Integer quantity = position.getQuantity();
+            Integer instrumentId = position.getInstrumentId().getInstrumentId();
+            BigDecimal price = currentPriceRepo.findByInstrumentId(instrumentId)
+                .orElseThrow(() -> new IllegalStateException("No current price is available for instrument " + instrumentId))
+                .getPrice();
+            BigDecimal proceeds = price.multiply(BigDecimal.valueOf(quantity));
+            liquidationValue = liquidationValue.add(proceeds);
+
+            OrderEntity liquidationOrder = new OrderEntity();
+            liquidationOrder.setSide("SELL");
+            liquidationOrder.setAccountId(source);
+            InstrumentEntity instrument = new InstrumentEntity();
+            instrument.setInstrumentId(instrumentId);
+            liquidationOrder.setInstrumentId(instrument);
+            liquidationOrder.setStatus("FILLED");
+            liquidationOrder.setQuantity(quantity);
+            liquidationOrder.setTotalPrice(proceeds);
+            liquidationOrder.setCreatedAt(happenedAt);
+            liquidationOrder.setUpdatedAt(happenedAt);
+            ordersRepo.insert(liquidationOrder);
+            historicalOrdersService.captureOrderSnapshot(liquidationOrder, happenedAt);
+
+            positionsRepo.update(position.getPositionId(), accountId, instrumentId, 0,
+                BigDecimal.ZERO, position.getAveragePrice(), position.getOpenedAt(), happenedAt);
+        }
+
+        BigDecimal sourceBalance = source.getBalance().add(liquidationValue);
+        if (sourceBalance.compareTo(BigDecimal.ZERO) > 0) {
+            transactionsRepo.insertTransfer(sourceBalance, "OUT", accountId, "WITHDRAWAL", happenedAt);
+        }
+
+        repo.update(accountId, userId, BigDecimal.ZERO, source.getPortfolioSize().getValue(),
+            source.getTradeType(), false);
+        return "Success";
+    }
+
+    private void validateClosable(AccountsEntity account) {
+        if (account.getUserId() == null || account.getUserId().getUserId() == null) {
+            throw new IllegalStateException("Account user information is missing");
+        }
+        if (!account.getAccountActive()) {
+            throw new IllegalStateException("Account is already closed");
+        }
     }
 
     private String close(Integer accountId, Integer currentUserId, boolean asAdmin) {

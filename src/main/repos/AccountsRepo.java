@@ -115,6 +115,19 @@ public interface AccountsRepo {
     })
     Optional<AccountsEntity> findByIdIncludingInactive(Integer accountId);
 
+    @Select("SELECT a.account_id, a.user_id, a.balance, a.portfolio_size, a.trade_type, a.created_at, a.account_active " +
+            "FROM accounts a WHERE a.account_id = #{accountId} FOR UPDATE")
+        @Results({
+                @Result(column = "account_id", property = "accountId", id = true),
+                @Result(column = "balance", property = "balance"),
+                @Result(column = "portfolio_size", property = "portfolioSize"),
+                @Result(column = "trade_type", property = "trade_type"),
+                @Result(column = "created_at", property = "createdAt"),
+                @Result(column = "account_active", property = "accountActive"),
+                @Result(column = "user_id", property = "user.userId")
+        })
+        Optional<AccountsEntity> findByIdIncludingInactiveForUpdate(Integer accountId);
+
     @Delete("DELETE FROM accounts WHERE account_id = #{accountId}")
     void delete(Integer accountId);
 

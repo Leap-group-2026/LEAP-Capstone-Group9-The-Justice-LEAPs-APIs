@@ -52,6 +52,14 @@ public interface TransactionsRepo {
     @Options(useGeneratedKeys = true, keyProperty = "transactionId", keyColumn = "transaction_id")
     void insertReturningId(TransactionsEntity entity);
 
+    @Insert("INSERT INTO transactions (amount, side, account_id, transaction_type, happened_at) " +
+            "VALUES (#{amount}, #{side}, #{accountId}, #{transactionType}, #{happenedAt})")
+    void insertTransfer(@Param("amount") BigDecimal amount,
+                        @Param("side") String side,
+                        @Param("accountId") Integer accountId,
+                        @Param("transactionType") String transactionType,
+                        @Param("happenedAt") LocalDateTime happenedAt);
+
     @Select("SELECT t.transaction_id, t.transaction_type, t.amount, t.side, t.account_id, t.happened_at " +
             "FROM transactions t WHERE t.transaction_id = #{transactionId}")
     Optional<TransactionHistoryResponse> findHistoryById(@Param("transactionId") Integer transactionId);

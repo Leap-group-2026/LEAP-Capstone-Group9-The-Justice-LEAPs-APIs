@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import services.InstrumentService;
 import dto.InstrumentWithPrice;
+import dto.response.NewsArticle;
 import dto.request.ForeignExchangePriceRequest;
 import dto.response.ValidationError;
 import jakarta.validation.Valid;
@@ -79,6 +80,14 @@ public class InstrumentController {
         @Parameter(description = "End date in YYYY-MM-DD format", example = "2026-10-01")
         @RequestParam String end) {
         return service.getBarNumbers(symbols, timeframe, start, end);
+    }
+
+    @Operation(summary = "Get the latest market news")
+    @ApiResponse(responseCode = "200", description = "Latest market news retrieved",
+                 content = @Content(mediaType = "application/json"))
+    @GetMapping("/news")
+    public List<NewsArticle> getNews() {
+        return service.getNews();
     }
 
     @Operation(summary = "Get a foreign exchange price from a JSON currency pair")

@@ -47,6 +47,14 @@ public interface PositionsRepo {
     })
     List<PositionsEntity> findByAccount(@Param("accountId") Integer accountId);
 
+    @Select("SELECT COALESCE(SUM(CASE WHEN i.asset_type = 'FOREX' THEN p.total_price " +
+            "ELSE p.quantity * cp.price END), 0) " +
+            "FROM positions p " +
+            "JOIN instruments i ON p.instrument_id = i.instrument_id " +
+            "LEFT JOIN current_prices cp ON p.instrument_id = cp.instrument_id " +
+            "WHERE p.account_id = #{accountId} AND p.closed_at IS NULL")
+    BigDecimal findCurrentPortfolioValue(@Param("accountId") Integer accountId);
+
     @Select("SELECT p.position_id, p.account_id, " +
             "i.instrument_id, i.ticker, i.asset_name, i.asset_type, i.currency, " +
             "p.quantity, p.average_price, p.total_price, p.opened_at " +

@@ -431,6 +431,21 @@ public class SecurityTest {
     }
 
     @Test
+    void anAdminCanReadMoneyMovedAnalytics() throws Exception {
+        mockMvc.perform(as(adminToken(ADMIN_ID), get("/admin/analytics/money-moved"))).andExpect(status().isOk());
+    }
+
+    @Test
+    void aClientCannotReadMoneyMovedAnalytics() throws Exception {
+        mockMvc.perform(as(clientToken(OWNER_ID), get("/admin/analytics/money-moved"))).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void moneyMovedAnalyticsWithoutATokenIs401() throws Exception {
+        expect401(get("/admin/analytics/money-moved"), "unauthenticated");
+    }
+
+    @Test
     void forceLogoutWithoutATokenIs401() throws Exception {
         expect401(post("/admin/users/" + OTHER_ID + "/logout"), "unauthenticated");
 

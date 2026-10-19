@@ -24,6 +24,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.List;
 import dto.response.AdminLoginResponse;
 import dto.response.TopBoughtStockResponse;
+import dto.response.DailyMoneyMovedResponse;
+import services.OrderAnalyticsService;
 import dto.response.TransactionHistoryResponse;
 import dto.response.AdminUserLookupResponse;
 
@@ -37,13 +39,15 @@ public class AdminController {
     private AccountService accountService;
     private OrderService orderService;
     private SessionService sessionService;
-    public AdminController(AdminService service, PasswordEncoder passwordEncoder, EmailService emailService, AccountService accountService, OrderService orderService, SessionService sessionService){
+    private OrderAnalyticsService orderAnalyticsService;
+    public AdminController(AdminService service, PasswordEncoder passwordEncoder, EmailService emailService, AccountService accountService, OrderService orderService, SessionService sessionService, OrderAnalyticsService orderAnalyticsService){
         this.service = service;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.accountService = accountService;
         this.orderService = orderService;
         this.sessionService = sessionService;
+        this.orderAnalyticsService = orderAnalyticsService;
     }
     @Operation(summary = "Create an admin",
         description = "Creates an administrator with a bcrypt-hashed password. The username must be unique "
@@ -168,6 +172,19 @@ public class AdminController {
     @GetMapping("/analytics/top-bought")
     public List<TopBoughtStockResponse> getTopBoughtStocks() {
         return service.getTopBoughtStocks();
+    }
+
+    @Operation(summary = "Money moved by filled orders per day",
+        description = "Sums total_price of FILLED orders by fill day (updated_at, Eastern time) and side, over the last "
+            + "`days` days including today. Days with no fills are omitted.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Daily totals, oldest first"),
+        @ApiResponse(responseCode = "400", description = "days is not between 1 and 365",
+            content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "days must be between 1 and 365")))
+    })
+    @GetMapping("/analytics/money-moved")
+    public List<DailyMoneyMovedResponse> getMoneyMoved(@RequestParam(defaultValue = "30") int days) {
+        return orderAnalyticsService.moneyMoved(days);
     }
 
     @Operation(summary = "Find a user by email with their accounts")

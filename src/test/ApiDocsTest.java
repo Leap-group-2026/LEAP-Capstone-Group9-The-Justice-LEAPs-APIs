@@ -72,6 +72,7 @@ public class ApiDocsTest {
         Map.entry("get", "/admin/analytics/top-bought"),
         Map.entry("get", "/admin/analytics/active-accounts"),
         Map.entry("get", "/admin/analytics/money-moved"),
+        Map.entry("get", "/admin/analytics/order-statuses"),
         Map.entry("post", "/admin/users/{id}/logout"),
         Map.entry("get", "/admin/users/by-email"),
         Map.entry("patch", "/user"),

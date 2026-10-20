@@ -9,6 +9,7 @@ import entities.AdminEntity;
 import entities.UserEntity;
 import dto.request.AdminCreation;
 import dto.response.OrderAdminResponse;
+import dto.response.OrderStatusAnalyticsResponse;
 import dto.response.AccountResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -192,6 +193,16 @@ public class AdminController {
     @GetMapping("/analytics/money-moved")
     public List<DailyMoneyMovedResponse> getMoneyMoved(@RequestParam(defaultValue = "30") int days) {
         return orderAnalyticsService.moneyMoved(days);
+    }
+
+    @Operation(summary = "Get order statuses from the last 30 days")
+    @ApiResponse(
+        responseCode = "200",
+        description = "Order counts and percentages grouped by status"
+    )
+    @GetMapping("/analytics/order-statuses")
+    public List<OrderStatusAnalyticsResponse> getOrderStatusesLast30Days() {
+        return service.getOrderStatusesLast30Days();
     }
 
     @Operation(summary = "Find a user by email with their accounts")

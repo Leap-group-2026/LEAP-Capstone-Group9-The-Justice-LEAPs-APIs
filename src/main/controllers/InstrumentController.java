@@ -82,6 +82,24 @@ public class InstrumentController {
         return service.getBarNumbers(symbols, timeframe, start, end);
     }
 
+    @Operation(summary = "Get crypto bar closing prices",
+               description = "Retrieves historical crypto bars from Alpaca and returns their closing prices.")
+    @ApiResponse(responseCode = "200", description = "Crypto bar closing prices retrieved",
+                 content = @Content(mediaType = "application/json",
+                     array = @ArraySchema(schema = @Schema(implementation = BigDecimal.class))))
+    @GetMapping("/crypto-bars")
+    public List<BigDecimal> getCryptoBars(
+        @Parameter(description = "Comma-separated crypto symbols", example = "BTC/USD,ETH/USD,SOL/USD")
+        @RequestParam String symbols,
+        @Parameter(description = "Bar timeframe, such as 1Day", example = "1Day")
+        @RequestParam String timeframe,
+        @Parameter(description = "Start date in YYYY-MM-DD format", example = "2026-09-01")
+        @RequestParam String start,
+        @Parameter(description = "End date in YYYY-MM-DD format", example = "2026-10-01")
+        @RequestParam String end) {
+        return service.getCryptoBarNumbers(symbols, timeframe, start, end);
+    }
+
     @Operation(summary = "Get the latest market news")
     @ApiResponse(responseCode = "200", description = "Latest market news retrieved",
                  content = @Content(mediaType = "application/json"))

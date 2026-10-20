@@ -82,6 +82,9 @@ public class AccountController {
     @PatchMapping("/close/{id}")
     public ResponseEntity<String> closeAccount(@PathVariable Integer id) {
         try {
+            if (authorizationUtil.isAdmin()) {
+                return ResponseEntity.ok(accountService.closeAccountAsAdmin(id));
+            }
             Integer clientId = authorizationUtil.getCurrentClientId();
             if (clientId == null) {
                 throw new AccessDeniedException("Only the account owner can close it");

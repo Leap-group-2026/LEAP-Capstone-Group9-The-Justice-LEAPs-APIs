@@ -6,6 +6,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import repos.AdminRepo;
 import repos.UserRepo;
 import dto.response.OrderAdminResponse;
+import dto.response.OrderStatusAnalyticsResponse;
 import dto.response.AdminLoginResponse;
 import dto.response.TopBoughtStockResponse;
 import dto.response.ActiveAccountAnalyticsResponse;
@@ -109,6 +110,10 @@ public class AdminService {
     public List<ActiveAccountAnalyticsResponse> getMostActiveAccounts() {
         return warehouseAnalyticsService.getMostActiveAccounts();
     }
+
+    public List<OrderStatusAnalyticsResponse> getOrderStatusesLast30Days() {
+        return warehouseAnalyticsService.getOrderStatusesLast30Days();
+}
 
     public AdminUserLookupResponse findUserByEmail(String email, AccountService accountService) {
         UserEntity user = userRepo.findByEmail(email.trim())

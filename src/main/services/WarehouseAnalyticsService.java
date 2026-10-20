@@ -2,6 +2,7 @@ package services;
 
 import dto.response.TopBoughtStockResponse;
 import dto.response.ActiveAccountAnalyticsResponse;
+import dto.response.OrderStatusAnalyticsResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -95,6 +96,46 @@ public class WarehouseAnalyticsService {
             return accounts;
         } catch (SQLException exception) {
             throw new IllegalStateException("Unable to load active account analytics", exception);
+        }
+    }
+
+    public List<OrderStatusAnalyticsResponse> getOrderStatusesLast30Days() {
+        String sql = """
+            SELECT status,
+                   COUNT(*) AS order_count,
+                   ROUND(
+                       COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (),
+                       1
+                   ) AS percentage
+            FROM dw.ribbit_trade_activity
+            WHERE order_created_at >= CURRENT_TIMESTAMP - INTERVAL '30 days'
+            GROUP BY status
+            ORDER BY status
+            """;
+
+        List<OrderStatusAnalyticsResponse> statuses = new ArrayList<>();
+
+        try (
+            Connection connection = DriverManager.getConnection(
+                warehouseUrl, warehouseUsername, warehousePassword
+            );
+            PreparedStatement statement = connection.prepareStatement(sql);
+            ResultSet results = statement.executeQuery()
+        ) {
+            while (results.next()) {
+                statuses.add(new OrderStatusAnalyticsResponse(
+                    results.getString("status"),
+                    results.getLong("order_count"),
+                    results.getBigDecimal("percentage")
+                ));
+            }
+
+            return statuses;
+        } catch (SQLException exception) {
+            throw new IllegalStateException(
+                "Unable to load order status analytics",
+                exception
+            );
         }
     }
 }

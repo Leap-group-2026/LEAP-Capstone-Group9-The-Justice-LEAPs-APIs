@@ -50,6 +50,9 @@ public class TransactionsService {
     @Transactional
     public FundsTransferResponse deposit(Integer accountId, Integer userId, BigDecimal amount) {
         AccountsEntity account = lockOwnedActiveAccount(accountId, userId);
+        if (Boolean.TRUE.equals(account.getAccountFrozen())) {
+            throw new IllegalArgumentException("Deposits are not allowed while the account is frozen");
+        }
         BigDecimal newBalance = account.getBalance().add(amount);
         return record(account, amount, newBalance, "IN", "DEPOSIT");
     }

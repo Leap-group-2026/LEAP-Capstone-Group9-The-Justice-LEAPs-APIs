@@ -11,8 +11,9 @@ public class AccountResponse {
     private String tradeType;
     private LocalDateTime createdAt;
     private Boolean accountActive;
+    private Boolean accountFrozen;
 
-    public AccountResponse(Integer accountId, Integer userId, BigDecimal balance, String portfolioSize, String tradeType, LocalDateTime createdAt, Boolean accountActive) {
+    public AccountResponse(Integer accountId, Integer userId, BigDecimal balance, String portfolioSize, String tradeType, LocalDateTime createdAt, Boolean accountActive, Boolean accountFrozen) {
         this.accountId = accountId;
         this.userId = userId;
         this.balance = balance;
@@ -20,6 +21,7 @@ public class AccountResponse {
         this.tradeType = tradeType;
         this.createdAt = createdAt;
         this.accountActive = accountActive;
+        this.accountFrozen = accountFrozen;
     }
 
     public Integer getAccountId() {
@@ -72,5 +74,13 @@ public class AccountResponse {
 
     public void setAccountActive(Boolean accountActive) {
         this.accountActive = accountActive;
+    }
+
+    public Boolean getAccountFrozen() {
+        return accountFrozen;
+    }
+
+    public void setAccountFrozen(Boolean accountFrozen) {
+        this.accountFrozen = accountFrozen;
     }
 }

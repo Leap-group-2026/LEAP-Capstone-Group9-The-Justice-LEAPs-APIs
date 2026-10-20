@@ -114,6 +114,11 @@ public class OrderProcessingService {
             return;
         }
 
+        if (Boolean.TRUE.equals(account.getAccountFrozen()) && "BUY".equals(order.getSide())) {
+            decline(order, order.getTotalPrice(), happenedAt, "account is frozen for BUY orders");
+            return;
+        }
+
         BigDecimal executionTotal = OrderPriceCalculator.calculateExecutionTotal(
                 currentPrice.get().getPrice(),
                 order.getQuantity()

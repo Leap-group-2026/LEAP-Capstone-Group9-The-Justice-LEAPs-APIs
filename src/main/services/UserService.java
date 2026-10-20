@@ -332,6 +332,9 @@ public class UserService {
         String[] parts = baseAndExchange.split("/");
         accountsRepo.findByIdForUpdate(transactionRequest.accountId());
         AccountsEntity account = accountsRepo.findById(transactionRequest.accountId()).orElseThrow(() -> new IllegalArgumentException("Account not found"));
+        if (Boolean.TRUE.equals(account.getAccountFrozen())) {
+            throw new IllegalArgumentException("Currency exchanges are not allowed while the account is frozen");
+        }
 
         if (parts.length < 2) throw new IllegalArgumentException("Invalid exchange rate format");
         if (!parts[0].equals("USD")){

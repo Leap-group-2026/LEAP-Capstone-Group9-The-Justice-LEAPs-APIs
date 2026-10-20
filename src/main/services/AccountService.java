@@ -66,6 +66,9 @@ public class AccountService {
         if (entity.getAccountActive() == null) {
             entity.setAccountActive(true);
         }
+        if (entity.getAccountFrozen() == null) {
+            entity.setAccountFrozen(false);
+        }
 
         if (entity.getCreatedAt() == null) {
             entity.setCreatedAt(LocalDateTime.now());
@@ -77,6 +80,24 @@ public class AccountService {
     }
     public String closeAccount(Integer accountId, Integer currentUserId) {
         return close(accountId, currentUserId, false);
+    }
+
+    @Transactional
+    public String freezeAccountAsAdmin(Integer accountId) {
+        AccountsEntity account = repo.findByIdIncludingInactive(accountId)
+            .orElseThrow(() -> new IllegalStateException("Not a valid user"));
+        validateClosable(account);
+        repo.freeze(accountId);
+        return "Success";
+    }
+
+    @Transactional
+    public String unfreezeAccountAsAdmin(Integer accountId) {
+        AccountsEntity account = repo.findByIdIncludingInactive(accountId)
+            .orElseThrow(() -> new IllegalStateException("Not a valid user"));
+        validateClosable(account);
+        repo.unfreeze(accountId);
+        return "Success";
     }
 
 
@@ -192,7 +213,8 @@ public class AccountService {
                 account.getPortfolioSize().getValue(),
                 account.getTradeType(),
                 account.getCreatedAt(),
-                account.getAccountActive()
+                account.getAccountActive(),
+                account.getAccountFrozen()
             ))
             .collect(Collectors.toList());
     }
@@ -224,7 +246,8 @@ public class AccountService {
                 account.getPortfolioSize().getValue(),
                 account.getTradeType(),
                 account.getCreatedAt(),
-                account.getAccountActive()
+                account.getAccountActive(),
+                account.getAccountFrozen()
             ))
             .collect(Collectors.toList());
     }

@@ -18,6 +18,9 @@ public class BuyOrderValidator {
     private static final LocalTime MARKET_CLOSE = LocalTime.of(16, 0);
 
     public void validate(CreateOrderRequest request, AccountsEntity account, InstrumentWithPrice instrument, ZonedDateTime submittedAt) {
+        if (Boolean.TRUE.equals(account.getAccountFrozen())) {
+            throw new InvalidOrderException("account", "BUY orders are not allowed while the account is frozen");
+        }
         validateBalance(request, account, instrument);
         validateMarketHours(submittedAt);
     }

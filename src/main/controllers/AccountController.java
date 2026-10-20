@@ -65,10 +65,7 @@ public class AccountController {
     }
     
     @Operation(summary = "Close an account",
-        description = "For a client, soft-deletes the account only when its balance is exactly 0. "
-            + "For an admin, automatically liquidates open positions at current prices, withdraws the remaining "
-            + "balance to the bank account on file, and then soft-deletes the account. "
-            + "Closing an account that is already closed is rejected with an explicit message.")
+        description = "For the account owner, closes the account only when its balance is exactly 0. ")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Account closed",
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Success"))),
@@ -85,17 +82,54 @@ public class AccountController {
     @PatchMapping("/close/{id}")
     public ResponseEntity<String> closeAccount(@PathVariable Integer id) {
         try {
-            String result;
-            if (authorizationUtil.isAdmin()) {
-                result = accountService.closeAccountAsAdmin(id);
-            } else {
-                Integer clientId = authorizationUtil.getCurrentClientId();
-                if (clientId == null) {
-                    throw new AccessDeniedException("Only the account's owner or an admin can close it");
-                }
-                result = accountService.closeAccount(id, clientId);
+            Integer clientId = authorizationUtil.getCurrentClientId();
+            if (clientId == null) {
+                throw new AccessDeniedException("Only the account owner can close it");
             }
-            return ResponseEntity.ok(result);
+            return ResponseEntity.ok(accountService.closeAccount(id, clientId));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Freeze an account",
+        description = "Admin-only operation that freezes an active account. Deposits and BUY orders are blocked, "
+            + "while withdrawals and SELL orders remain allowed.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Account frozen",
+            content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Success"))),
+        @ApiResponse(responseCode = "400", description = "Account is missing or already closed",
+            content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Account is already closed"))),
+        @ApiResponse(responseCode = "403", description = "Only an admin can freeze an account")
+    })
+    @PatchMapping("/freeze/{id}")
+    public ResponseEntity<String> freezeAccount(@PathVariable Integer id) {
+        if (!authorizationUtil.isAdmin()) {
+            throw new AccessDeniedException("Only an admin can freeze an account");
+        }
+        try {
+            return ResponseEntity.ok(accountService.freezeAccountAsAdmin(id));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Unfreeze an account",
+        description = "Admin-only operation that unfreezes an active account and restores deposits and BUY orders.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Account unfrozen",
+            content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Success"))),
+        @ApiResponse(responseCode = "400", description = "Account is missing or already closed",
+            content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Account is already closed"))),
+        @ApiResponse(responseCode = "403", description = "Only an admin can unfreeze an account")
+    })
+    @PatchMapping("/unfreeze/{id}")
+    public ResponseEntity<String> unfreezeAccount(@PathVariable Integer id) {
+        if (!authorizationUtil.isAdmin()) {
+            throw new AccessDeniedException("Only an admin can unfreeze an account");
+        }
+        try {
+            return ResponseEntity.ok(accountService.unfreezeAccountAsAdmin(id));
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }

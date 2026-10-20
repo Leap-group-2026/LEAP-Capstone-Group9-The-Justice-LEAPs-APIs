@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 
 @Mapper
 public interface AccountsRepo {
-    @Select("SELECT a.account_id, a.user_id, a.balance, a.portfolio_size, a.trade_type, a.created_at, a.account_active, " +
+        @Select("SELECT a.account_id, a.user_id, a.balance, a.portfolio_size, a.trade_type, a.created_at, a.account_active, a.account_frozen, " +
             "u.user_id, u.name, u.email, u.date_of_birth, u.address, u.ssn_hash, u.pass_hash " +
             "FROM accounts a LEFT JOIN user_info u ON a.user_id = u.user_id " +
             "WHERE a.account_id = #{accountId} AND a.account_active = true")
@@ -27,6 +27,7 @@ public interface AccountsRepo {
         @Result(column = "trade_type", property = "trade_type"),
         @Result(column = "created_at", property = "createdAt"),
         @Result(column = "account_active", property = "accountActive"),
+        @Result(column = "account_frozen", property = "accountFrozen"),
         @Result(column = "user_id", property = "user.userId"),
         @Result(column = "name", property = "user.name"),
         @Result(column = "email", property = "user.email"),
@@ -37,7 +38,7 @@ public interface AccountsRepo {
     })
     Optional<AccountsEntity> findById(Integer accountId);
 
-    @Select("SELECT a.account_id, a.user_id, a.balance, a.portfolio_size, a.trade_type, a.created_at, a.account_active, " +
+        @Select("SELECT a.account_id, a.user_id, a.balance, a.portfolio_size, a.trade_type, a.created_at, a.account_active, a.account_frozen, " +
             "u.user_id, u.name, u.email, u.date_of_birth, u.address, u.ssn_hash, u.pass_hash " +
             "FROM accounts a LEFT JOIN user_info u ON a.user_id = u.user_id " +
             "WHERE a.account_active = true")
@@ -48,6 +49,7 @@ public interface AccountsRepo {
         @Result(column = "trade_type", property = "trade_type"),
         @Result(column = "created_at", property = "createdAt"),
         @Result(column = "account_active", property = "accountActive"),
+        @Result(column = "account_frozen", property = "accountFrozen"),
         @Result(column = "user_id", property = "user.userId"),
         @Result(column = "name", property = "user.name"),
         @Result(column = "email", property = "user.email"),
@@ -58,7 +60,7 @@ public interface AccountsRepo {
     })
     List<AccountsEntity> findAll();
 
-    @Select("SELECT a.account_id, a.user_id, a.balance, a.portfolio_size, a.trade_type, a.created_at, a.account_active, " +
+        @Select("SELECT a.account_id, a.user_id, a.balance, a.portfolio_size, a.trade_type, a.created_at, a.account_active, a.account_frozen, " +
             "u.user_id, u.name, u.email, u.date_of_birth, u.address, u.ssn_hash, u.pass_hash " +
             "FROM accounts a LEFT JOIN user_info u ON a.user_id = u.user_id " +
             "WHERE a.user_id = #{userId} AND a.account_active = true")
@@ -69,6 +71,7 @@ public interface AccountsRepo {
         @Result(column = "trade_type", property = "trade_type"),
         @Result(column = "created_at", property = "createdAt"),
         @Result(column = "account_active", property = "accountActive"),
+        @Result(column = "account_frozen", property = "accountFrozen"),
         @Result(column = "user_id", property = "user.userId"),
         @Result(column = "name", property = "user.name"),
         @Result(column = "email", property = "user.email"),
@@ -79,8 +82,8 @@ public interface AccountsRepo {
     })
     List<AccountsEntity> findByUser(@Param("userId") Integer userId);
 
-    @Insert("INSERT INTO accounts (user_id, balance, portfolio_size, trade_type, created_at, account_active) " +
-            "VALUES (#{user.userId}, #{balance}, #{portfolioSize}, #{trade_type}, #{createdAt}, #{accountActive})")
+    @Insert("INSERT INTO accounts (user_id, balance, portfolio_size, trade_type, created_at, account_active, account_frozen) " +
+            "VALUES (#{user.userId}, #{balance}, #{portfolioSize}, #{trade_type}, #{createdAt}, #{accountActive}, COALESCE(#{accountFrozen}, false))")
     @Options(useGeneratedKeys = true, keyProperty = "accountId", keyColumn = "account_id")
     void insert(AccountsEntity account);
 
@@ -94,7 +97,7 @@ public interface AccountsRepo {
                 @Param("accountActive") Boolean accountActive);
 
     // Admin-only method: retrieve account including inactive ones
-    @Select("SELECT a.account_id, a.user_id, a.balance, a.portfolio_size, a.trade_type, a.created_at, a.account_active, " +
+        @Select("SELECT a.account_id, a.user_id, a.balance, a.portfolio_size, a.trade_type, a.created_at, a.account_active, a.account_frozen, " +
             "u.user_id, u.name, u.email, u.date_of_birth, u.address, u.ssn_hash, u.pass_hash " +
             "FROM accounts a LEFT JOIN user_info u ON a.user_id = u.user_id " +
             "WHERE a.account_id = #{accountId}")
@@ -105,6 +108,7 @@ public interface AccountsRepo {
         @Result(column = "trade_type", property = "trade_type"),
         @Result(column = "created_at", property = "createdAt"),
         @Result(column = "account_active", property = "accountActive"),
+        @Result(column = "account_frozen", property = "accountFrozen"),
         @Result(column = "user_id", property = "user.userId"),
         @Result(column = "name", property = "user.name"),
         @Result(column = "email", property = "user.email"),
@@ -115,7 +119,7 @@ public interface AccountsRepo {
     })
     Optional<AccountsEntity> findByIdIncludingInactive(Integer accountId);
 
-    @Select("SELECT a.account_id, a.user_id, a.balance, a.portfolio_size, a.trade_type, a.created_at, a.account_active " +
+        @Select("SELECT a.account_id, a.user_id, a.balance, a.portfolio_size, a.trade_type, a.created_at, a.account_active, a.account_frozen " +
             "FROM accounts a WHERE a.account_id = #{accountId} FOR UPDATE")
         @Results({
                 @Result(column = "account_id", property = "accountId", id = true),
@@ -124,6 +128,7 @@ public interface AccountsRepo {
                 @Result(column = "trade_type", property = "trade_type"),
                 @Result(column = "created_at", property = "createdAt"),
                 @Result(column = "account_active", property = "accountActive"),
+                @Result(column = "account_frozen", property = "accountFrozen"),
                 @Result(column = "user_id", property = "user.userId")
         })
         Optional<AccountsEntity> findByIdIncludingInactiveForUpdate(Integer accountId);
@@ -131,16 +136,23 @@ public interface AccountsRepo {
     @Delete("DELETE FROM accounts WHERE account_id = #{accountId}")
     void delete(Integer accountId);
 
-    @Select("SELECT account_id, balance, account_active FROM accounts WHERE account_id = #{accountId} FOR UPDATE")
+        @Select("SELECT account_id, balance, account_active, account_frozen FROM accounts WHERE account_id = #{accountId} FOR UPDATE")
+        @Results({
+                @Result(column = "account_id", property = "accountId", id = true),
+                @Result(column = "balance", property = "balance"),
+                @Result(column = "account_active", property = "accountActive"),
+                @Result(column = "account_frozen", property = "accountFrozen")
+        })
     Optional<AccountsEntity> findByIdForUpdate(Integer accountId);
 
 
-    @Select("SELECT account_id, user_id, balance, account_active FROM accounts " +
+        @Select("SELECT account_id, user_id, balance, account_active, account_frozen FROM accounts " +
             "WHERE account_id = #{accountId} AND user_id = #{userId} AND account_active = true FOR UPDATE")
     @Results({
         @Result(column = "account_id", property = "accountId", id = true),
         @Result(column = "balance", property = "balance"),
         @Result(column = "account_active", property = "accountActive"),
+        @Result(column = "account_frozen", property = "accountFrozen"),
         @Result(column = "user_id", property = "user.userId")
     })
     Optional<AccountsEntity> findOwnedActiveByIdForUpdate(@Param("accountId") Integer accountId,
@@ -148,6 +160,12 @@ public interface AccountsRepo {
 
     @Update("UPDATE accounts SET balance = #{balance} WHERE account_id = #{accountId}")
     void updateBalance(@Param("accountId") Integer accountId, @Param("balance") BigDecimal balance);
+
+        @Update("UPDATE accounts SET account_frozen = true WHERE account_id = #{accountId} AND account_active = true")
+        int freeze(@Param("accountId") Integer accountId);
+
+        @Update("UPDATE accounts SET account_frozen = false WHERE account_id = #{accountId} AND account_active = true")
+        int unfreeze(@Param("accountId") Integer accountId);
 }
 
 

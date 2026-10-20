@@ -113,6 +113,38 @@ public class InstrumentService {
         }
     }
 
+    public List<BigDecimal> getCryptoBarNumbers(String symbols, String timeframe, String start, String end) {
+        String url = UriComponentsBuilder
+            .fromHttpUrl("https://data.alpaca.markets/v1beta3/crypto/us/bars")
+            .queryParam("symbols", symbols)
+            .queryParam("timeframe", timeframe)
+            .queryParam("start", start)
+            .queryParam("end", end)
+            .toUriString();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("APCA-API-KEY-ID", getEnvValue("ALPACA_KEY"));
+        headers.set("APCA-API-SECRET-KEY", getEnvValue("ALPACA_SECRET"));
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        try {
+            ResponseEntity<String> response = template.exchange(url, HttpMethod.GET, entity, String.class);
+            JsonNode barsBySymbol = objectMapper.readTree(response.getBody()).path("bars");
+            List<BigDecimal> closingPrices = new ArrayList<>();
+
+            barsBySymbol.elements().forEachRemaining(bars -> bars.forEach(bar -> {
+                JsonNode close = bar.get("c");
+                if (close != null && !close.isNull()) {
+                    closingPrices.add(close.decimalValue());
+                }
+            }));
+
+            return closingPrices;
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to retrieve crypto bars from Alpaca", e);
+        }
+    }
+
     public List<NewsArticle> getNews() {
         HttpHeaders headers = new HttpHeaders();
         headers.set("APCA-API-KEY-ID", getEnvValue("ALPACA_KEY"));

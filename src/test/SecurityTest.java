@@ -445,6 +445,32 @@ public class SecurityTest {
         expect401(get("/admin/analytics/money-moved"), "unauthenticated");
     }
 
+    // The admin search routes: GET /admin/users, /admin/users/{id} and /admin/accounts/account/{accountId}
+    private String[] adminSearchRoutes() {
+        return new String[] {"/admin/users", "/admin/users/" + OTHER_ID, "/admin/accounts/account/" + OTHER_ACCOUNT};
+    }
+
+    @Test
+    void anAdminCanUseTheSearchRoutes() throws Exception {
+        for (String path : adminSearchRoutes()) {
+            mockMvc.perform(as(adminToken(ADMIN_ID), get(path))).andExpect(status().isOk());
+        }
+    }
+
+    @Test
+    void aClientCannotUseTheSearchRoutes() throws Exception {
+        for (String path : adminSearchRoutes()) {
+            mockMvc.perform(as(clientToken(OWNER_ID), get(path))).andExpect(status().isForbidden());
+        }
+    }
+
+    @Test
+    void theSearchRoutesWithoutATokenAre401() throws Exception {
+        for (String path : adminSearchRoutes()) {
+            expect401(get(path), "unauthenticated");
+        }
+    }
+
     @Test
     void forceLogoutWithoutATokenIs401() throws Exception {
         expect401(post("/admin/users/" + OTHER_ID + "/logout"), "unauthenticated");

@@ -12,6 +12,7 @@ import dto.response.TopBoughtStockResponse;
 import dto.response.ActiveAccountAnalyticsResponse;
 import dto.response.TransactionHistoryResponse;
 import dto.response.AdminUserLookupResponse;
+import dto.response.AdminUserSummaryResponse;
 import exception.InvalidCredentialsException;
 import exception.AdminRoleNotAssignedException;
 import entities.AdminEntity;
@@ -99,8 +100,8 @@ public class AdminService {
         return repo.getTransactionsByAccountId(accountId);
     }
 
-    public List<UserEntity> getAllUsers() {
-        return userRepo.findAll();
+    public List<AdminUserSummaryResponse> getAllUsers() {
+        return userRepo.findAllSummaries();
     }
 
     public List<TopBoughtStockResponse> getTopBoughtStocks() {
@@ -118,6 +119,16 @@ public class AdminService {
     public AdminUserLookupResponse findUserByEmail(String email, AccountService accountService) {
         UserEntity user = userRepo.findByEmail(email.trim())
             .orElseThrow(() -> new exception.ResourceNotFoundException("User", email));
+        return toLookup(user, accountService);
+    }
+
+    public AdminUserLookupResponse findUserById(Integer userId, AccountService accountService) {
+        UserEntity user = userRepo.findById(userId)
+            .orElseThrow(() -> new exception.ResourceNotFoundException("User", String.valueOf(userId)));
+        return toLookup(user, accountService);
+    }
+
+    private AdminUserLookupResponse toLookup(UserEntity user, AccountService accountService) {
         return new AdminUserLookupResponse(
             user.getUserId(),
             user.getName(),

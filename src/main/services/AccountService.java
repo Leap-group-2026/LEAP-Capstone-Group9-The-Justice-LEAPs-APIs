@@ -219,6 +219,26 @@ public class AccountService {
             .collect(Collectors.toList());
     }
 
+
+    public AccountResponse getAccountAsAdmin(Integer accountId) {
+        return repo.findByIdIncludingInactive(accountId)
+            .map(this::toResponse)
+            .orElseThrow(() -> new ResourceNotFoundException("Account", String.valueOf(accountId)));
+    }
+
+    private AccountResponse toResponse(AccountsEntity account) {
+        return new AccountResponse(
+            account.getAccountId(),
+            account.getUserId().getUserId(),
+            account.getBalance(),
+            account.getPortfolioSize().getValue(),
+            account.getTradeType(),
+            account.getCreatedAt(),
+            account.getAccountActive(),
+            account.getAccountFrozen()
+        );
+    }
+
     public List<OrderAccountResponse> getAllOrdersById(Integer accountId){
         return ordersRepo.findAllByAccountId(accountId).stream()
             .map(order -> {

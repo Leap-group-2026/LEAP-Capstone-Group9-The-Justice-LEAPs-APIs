@@ -7,7 +7,11 @@ import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Arg;
+import org.apache.ibatis.annotations.ConstructorArgs;
 import entities.UserEntity;
+import dto.response.AdminUserSummaryResponse;
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.List;
 
@@ -18,6 +22,17 @@ public interface UserRepo {
 
     @Select("SELECT * FROM user_info")
     List<UserEntity> findAll();
+
+    // Selects only the columns an admin may see, so the hashes and reset code never leave the database
+    @Select("SELECT user_id, name, email, date_of_birth, address FROM user_info ORDER BY user_id")
+    @ConstructorArgs({
+        @Arg(column = "user_id", javaType = Integer.class),
+        @Arg(column = "name", javaType = String.class),
+        @Arg(column = "email", javaType = String.class),
+        @Arg(column = "date_of_birth", javaType = LocalDate.class),
+        @Arg(column = "address", javaType = String.class)
+    })
+    List<AdminUserSummaryResponse> findAllSummaries();
 
     @Insert("INSERT INTO user_info (name, email, date_of_birth, address, ssn_hash, pass_hash, code) " +
             "VALUES (#{name}, #{email}, #{dateOfBirth}, #{address}, #{ssnHash}, #{passHash}, #{code})")

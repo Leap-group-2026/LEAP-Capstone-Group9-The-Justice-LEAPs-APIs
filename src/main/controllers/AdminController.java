@@ -6,7 +6,6 @@ import services.AccountService;
 import services.OrderService;
 import services.SessionService;
 import entities.AdminEntity;
-import entities.UserEntity;
 import dto.request.AdminCreation;
 import dto.response.OrderAdminResponse;
 import dto.response.OrderStatusAnalyticsResponse;
@@ -30,6 +29,8 @@ import dto.response.DailyMoneyMovedResponse;
 import services.OrderAnalyticsService;
 import dto.response.TransactionHistoryResponse;
 import dto.response.AdminUserLookupResponse;
+import dto.response.AdminUserSummaryResponse;
+import dto.response.ValidationError;
 
 @Tag(name = "Admin")  // description and display order: OpenApiConfig
 @RestController
@@ -130,6 +131,19 @@ public class AdminController {
         return accountService.getAccountsByUserID(userId);
     }
 
+    @Operation(summary = "Retrieve one account by id",
+        description = "Returns the account whether it is active, frozen or closed. Unlike GET /accounts/{id}, "
+            + "closed accounts are included and no user details are embedded.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Account retrieved"),
+        @ApiResponse(responseCode = "404", description = "No account has this id",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationError.class)))
+    })
+    @GetMapping("/accounts/account/{accountId}")
+    public AccountResponse getAccount(@PathVariable Integer accountId) {
+        return accountService.getAccountAsAdmin(accountId);
+    }
+
     @Operation(summary = "Retrieve all orders for a specific user",
            description = "Returns a list of all orders placed by the specified user")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved user's orders")
@@ -161,10 +175,11 @@ public class AdminController {
     }
 
     @Operation(summary = "Retrieve all users",
-        description = "Returns a list of all users")
+        description = "Returns every user's id, name, email, date of birth and address, sorted by userId. "
+            + "Password hashes, SSN hashes and reset codes are never included.")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved users")
     @GetMapping("/users")
-    public List<UserEntity> getAllUsers() {
+    public List<AdminUserSummaryResponse> getAllUsers() {
         return service.getAllUsers();
     }
 
@@ -213,5 +228,17 @@ public class AdminController {
     @GetMapping("/users/by-email")
     public AdminUserLookupResponse getUserByEmail(@RequestParam String email) {
         return service.findUserByEmail(email, accountService);
+    }
+
+    @Operation(summary = "Find a user by id with their accounts",
+        description = "Same response as GET /admin/users/by-email. The accounts list holds the user's active accounts.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "User and accounts retrieved"),
+        @ApiResponse(responseCode = "404", description = "User not found",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationError.class)))
+    })
+    @GetMapping("/users/{id}")
+    public AdminUserLookupResponse getUserById(@PathVariable Integer id) {
+        return service.findUserById(id, accountService);
     }
 }

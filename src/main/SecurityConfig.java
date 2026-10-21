@@ -70,6 +70,7 @@ public class SecurityConfig {
                 .requestMatchers("/transactions/account/**").hasAnyRole("ADMIN", "CLIENT")
                 .requestMatchers("/transactions/**").hasAnyRole("ADMIN", "CLIENT")
                 .requestMatchers("/positions/account/**").hasAnyRole("ADMIN", "CLIENT")
+                .requestMatchers("/news/account/**").hasAnyRole("ADMIN", "CLIENT")
                 .requestMatchers("/positions/**").hasAnyRole("ADMIN", "CLIENT")
                 .requestMatchers("/orders/account/**").hasAnyRole("ADMIN", "CLIENT")
                 .requestMatchers("/orders/{orderId}/history").hasAnyRole("ADMIN", "CLIENT")

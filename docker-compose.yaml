@@ -26,6 +26,8 @@ services:
       APP_KAFKA_TOPIC_ORDER_SUBMITTED: ${APP_KAFKA_TOPIC_ORDER_SUBMITTED:-order.submitted}
       JWT_SECRET: ${JWT_SECRET}
       APP_CORS_WEB_APP_ORIGIN: ${APP_CORS_WEB_APP_ORIGIN}
+      MARKETAUX_API_TOKEN: ${MARKETAUX_API_TOKEN}
+      MARKETAUX_BASE_URL: ${MARKETAUX_BASE_URL:-https://api.marketaux.com/v1}
     ports:
       - "8081:8081"
     depends_on:

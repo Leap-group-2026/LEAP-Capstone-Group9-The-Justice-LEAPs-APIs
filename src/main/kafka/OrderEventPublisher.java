@@ -31,8 +31,12 @@ public class OrderEventPublisher {
         kafkaTemplate.send(topic, String.valueOf(event.accountId()), event)
             .whenComplete((result, ex) -> {
                 if (ex != null) {
-                    logger.error("Order {} committed but its event was not published; the sweeper will pick it up",
-                        event.orderId(), ex);
+                    logger.error("Order {} committed but its event was not published to topic={}; the sweeper will pick it up",
+                        event.orderId(), topic, ex);
+                } else {
+                    logger.info("Published OrderSubmittedEvent orderId={} to topic={} partition={} offset={}",
+                        event.orderId(), topic,
+                        result.getRecordMetadata().partition(), result.getRecordMetadata().offset());
                 }
             });
     }

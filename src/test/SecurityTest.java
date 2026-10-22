@@ -703,6 +703,50 @@ public class SecurityTest {
         assertTrue(isActive(OTHER_ACCOUNT));
     }
 
+    // ---- Renaming is for the owner only. An admin is refused by role (403) before any account is looked up,
+    // because checkAccountAccess lets every admin through and an admin's id can match a client's ----
+
+    private static final String RENAME = "{\"name\":\"Savings\"}";
+
+    private String accountName(int accountId) {
+        return jdbcTemplate.queryForObject("SELECT account_name FROM accounts WHERE account_id = ?", String.class, accountId);
+    }
+
+    @Test
+    void aClientRenamesTheirOwnAccount() throws Exception {
+        mockMvc.perform(as(clientToken(OWNER_ID), json(patch("/accounts/rename/" + OWNER_ACCOUNT), RENAME)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.accountName").value("Savings"));
+
+        assertEquals("Savings", accountName(OWNER_ACCOUNT));
+    }
+
+    @Test
+    void aClientCannotRenameAnotherClientsAccount() throws Exception {
+        mockMvc.perform(as(clientToken(OWNER_ID), json(patch("/accounts/rename/" + OTHER_ACCOUNT), RENAME)))
+            .andExpect(status().isNotFound());
+
+        assertNull(accountName(OTHER_ACCOUNT), "a client renamed someone else's account");
+    }
+
+    @Test
+    void anAdminCannotRenameAnyAccountNotEvenTheClientWithTheSameId() throws Exception {
+        mockMvc.perform(as(adminToken(ADMIN_ID), json(patch("/accounts/rename/" + OTHER_ACCOUNT), RENAME)))
+            .andExpect(status().isForbidden());
+        mockMvc.perform(as(adminToken(OWNER_ID), json(patch("/accounts/rename/" + OWNER_ACCOUNT), RENAME)))
+            .andExpect(status().isForbidden());
+
+        assertNull(accountName(OTHER_ACCOUNT), "an admin renamed a client's account");
+        assertNull(accountName(OWNER_ACCOUNT), "an admin's token renamed the account of the client with the same id");
+    }
+
+    @Test
+    void renamingWithoutATokenIsUnauthenticated() throws Exception {
+        expect401(json(patch("/accounts/rename/" + OWNER_ACCOUNT), RENAME), "unauthenticated");
+
+        assertNull(accountName(OWNER_ACCOUNT));
+    }
+
     // ---- Deposits and withdrawals: a client moves money in and out of their own account only ----
 
     private static final String FUNDS = "{\"amount\":100,\"fundingMethod\":\"bank\"}";

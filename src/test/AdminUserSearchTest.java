@@ -266,7 +266,7 @@ public class AdminUserSearchTest {
         JsonNode account = getJson("/admin/accounts/account/" + ACTIVE_ACCOUNT);
 
         assertEquals(Set.of("accountId", "userId", "balance", "portfolioSize", "tradeType", "createdAt",
-            "accountActive", "accountFrozen"), keys(account));
+            "accountActive", "accountFrozen", "accountName"), keys(account));
     }
 
     @Test

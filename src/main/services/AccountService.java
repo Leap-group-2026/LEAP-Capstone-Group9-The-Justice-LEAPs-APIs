@@ -73,11 +73,32 @@ public class AccountService {
         if (entity.getCreatedAt() == null) {
             entity.setCreatedAt(LocalDateTime.now());
         }
+        entity.setAccountName(normalizeAccountName(entity.getAccountName()));
 
   
         repo.insert(entity);
         return entity;
     }
+    /**
+     * Sets or clears the name of the owner's active account (frozen accounts included) and returns the account.
+     * The name must already have passed @AccountName validation.
+     */
+    @Transactional
+    public AccountsEntity renameAccount(Integer accountId, Integer ownerId, String name) {
+        if (repo.rename(accountId, ownerId, normalizeAccountName(name)) == 0) {
+            throw new ResourceNotFoundException("Account", String.valueOf(accountId));
+        }
+        return findById(accountId);
+    }
+
+    // Surrounding whitespace is dropped and a blank name means no name
+    static String normalizeAccountName(String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+        return name.strip();
+    }
+
     public String closeAccount(Integer accountId, Integer currentUserId) {
         return close(accountId, currentUserId, false);
     }
@@ -206,16 +227,7 @@ public class AccountService {
     public List<AccountResponse> getAccountsByUserID (int userId)
     {
         return repo.findByUser(userId).stream()
-            .map(account -> new AccountResponse(
-                account.getAccountId(),
-                account.getUserId().getUserId(),
-                account.getBalance(),
-                account.getPortfolioSize().getValue(),
-                account.getTradeType(),
-                account.getCreatedAt(),
-                account.getAccountActive(),
-                account.getAccountFrozen()
-            ))
+            .map(this::toResponse)
             .collect(Collectors.toList());
     }
 
@@ -235,7 +247,8 @@ public class AccountService {
             account.getTradeType(),
             account.getCreatedAt(),
             account.getAccountActive(),
-            account.getAccountFrozen()
+            account.getAccountFrozen(),
+            account.getAccountName()
         );
     }
 
@@ -259,16 +272,7 @@ public class AccountService {
     }
     public List<AccountResponse> getAllAccounts() {
         return repo.findAll().stream()
-            .map(account -> new AccountResponse(
-                account.getAccountId(),
-                account.getUserId().getUserId(),
-                account.getBalance(),
-                account.getPortfolioSize().getValue(),
-                account.getTradeType(),
-                account.getCreatedAt(),
-                account.getAccountActive(),
-                account.getAccountFrozen()
-            ))
+            .map(this::toResponse)
             .collect(Collectors.toList());
     }
 }

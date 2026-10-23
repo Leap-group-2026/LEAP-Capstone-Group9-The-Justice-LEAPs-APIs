@@ -29,7 +29,7 @@ import java.util.Map;
 public class ApiDocsTest {
 
     // The order Swagger UI shows the groups in (set in OpenApiConfig)
-    private static final List<String> TAGS = List.of("Users", "Transactions", "Orders", "Accounts", "Instruments", "Positions", "Admin");
+    private static final List<String> TAGS = List.of("Users", "Transactions", "Orders", "Accounts", "Instruments", "Positions", "Portfolio Snapshots", "Sessions (internal)", "Admin");
 
     // method -> path, one entry per endpoint found by scanning the controllers
     private static final List<Map.Entry<String, String>> ENDPOINTS = List.of(
@@ -38,6 +38,9 @@ public class ApiDocsTest {
         Map.entry("get", "/accounts/orders/{accountId}"),
         Map.entry("post", "/accounts"),
         Map.entry("patch", "/accounts/close/{id}"),
+        Map.entry("patch", "/accounts/rename/{id}"),
+        Map.entry("patch", "/accounts/freeze/{id}"),
+        Map.entry("patch", "/accounts/unfreeze/{id}"),
         Map.entry("post", "/orders"),
         Map.entry("get", "/orders/{orderId}"),
         Map.entry("post", "/orders/{orderId}/cancel"),
@@ -47,33 +50,59 @@ public class ApiDocsTest {
         Map.entry("post", "/transactions/account/{accountId}/deposit"),
         Map.entry("post", "/transactions/account/{accountId}/withdraw"),
         Map.entry("get", "/instruments/{ticker}"),
+        Map.entry("get", "/instruments/{base}/{quote}"),
         Map.entry("get", "/user/accounts"),
         Map.entry("get", "/instruments"),
         Map.entry("get", "/instruments/bars"),
+        Map.entry("get", "/instruments/crypto-bars"),
+        Map.entry("get", "/instruments/news"),
+        Map.entry("get", "/news/account/{accountId}"),
+        Map.entry("post", "/instruments/forex/price"),
         Map.entry("get", "/positions/{id}"),
         Map.entry("post", "/positions"),
         Map.entry("get", "/positions/account/{accountId}"),
+        Map.entry("get", "/portfolio-snapshots"),
+        Map.entry("get", "/portfolio-snapshots/account/{accountId}"),
         Map.entry("post", "/admin"),
         Map.entry("post", "/admin/login"),
         Map.entry("get", "/admin/orders"),
+        Map.entry("get", "/admin/orders/account/{accountId}"),
         Map.entry("get", "/admin/orders/{userId}"),
         Map.entry("get", "/admin/orders/{userId}/cancelled"),
+        Map.entry("get", "/admin/transactions"),
+        Map.entry("get", "/admin/transactions/account/{accountId}"),
         Map.entry("get", "/admin/accounts"),
         Map.entry("get", "/admin/accounts/{userId}"),
+        Map.entry("get", "/admin/accounts/account/{accountId}"),
         Map.entry("get", "/admin/users"),
+        Map.entry("get", "/admin/analytics/top-bought"),
+        Map.entry("get", "/admin/analytics/active-accounts"),
+        Map.entry("get", "/admin/analytics/money-moved"),
+        Map.entry("get", "/admin/analytics/order-statuses"),
+        Map.entry("post", "/admin/users/{id}/logout"),
+        Map.entry("get", "/admin/users/by-email"),
+        Map.entry("get", "/admin/users/{id}"),
         Map.entry("patch", "/user"),
         Map.entry("get", "/user"),
         Map.entry("post", "/user"),
         Map.entry("post", "/user/login"),
         Map.entry("post", "/user/resetpassword"),
         Map.entry("post", "/user/resetpassword/reset"),
-        Map.entry("post", "/user/transactions/exchange"));
+        Map.entry("post", "/user/transactions/exchange"),
+        Map.entry("post", "/internal/sessions/{sid}/check"),
+        Map.entry("post", "/internal/sessions/{sid}/revoke"));
 
     // The endpoints only the auth service calls: they take the internal API key instead of a token (InternalApiKeyFilter)
     private static final List<Map.Entry<String, String>> INTERNAL_ENDPOINTS = List.of(
         Map.entry("post", "/user"),
         Map.entry("post", "/user/login"),
-        Map.entry("post", "/admin/login"));
+        Map.entry("post", "/admin/login"),
+        Map.entry("post", "/internal/sessions/{sid}/check"),
+        Map.entry("post", "/internal/sessions/{sid}/revoke"));
+
+    private static final List<Map.Entry<String, String>> PUBLIC_ENDPOINTS = List.of(
+        Map.entry("post", "/user/resetpassword"),
+        Map.entry("post", "/user/resetpassword/reset"));
 
     @Autowired
     private MockMvc mockMvc;
@@ -141,6 +170,8 @@ public class ApiDocsTest {
             if (INTERNAL_ENDPOINTS.contains(e)) {
                 // Exactly the internal key, and no bearer token
                 assertEquals("[{\"internalApiKey\":[]}]", op.path("security").toString(), name + " should ask for the internal key only");
+            } else if (PUBLIC_ENDPOINTS.contains(e)) {
+                assertEquals("[]", op.path("security").toString(), name + " should need nothing");
             } else {
                 // No security of its own, so it inherits the global bearer requirement
                 assertFalse(op.has("security"), name + " should need an access token, has " + op.path("security"));

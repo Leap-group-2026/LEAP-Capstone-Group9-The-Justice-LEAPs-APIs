@@ -28,7 +28,7 @@ public class ScheduledOrdersCheck {
         this.fillDelay = fillDelay;
     }
 
-    @Scheduled(fixedRate = 300000)
+    @Scheduled(fixedRate = 30000)
     public void processOrders() {
         List<Integer> pendingIds = ordersRepo.findPendingOrderIds(fillDelay.toSeconds());
 

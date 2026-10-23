@@ -6,7 +6,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import repos.AdminRepo;
 import repos.UserRepo;
 import dto.response.OrderAdminResponse;
+import dto.response.OrderStatusAnalyticsResponse;
 import dto.response.AdminLoginResponse;
+import dto.response.TopBoughtStockResponse;
+import dto.response.ActiveAccountAnalyticsResponse;
+import dto.response.TransactionHistoryResponse;
+import dto.response.AdminUserLookupResponse;
+import dto.response.AdminUserSummaryResponse;
 import exception.InvalidCredentialsException;
 import exception.AdminRoleNotAssignedException;
 import entities.AdminEntity;
@@ -20,6 +26,8 @@ public class AdminService {
     private AdminRepo repo;
     private UserRepo userRepo;
     private PasswordEncoder passwordEncoder;
+    private WarehouseAnalyticsService warehouseAnalyticsService;
+    private SessionService sessionService;
 
     private static final Map<String, String> TOKEN_ROLES = Map.of(
         "SUPER ADMIN", "superadmin",
@@ -27,10 +35,17 @@ public class AdminService {
         "REPORTER/ANALYST", "analyst"
     );
 
-    public AdminService(AdminRepo repo, UserRepo userRepo, PasswordEncoder passwordEncoder){
+    public AdminService(
+        AdminRepo repo,
+        UserRepo userRepo,
+        PasswordEncoder passwordEncoder,
+        WarehouseAnalyticsService warehouseAnalyticsService
+    , SessionService sessionService){
         this.repo = repo;
         this.userRepo = userRepo;
         this.passwordEncoder = passwordEncoder;
+        this.warehouseAnalyticsService = warehouseAnalyticsService;
+        this.sessionService = sessionService;
     }
 
     public AdminEntity saveAdmin(AdminEntity entity){
@@ -44,7 +59,7 @@ public class AdminService {
         }
         switch(email.toLowerCase().charAt(0)) {
             case 's':
-                entity.setRole("SUPER ADMIN");
+            entity.setRole("SUPER ADMIN");
                 break;
             case 'a':
                 entity.setRole("ADMIN");
@@ -66,13 +81,61 @@ public class AdminService {
         if (role == null) {
             throw new AdminRoleNotAssignedException();
         }
-        return new AdminLoginResponse(admin.getAdminId(), role);
+        SessionService.Grant session = sessionService.create(role, admin.getAdminId());
+        return new AdminLoginResponse(admin.getAdminId(), role, session.sid(), session.expiresAt().toString());
     }
     public List<OrderAdminResponse> getAllOrders() {
         return repo.getAllOrders();
     }
 
-    public List<UserEntity> getAllUsers() {
-        return userRepo.findAll();
+    public List<OrderAdminResponse> getOrdersByAccountId(Integer accountId) {
+        return repo.getOrdersByAccountId(accountId);
+    }
+
+    public List<TransactionHistoryResponse> getAllTransactions() {
+        return repo.getAllTransactions();
+    }
+
+    public List<TransactionHistoryResponse> getTransactionsByAccountId(Integer accountId) {
+        return repo.getTransactionsByAccountId(accountId);
+    }
+
+    public List<AdminUserSummaryResponse> getAllUsers() {
+        return userRepo.findAllSummaries();
+    }
+
+    public List<TopBoughtStockResponse> getTopBoughtStocks() {
+        return warehouseAnalyticsService.getTopBoughtStocks();
+    }
+
+    public List<ActiveAccountAnalyticsResponse> getMostActiveAccounts() {
+        return warehouseAnalyticsService.getMostActiveAccounts();
+    }
+
+    public List<OrderStatusAnalyticsResponse> getOrderStatusesLast30Days() {
+        return warehouseAnalyticsService.getOrderStatusesLast30Days();
+}
+
+    public AdminUserLookupResponse findUserByEmail(String email, AccountService accountService) {
+        UserEntity user = userRepo.findByEmail(email.trim())
+            .orElseThrow(() -> new exception.ResourceNotFoundException("User", email));
+        return toLookup(user, accountService);
+    }
+
+    public AdminUserLookupResponse findUserById(Integer userId, AccountService accountService) {
+        UserEntity user = userRepo.findById(userId)
+            .orElseThrow(() -> new exception.ResourceNotFoundException("User", String.valueOf(userId)));
+        return toLookup(user, accountService);
+    }
+
+    private AdminUserLookupResponse toLookup(UserEntity user, AccountService accountService) {
+        return new AdminUserLookupResponse(
+            user.getUserId(),
+            user.getName(),
+            user.getEmail(),
+            user.getDateOfBirth(),
+            user.getAddress(),
+            accountService.getAccountsByUserID(user.getUserId())
+        );
     }
 }

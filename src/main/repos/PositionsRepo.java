@@ -47,6 +47,29 @@ public interface PositionsRepo {
     })
     List<PositionsEntity> findByAccount(@Param("accountId") Integer accountId);
 
+    @Select("SELECT a.balance + COALESCE(SUM(CASE WHEN i.asset_type = 'FOREX' THEN p.total_price " +
+            "ELSE p.quantity * cp.price END), 0) " +
+            "FROM accounts a " +
+            "LEFT JOIN positions p ON p.account_id = a.account_id AND p.closed_at IS NULL " +
+            "LEFT JOIN instruments i ON p.instrument_id = i.instrument_id " +
+            "LEFT JOIN current_prices cp ON p.instrument_id = cp.instrument_id " +
+            "WHERE a.account_id = #{accountId} " +
+            "GROUP BY a.balance")
+    BigDecimal findCurrentPortfolioValue(@Param("accountId") Integer accountId);
+        @Select("SELECT p.* FROM positions p WHERE p.account_id = #{accountId} AND p.closed_at IS NULL " +
+                        "ORDER BY p.position_id ASC FOR UPDATE")
+        @Results({
+                @Result(column = "position_id", property = "positionId"),
+                @Result(column = "account_id", property = "account.accountId"),
+                @Result(column = "instrument_id", property = "instrument.instrumentId"),
+                @Result(column = "quantity", property = "quantity"),
+                @Result(column = "opened_at", property = "openedAt"),
+                @Result(column = "closed_at", property = "closedAt"),
+                @Result(column = "total_price", property = "totalPrice"),
+                @Result(column = "average_price", property = "averagePrice")
+        })
+        List<PositionsEntity> findOpenByAccountForUpdate(@Param("accountId") Integer accountId);
+
     @Select("SELECT p.position_id, p.account_id, " +
             "i.instrument_id, i.ticker, i.asset_name, i.asset_type, i.currency, " +
             "p.quantity, p.average_price, p.total_price, p.opened_at " +

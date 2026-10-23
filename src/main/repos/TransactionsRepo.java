@@ -29,6 +29,15 @@ public interface TransactionsRepo {
                 @Param("transactionType") String transactionType,
                 @Param("happenedAt") LocalDateTime happenedAt);
 
+    @Insert("INSERT INTO transactions (amount, side, account_id, transaction_type, happened_at, currency) " +
+            "VALUES (#{amount}, #{side}, #{accountId}, #{transactionType}, #{happenedAt}, #{currency})")
+    void insertExchange(@Param("amount") BigDecimal amount,
+                        @Param("side") String side,
+                        @Param("accountId") Integer accountId,
+                        @Param("transactionType") String transactionType,
+                        @Param("happenedAt") LocalDateTime happenedAt,
+                        @Param("currency") String currency);
+
     @Update("UPDATE transactions SET amount=#{amount}, side=#{side}, account_id=#{accountId}, " +
             "transaction_type=#{transactionType}, happened_at=#{happenedAt} WHERE transaction_id=#{transactionId}")
     void update(@Param("transactionId") Integer transactionId,
@@ -38,17 +47,29 @@ public interface TransactionsRepo {
                 @Param("transactionType") String transactionType,
                 @Param("happenedAt") LocalDateTime happenedAt);
         
-     @Select("SELECT t.transaction_id, t.transaction_type, t.amount, t.side, t.account_id, t.happened_at " +
+     @Select("SELECT t.transaction_id, t.transaction_type, t.amount, t.side, t.account_id, t.happened_at, t.currency " +
              "FROM transactions t WHERE t.account_id = #{accountId} " +
              "ORDER BY t.happened_at DESC, t.transaction_id DESC")
      List<TransactionHistoryResponse> getTransactionsByAccountId(@Param("accountId") Integer accountId);
+
+    @Select("SELECT t.transaction_id, t.transaction_type, t.amount, t.side, t.account_id, t.happened_at, t.currency " +
+            "FROM transactions t ORDER BY t.happened_at DESC, t.transaction_id DESC")
+    List<TransactionHistoryResponse> getAllTransactionHistory();
 
     @Insert("INSERT INTO transactions (amount, side, account_id, transaction_type, happened_at) " +
             "VALUES (#{amount}, #{side}, #{accountId.accountId}, #{transactionType}, #{happenedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "transactionId", keyColumn = "transaction_id")
     void insertReturningId(TransactionsEntity entity);
 
-    @Select("SELECT t.transaction_id, t.transaction_type, t.amount, t.side, t.account_id, t.happened_at " +
+    @Insert("INSERT INTO transactions (amount, side, account_id, transaction_type, happened_at) " +
+            "VALUES (#{amount}, #{side}, #{accountId}, #{transactionType}, #{happenedAt})")
+    void insertTransfer(@Param("amount") BigDecimal amount,
+                        @Param("side") String side,
+                        @Param("accountId") Integer accountId,
+                        @Param("transactionType") String transactionType,
+                        @Param("happenedAt") LocalDateTime happenedAt);
+
+    @Select("SELECT t.transaction_id, t.transaction_type, t.amount, t.side, t.account_id, t.happened_at, t.currency " +
             "FROM transactions t WHERE t.transaction_id = #{transactionId}")
     Optional<TransactionHistoryResponse> findHistoryById(@Param("transactionId") Integer transactionId);
 }

@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { Pool } from 'pg';
 import request from 'supertest';
+import { randomUUID } from 'crypto';
 import { SpringUsersClient } from '../src/auth/spring-users.client';
 import { resetAuthTables } from './auth-tables';
 
@@ -12,6 +13,7 @@ const spring = { login: jest.fn(), register: jest.fn() };
 
 const reply = (status: number, data: unknown, contentType = 'application/json') =>
   ({ status, data, headers: { 'content-type': contentType } });
+const session = () => ({ sid: randomUUID(), expiresAt: new Date(Date.now() + 8 * 3600_000).toISOString() });
 
 describe('POST /auth/login and /auth/register (N2)', () => {
   let app: INestApplication;
@@ -50,7 +52,7 @@ describe('POST /auth/login and /auth/register (N2)', () => {
 
   describe('login', () => {
     it('returns 200 with a token for sub = user id, role = client, lasting 1800 seconds', async () => {
-      spring.login.mockResolvedValue(reply(200, { id: 42 }));
+      spring.login.mockResolvedValue(reply(200, { id: 42, ...session() }));
 
       const res = await login({ email: 'jo@example.com', password: 'Secret' }).expect(200);
 
@@ -64,7 +66,7 @@ describe('POST /auth/login and /auth/register (N2)', () => {
 
     it('puts nothing but sub, role, type, sid, auth_time, iat and exp in the token', async () => {
       // Even if Spring were to send extra fields, none of them may reach the token
-      spring.login.mockResolvedValue(reply(200, { id: 42, email: 'jo@example.com', passHash: 'x', ssn: '123' }));
+      spring.login.mockResolvedValue(reply(200, { id: 42, ...session(), email: 'jo@example.com', passHash: 'x', ssn: '123' }));
 
       const res = await login({ email: 'jo@example.com', password: 'Secret' }).expect(200);
 

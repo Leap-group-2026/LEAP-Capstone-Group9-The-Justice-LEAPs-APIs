@@ -24,7 +24,9 @@ CREATE TABLE IF NOT EXISTS accounts (
 	portfolio_size	TEXT NOT NULL CHECK(portfolio_size IN ('LOW', 'BALANCED', 'HIGH')),
 	trade_type      TEXT NOT NULL,
 	created_at		TIMESTAMP NOT NULL DEFAULT now(),
-	account_active  BOOLEAN NOT NULL DEFAULT TRUE
+	account_active  BOOLEAN NOT NULL DEFAULT TRUE,
+	account_frozen  BOOLEAN NOT NULL DEFAULT FALSE,
+	account_name    TEXT
 );
 
 -- Reference data only. Instrument existing here making it tradable
@@ -56,6 +58,13 @@ CREATE TABLE IF NOT EXISTS positions (
 	average_price	NUMERIC(18, 4) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS portfolio_snapshot(
+	portfolio_snapshot_id SERIAL PRIMARY KEY,
+	account_id INTEGER NOT NULL REFERENCES accounts(account_id),
+	portfolio_value NUMERIC(19, 4) NOT NULL,
+	snapshot_date DATE NOT NULL
+);
+
 
 CREATE TABLE IF NOT EXISTS orders (
 	order_id		SERIAL PRIMARY KEY,
@@ -75,7 +84,8 @@ CREATE TABLE IF NOT EXISTS transactions(
 	side				TEXT NOT NULL CHECK(side IN('OUT', 'IN', 'EXCHANGE')),
 	account_id			INTEGER NOT NULL REFERENCES accounts(account_id),
 	transaction_type	TEXT NOT NULL CHECK(transaction_type IN('WITHDRAWAL', 'DEPOSIT', 'CURRENCY EXCHANGE')),
-	happened_at			TIMESTAMP NOT NULL DEFAULT now()
+	happened_at			TIMESTAMP NOT NULL DEFAULT now(),
+	currency			TEXT
 );
 
 CREATE TABLE IF NOT EXISTS historical_orders(
@@ -85,3 +95,19 @@ CREATE TABLE IF NOT EXISTS historical_orders(
     order_information_json  VARCHAR(4000) NOT NULL,
     created_at              TIMESTAMP NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS user_sessions (
+	session_id			UUID PRIMARY KEY,
+	user_id				INT NULL REFERENCES user_info(user_id) ON DELETE CASCADE,
+	admin_id			INT NULL REFERENCES admin(admin_id) ON DELETE CASCADE,
+	role				TEXT NOT NULL,
+	created_at			TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+	last_activity_at	TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+	expires_at			TIMESTAMP WITH TIME ZONE NOT NULL,
+	revoked_at			TIMESTAMP WITH TIME ZONE NULL,
+	revoked_reason		TEXT NULL,
+	CHECK ((user_id IS NULL AND admin_id IS NOT NULL) OR (user_id IS NOT NULL AND admin_id IS NULL))
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_admin_id ON user_sessions(admin_id);

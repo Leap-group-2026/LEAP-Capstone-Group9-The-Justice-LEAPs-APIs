@@ -26,9 +26,9 @@ import { RefreshTokenStore } from './refresh-token.store';
     }),
     JwtModule.registerAsync({
       inject: [ConfigService],
+      // No expiresIn: exp is set in the payload, and jsonwebtoken rejects both
       useFactory: (config: ConfigService<EnvConfig, true>) => ({
         secret: config.get('JWT_SECRET', { infer: true }),
-        signOptions: { expiresIn: config.get('JWT_EXPIRATION', { infer: true }) },
       }),
     }),
   ],

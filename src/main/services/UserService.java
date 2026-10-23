@@ -9,12 +9,12 @@ import entities.AccountsEntity;
 import dto.request.TransactionRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
-
 import repos.UserRepo;
 import entities.UserEntity; 
 import dto.request.UserRegistrationRequest;
 import dto.request.LoginRequest;
-import dto.request.VerifyPasswordReset;
+import dto.request.EmailResetRequest;
+import dto.request.PasswordResetRequest;
 import dto.request.UpdateUserRequest;
 import dto.response.UserResponse;
 import dto.response.UpdateUserResponse;
@@ -23,6 +23,7 @@ import repos.InstrumentRepo;
 import repos.AccountsRepo;
 import repos.PositionsRepo;
 import repos.CurrentPriceRepo;
+import repos.TransactionsRepo;
 import exception.ResourceNotFoundException;
 import dto.response.UserLoginResponse;
 import exception.InvalidCredentialsException;
@@ -45,7 +46,9 @@ public class UserService {
     private AccountsRepo accountsRepo;
     private PositionsRepo positionsRepo;
     private InstrumentRepo instrumentRepo;
+    private TransactionsRepo transactionsRepo;
     private Clock clock;
+    private SessionService sessionService;
     private static final Random random = new Random();
 
     static final int MIN_AGE_YEARS = 18;
@@ -54,15 +57,26 @@ public class UserService {
     @Autowired
     public UserService(UserRepo repo, EmailService emailService, PasswordEncoder passwordEncoder, 
                        AccountsRepo accountsRepo, CurrentPriceRepo currentPriceRepo, 
-                       PositionsRepo positionsRepo, InstrumentRepo instrumentRepo, Clock clock){
-        this.repo = repo; 
+                       PositionsRepo positionsRepo, InstrumentRepo instrumentRepo, Clock clock,
+                       SessionService sessionService, TransactionsRepo transactionsRepo){
+        this.repo = repo;
         this.clock = clock;
+        this.sessionService = sessionService;
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
         this.accountsRepo = accountsRepo;
         this.currentPriceRepo = currentPriceRepo;
         this.positionsRepo = positionsRepo;
         this.instrumentRepo = instrumentRepo;
+        this.transactionsRepo = transactionsRepo;
+    }
+
+    public UserService(UserRepo repo, EmailService emailService, PasswordEncoder passwordEncoder,
+                       AccountsRepo accountsRepo, CurrentPriceRepo currentPriceRepo,
+                       PositionsRepo positionsRepo, InstrumentRepo instrumentRepo, Clock clock,
+                       SessionService sessionService) {
+        this(repo, emailService, passwordEncoder, accountsRepo, currentPriceRepo,
+             positionsRepo, instrumentRepo, clock, sessionService, null);
     }
 
     public UserResponse registerUser(UserRegistrationRequest request){
@@ -127,7 +141,8 @@ public class UserService {
             .filter(u -> request.getPassword() != null
                 && passwordEncoder.matches(request.getPassword(), u.getPassHash()))
             .orElseThrow(InvalidCredentialsException::new);
-        return new UserLoginResponse(user.getUserId());
+        SessionService.Grant session = sessionService.create(SessionService.CLIENT_ROLE, user.getUserId());
+        return new UserLoginResponse(user.getUserId(), session.sid(), session.expiresAt().toString());
     }
 
     public ResponseEntity<UserInfoDisplayed> getUsersInfoForDisplay(String userId) {
@@ -218,8 +233,8 @@ public class UserService {
         }
     }
 
-    public ResponseEntity<String> emailResetPassword(UserResponse entity){
-        String email = entity.getEmail();
+    public ResponseEntity<String> emailResetPassword(EmailResetRequest request){
+        String email = request.getEmail();
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("Email is required");
         }
@@ -254,17 +269,19 @@ public class UserService {
         return ResponseEntity.ok("Email sent successfully");
     }
 
-    public ResponseEntity<String> resetPassword(VerifyPasswordReset user){
-        String email = user.getEmail();
+    @Transactional
+    public ResponseEntity<String> resetPassword(PasswordResetRequest request){
+        String email = request.getEmail();
         UserEntity userInDb = repo.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
         
-        if(userInDb.getCode() == null || !userInDb.getCode().equals(user.getCode())){
+        if(userInDb.getCode() == null || !userInDb.getCode().equals(request.getCode())){
             return ResponseEntity.badRequest().body("Incorrect reset code");
         }
         else{
-            validatePass(user.getPassword());
-            String encodedPassword = passwordEncoder.encode(user.getPassword());
+            validatePass(request.getPassword());
+            String encodedPassword = passwordEncoder.encode(request.getPassword());
             repo.updatePassword(userInDb.getUserId(), encodedPassword);
+            sessionService.revokeAllForUser(userInDb.getUserId(), "password_reset");
             return ResponseEntity.ok("Password reset successfully");
         }
     }
@@ -315,6 +332,9 @@ public class UserService {
         String[] parts = baseAndExchange.split("/");
         accountsRepo.findByIdForUpdate(transactionRequest.accountId());
         AccountsEntity account = accountsRepo.findById(transactionRequest.accountId()).orElseThrow(() -> new IllegalArgumentException("Account not found"));
+        if (Boolean.TRUE.equals(account.getAccountFrozen())) {
+            throw new IllegalArgumentException("Currency exchanges are not allowed while the account is frozen");
+        }
 
         if (parts.length < 2) throw new IllegalArgumentException("Invalid exchange rate format");
         if (!parts[0].equals("USD")){
@@ -377,6 +397,15 @@ public class UserService {
             
             accountsRepo.update(account.getAccountId(), account.getOwnerUserId(), usd, account.getPortfolioSize().getValue(), account.getTradeType(), account.getAccountActive());
         }
+
+        transactionsRepo.insertExchange(
+            transactionRequest.amount(),
+            "EXCHANGE",
+            account.getAccountId(),
+            "CURRENCY EXCHANGE",
+            LocalDateTime.now(clock),
+            transactionRequest.baseAndExchange()
+        );
         
         return ResponseEntity.ok("Transaction processed successfully");
     }

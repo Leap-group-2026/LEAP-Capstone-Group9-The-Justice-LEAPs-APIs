@@ -34,6 +34,10 @@ public class OrderHistoryResponse {
     @JsonProperty("totalPrice")
     private BigDecimal totalPrice;
 
+    @Schema(description = "When the order was placed")
+    @JsonProperty("createdAt")
+    private LocalDateTime createdAt;
+
     @Schema(description = "When the order was executed. Null unless status is FILLED.", nullable = true)
     @JsonProperty("executedAt")
     private LocalDateTime executedAt;
@@ -96,6 +100,10 @@ public class OrderHistoryResponse {
     public void setTotalPrice(BigDecimal totalPrice) {
         this.totalPrice = totalPrice;
     }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     public LocalDateTime getExecutedAt() {
         return executedAt;

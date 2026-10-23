@@ -14,7 +14,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.when;
 
 import main.Application;
-import entities.UserEntity;
+import dto.response.AdminUserSummaryResponse;
 import services.AdminService;
 import org.springframework.context.annotation.Import;
 import test.config.TestSecurityConfig;
@@ -36,17 +36,12 @@ public class GetAllUsersTest {
 
     @Test 
     public void getAllUsersSuccess() throws Exception {
-        UserEntity user1 = new UserEntity();
-        user1.setUserId(1);
-        user1.setName("John Doe");
-        user1.setEmail("john@example.com");
-        
-        UserEntity user2 = new UserEntity();
-        user2.setUserId(2);
-        user2.setName("Jane Smith");
-        user2.setEmail("jane@example.com");
-        
-        List<UserEntity> users = Arrays.asList(user1, user2);
+        AdminUserSummaryResponse user1 = new AdminUserSummaryResponse(1, "John Doe", "john@example.com",
+            LocalDate.of(1990, 1, 1), "1 Main St");
+        AdminUserSummaryResponse user2 = new AdminUserSummaryResponse(2, "Jane Smith", "jane@example.com",
+            LocalDate.of(1985, 6, 15), "2 Main St");
+
+        List<AdminUserSummaryResponse> users = Arrays.asList(user1, user2);
         when(adminService.getAllUsers()).thenReturn(users);
         
         mockMvc.perform(get("/admin/users")
@@ -59,7 +54,7 @@ public class GetAllUsersTest {
     
     @Test
     public void getAllUsersEmpty() throws Exception {
-        List<UserEntity> users = Arrays.asList();
+        List<AdminUserSummaryResponse> users = Arrays.asList();
         when(adminService.getAllUsers()).thenReturn(users);
         
         mockMvc.perform(get("/admin/users")

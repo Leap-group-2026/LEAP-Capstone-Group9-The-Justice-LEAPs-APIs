@@ -9,9 +9,13 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.ResultMap;
+import org.apache.ibatis.annotations.Arg;
+import org.apache.ibatis.annotations.ConstructorArgs;
 import entities.OrderEntity;
 import dto.response.OrderHistoryResponse;
+import dto.response.DailyMoneyMovedResponse;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.List;
@@ -65,6 +69,7 @@ public interface OrdersRepo {
     @Select("SELECT o.order_id, i.ticker, o.side, o.status, o.quantity, " +
             "CAST(o.total_price / o.quantity AS NUMERIC(18,4)) AS price_per_unit, " +
             "o.total_price, " +
+            "o.created_at, " +
             "CASE WHEN o.status = 'FILLED' THEN o.updated_at END AS executed_at " +
             "FROM orders o " +
             "JOIN instruments i ON o.instrument_id = i.instrument_id " +
@@ -103,4 +108,21 @@ public interface OrdersRepo {
             "WHERE order_id = #{orderId} and status = 'PENDING'")
     int cancelOrder(@Param("orderId") Integer orderId,
                      @Param("updatedAt") LocalDateTime updatedAt);
+
+
+    @Select("SELECT CAST(updated_at AS DATE) AS fill_date, " +
+            "COALESCE(SUM(CASE WHEN side = 'BUY' THEN total_price END), 0) AS buy_total, " +
+            "COALESCE(SUM(CASE WHEN side = 'SELL' THEN total_price END), 0) AS sell_total, " +
+            "COUNT(*) AS order_count " +
+            "FROM orders " +
+            "WHERE status = 'FILLED' AND updated_at >= #{since} " +
+            "GROUP BY CAST(updated_at AS DATE) " +
+            "ORDER BY fill_date")
+    @ConstructorArgs({
+        @Arg(column = "fill_date", javaType = LocalDate.class),
+        @Arg(column = "buy_total", javaType = BigDecimal.class),
+        @Arg(column = "sell_total", javaType = BigDecimal.class),
+        @Arg(column = "order_count", javaType = Long.class)
+    })
+    List<DailyMoneyMovedResponse> sumFilledOrdersByDay(@Param("since") LocalDateTime since);
 }

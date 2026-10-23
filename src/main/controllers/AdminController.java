@@ -4,10 +4,11 @@ import services.AdminService;
 import services.EmailService;
 import services.AccountService;
 import services.OrderService;
+import services.SessionService;
 import entities.AdminEntity;
-import entities.UserEntity;
 import dto.request.AdminCreation;
 import dto.response.OrderAdminResponse;
+import dto.response.OrderStatusAnalyticsResponse;
 import dto.response.AccountResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.List;
 import dto.response.AdminLoginResponse;
+import dto.response.TopBoughtStockResponse;
+import dto.response.ActiveAccountAnalyticsResponse;
+import dto.response.DailyMoneyMovedResponse;
+import services.OrderAnalyticsService;
+import dto.response.TransactionHistoryResponse;
+import dto.response.AdminUserLookupResponse;
+import dto.response.AdminUserSummaryResponse;
+import dto.response.ValidationError;
 
 @Tag(name = "Admin")  // description and display order: OpenApiConfig
 @RestController
@@ -32,12 +41,16 @@ public class AdminController {
     private EmailService emailService;
     private AccountService accountService;
     private OrderService orderService;
-    public AdminController(AdminService service, PasswordEncoder passwordEncoder, EmailService emailService, AccountService accountService, OrderService orderService){
+    private SessionService sessionService;
+    private OrderAnalyticsService orderAnalyticsService;
+    public AdminController(AdminService service, PasswordEncoder passwordEncoder, EmailService emailService, AccountService accountService, OrderService orderService, SessionService sessionService, OrderAnalyticsService orderAnalyticsService){
         this.service = service;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.accountService = accountService;
         this.orderService = orderService;
+        this.sessionService = sessionService;
+        this.orderAnalyticsService = orderAnalyticsService;
     }
     @Operation(summary = "Create an admin",
         description = "Creates an administrator with a bcrypt-hashed password. The username must be unique "
@@ -57,10 +70,11 @@ public class AdminController {
         return service.saveAdmin(adminEntity);
     }
     @Operation(summary = "Admin login",
-        description = "Checks an admin's email and password and returns their identity and token role for the token service. "
-            + "Spring issues no token. Roles map as SUPER ADMIN -> superadmin, ADMIN -> admin, REPORTER/ANALYST -> analyst.")
+        description = "Checks an admin's email and password, starts a new session and returns the admin's id, token role, "
+            + "session id (sid) and when the session ends at the latest (expiresAt). Spring issues no token. "
+            + "Roles map as SUPER ADMIN -> superadmin, ADMIN -> admin, REPORTER/ANALYST -> analyst.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Credentials valid; the body is the admin's identity and token role",
+        @ApiResponse(responseCode = "200", description = "Credentials valid; the body is the admin's id, token role and new session",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = AdminLoginResponse.class))),
         @ApiResponse(responseCode = "401", description = "Unknown email or wrong password (identical response for both)",
             content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "Invalid email or password"))),
@@ -81,6 +95,26 @@ public class AdminController {
         return service.getAllOrders();
     }
 
+    @Operation(summary = "Retrieve orders for an account")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved the account's orders")
+    @GetMapping("/orders/account/{accountId}")
+    public List<OrderAdminResponse> getAccountOrders(@PathVariable Integer accountId) {
+        return service.getOrdersByAccountId(accountId);
+    }
+
+    @Operation(summary = "Retrieve all transactions across all accounts")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved all transactions")
+    @GetMapping("/transactions")
+    public List<TransactionHistoryResponse> getAllTransactions() {
+        return service.getAllTransactions();
+    }
+
+    @Operation(summary = "Retrieve transactions for an account")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved the account's transactions")
+    @GetMapping("/transactions/account/{accountId}")
+    public List<TransactionHistoryResponse> getAccountTransactions(@PathVariable Integer accountId) {
+        return service.getTransactionsByAccountId(accountId);
+    }
     @Operation(summary = "Retrieve all accounts across all users",
         description = "Returns a list of all active accounts for admin monitoring and auditing")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved all accounts")
@@ -95,6 +129,19 @@ public class AdminController {
     @GetMapping("/accounts/{userId}")
     public List<AccountResponse> getUserAccounts(@PathVariable Integer userId) {
         return accountService.getAccountsByUserID(userId);
+    }
+
+    @Operation(summary = "Retrieve one account by id",
+        description = "Returns the account whether it is active, frozen or closed. Unlike GET /accounts/{id}, "
+            + "closed accounts are included and no user details are embedded.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Account retrieved"),
+        @ApiResponse(responseCode = "404", description = "No account has this id",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationError.class)))
+    })
+    @GetMapping("/accounts/account/{accountId}")
+    public AccountResponse getAccount(@PathVariable Integer accountId) {
+        return accountService.getAccountAsAdmin(accountId);
     }
 
     @Operation(summary = "Retrieve all orders for a specific user",
@@ -113,11 +160,85 @@ public class AdminController {
         return orderService.getCancelledOrdersByUserID(userId);
     }
 
+    @Operation(summary = "Log a client out everywhere",
+        description = "Revokes every session of the client with this user_id, so all their tokens stop working on the next "
+            + "request (401 session_revoked). Their refresh tokens fail at the next refresh. Answers 204 even if the client "
+            + "had no live session.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Every session of the client is revoked"),
+        @ApiResponse(responseCode = "403", description = "The caller is not an admin", content = @Content)
+    })
+    @PostMapping("/users/{id}/logout")
+    public ResponseEntity<Void> forceLogout(@PathVariable Integer id) {
+        sessionService.revokeAllForUser(id, "admin_force_logout");
+        return ResponseEntity.noContent().build();
+    }
+
     @Operation(summary = "Retrieve all users",
-        description = "Returns a list of all users")
+        description = "Returns every user's id, name, email, date of birth and address, sorted by userId. "
+            + "Password hashes, SSN hashes and reset codes are never included.")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved users")
     @GetMapping("/users")
-    public List<UserEntity> getAllUsers() {
+    public List<AdminUserSummaryResponse> getAllUsers() {
         return service.getAllUsers();
+    }
+
+    @Operation(summary = "Retrieve the top bought stocks from the data warehouse")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved top bought stocks")
+    @GetMapping("/analytics/top-bought")
+    public List<TopBoughtStockResponse> getTopBoughtStocks() {
+        return service.getTopBoughtStocks();
+    }
+
+    @Operation(summary = "Retrieve most active accounts from the data warehouse")
+    @ApiResponse(responseCode = "200", description = "Account activity metrics retrieved")
+    @GetMapping("/analytics/active-accounts")
+    public List<ActiveAccountAnalyticsResponse> getMostActiveAccounts() {
+        return service.getMostActiveAccounts();
+    }
+
+    @Operation(summary = "Money moved by filled orders per day",
+        description = "Sums total_price of FILLED orders by fill day (updated_at, Eastern time) and side, over the last "
+            + "`days` days including today. Days with no fills are omitted.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Daily totals, oldest first"),
+        @ApiResponse(responseCode = "400", description = "days is not between 1 and 365",
+            content = @Content(mediaType = "text/plain", schema = @Schema(type = "string", example = "days must be between 1 and 365")))
+    })
+    @GetMapping("/analytics/money-moved")
+    public List<DailyMoneyMovedResponse> getMoneyMoved(@RequestParam(defaultValue = "30") int days) {
+        return orderAnalyticsService.moneyMoved(days);
+    }
+
+    @Operation(summary = "Get order statuses from the last 30 days")
+    @ApiResponse(
+        responseCode = "200",
+        description = "Order counts and percentages grouped by status"
+    )
+    @GetMapping("/analytics/order-statuses")
+    public List<OrderStatusAnalyticsResponse> getOrderStatusesLast30Days() {
+        return service.getOrderStatusesLast30Days();
+    }
+
+    @Operation(summary = "Find a user by email with their accounts")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "User and accounts retrieved"),
+        @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    @GetMapping("/users/by-email")
+    public AdminUserLookupResponse getUserByEmail(@RequestParam String email) {
+        return service.findUserByEmail(email, accountService);
+    }
+
+    @Operation(summary = "Find a user by id with their accounts",
+        description = "Same response as GET /admin/users/by-email. The accounts list holds the user's active accounts.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "User and accounts retrieved"),
+        @ApiResponse(responseCode = "404", description = "User not found",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationError.class)))
+    })
+    @GetMapping("/users/{id}")
+    public AdminUserLookupResponse getUserById(@PathVariable Integer id) {
+        return service.findUserById(id, accountService);
     }
 }

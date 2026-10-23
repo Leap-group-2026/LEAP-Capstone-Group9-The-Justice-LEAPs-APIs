@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import entities.PortfolioSize;
 
 import javax.sql.DataSource;
+import java.util.UUID;
 
 @Configuration
 @MapperScan("repos")
@@ -27,6 +28,7 @@ public class MyBatisConfig {
         // Register custom type handlers
         TypeHandlerRegistry typeHandlerRegistry = configuration.getTypeHandlerRegistry();
         typeHandlerRegistry.register(PortfolioSize.class, new PortfolioSizeTypeHandler());
+        typeHandlerRegistry.register(UUID.class, new UuidTypeHandler());
         
         sessionFactory.setConfiguration(configuration);
         

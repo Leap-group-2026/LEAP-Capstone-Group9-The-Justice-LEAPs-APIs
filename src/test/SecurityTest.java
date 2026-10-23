@@ -23,12 +23,18 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 import main.Application;
 import config.JwtAuthenticationFilter;
 import test.config.TestClockConfig;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.Clock;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
@@ -60,12 +66,18 @@ public class SecurityTest {
     private static final int OTHER_ORDER = 920101;   // a PENDING order on the other client's account
     private static final int OWNER_EMPTY_ACCOUNT = 920103;  // zero balance, so it can be closed
     private static final int OTHER_EMPTY_ACCOUNT = 920104;
+    private static final int ADMIN_ID = 920105;      // an admin whose number matches no client here
 
     @Autowired
     private MockMvc mockMvc;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private Clock clock;
+
+    private final Map<String, UUID> sessions = new HashMap<>();
 
     private final SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes());
 
@@ -107,28 +119,74 @@ public class SecurityTest {
         jdbcTemplate.update(
             "INSERT INTO orders (order_id, side, account_id, instrument_id, status, quantity, total_price) " +
             "VALUES (?, 'BUY', ?, ?, 'PENDING', 1, 10.0000)", OTHER_ORDER, OTHER_ACCOUNT, INSTRUMENT_ID);
+        for (int adminId : new int[] {OWNER_ID, ADMIN_ID}) {
+            jdbcTemplate.update("INSERT INTO admin (admin_id, email, pass_hash, role) VALUES (?, ?, 'pass', 'ADMIN')",
+                adminId, "admin" + adminId + "@security.test");
+        }
+        for (int userId : new int[] {OWNER_ID, OTHER_ID}) {
+            sessions.put("client:" + userId, insertSession("client", userId));
+        }
+        for (int adminId : new int[] {OWNER_ID, ADMIN_ID}) {
+            sessions.put("admin:" + adminId, insertSession("admin", adminId));
+        }
+    }
+
+    private Instant now() {
+        return clock.instant();
+    }
+
+    private UUID insertSession(String role, int ownerId) {
+        return insertSession(role, ownerId, now(), now().plus(Duration.ofHours(8)));
+    }
+
+    private UUID insertSession(String role, int ownerId, Instant lastActivity, Instant expiresAt) {
+        UUID sid = UUID.randomUUID();
+        boolean client = "client".equals(role);
+        jdbcTemplate.update(
+            "INSERT INTO user_sessions (session_id, user_id, admin_id, role, created_at, last_activity_at, expires_at) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            sid, client ? ownerId : null, client ? null : ownerId, role,
+            Timestamp.from(now().minus(Duration.ofHours(1))), Timestamp.from(lastActivity), Timestamp.from(expiresAt));
+        return sid;
+    }
+
+    private Instant lastActivity(UUID sid) {
+        return jdbcTemplate.queryForObject("SELECT last_activity_at FROM user_sessions WHERE session_id = ?",
+            Timestamp.class, sid).toInstant();
     }
 
     // ---- Tokens ----
 
-    private String token(String sub, String role, String type, Instant expiresAt, SecretKey signingKey) {
-        return Jwts.builder()
+    // exp uses real time (jjwt checks it); session rows use the fixed test clock
+    private String token(String sub, String role, String type, Object sid, Instant expiresAt, SecretKey signingKey) {
+        var builder = Jwts.builder()
             .subject(sub)
             .claim("role", role)
             .claim("type", type)
-            .claim("sid", "security-test-session")
             .issuedAt(Date.from(expiresAt.minus(Duration.ofMinutes(30))))
             .expiration(Date.from(expiresAt))
-            .signWith(signingKey, Jwts.SIG.HS256)
-            .compact();
+            .signWith(signingKey, Jwts.SIG.HS256);
+        if (sid != null) {
+            builder.claim("sid", sid.toString());
+        }
+        return builder.compact();
+    }
+
+    private String token(String sub, String role, String type, Instant expiresAt, SecretKey signingKey) {
+        return token(sub, role, type, sessions.get(role + ":" + sub), expiresAt, signingKey);
     }
 
     private String clientToken(int userId) {
-        return token(String.valueOf(userId), "client", "access", Instant.now().plus(Duration.ofMinutes(30)), key);
+        return clientToken(userId, sessions.get("client:" + userId));
+    }
+
+    private String clientToken(int userId, UUID sid) {
+        return token(String.valueOf(userId), "client", "access", sid, Instant.now().plus(Duration.ofMinutes(30)), key);
     }
 
     private String adminToken(int adminId) {
-        return token(String.valueOf(adminId), "admin", "access", Instant.now().plus(Duration.ofMinutes(30)), key);
+        return token(String.valueOf(adminId), "admin", "access", sessions.get("admin:" + adminId),
+            Instant.now().plus(Duration.ofMinutes(30)), key);
     }
 
     private MockHttpServletRequestBuilder as(String token, MockHttpServletRequestBuilder request) {
@@ -174,14 +232,14 @@ public class SecurityTest {
 
     @Test
     void noTokenGets401() throws Exception {
-        mockMvc.perform(get("/accounts/" + OWNER_ACCOUNT)).andExpect(status().isUnauthorized());
+        expect401(get("/accounts/" + OWNER_ACCOUNT), "unauthenticated");
     }
 
     @Test
     void anExpiredTokenGets401() throws Exception {
         String expired = token(String.valueOf(OWNER_ID), "client", "access", Instant.now().minusSeconds(60), key);
 
-        mockMvc.perform(as(expired, get("/accounts/" + OWNER_ACCOUNT))).andExpect(status().isUnauthorized());
+        expect401(as(expired, get("/accounts/" + OWNER_ACCOUNT)), "token_expired");
     }
 
     @Test
@@ -189,23 +247,255 @@ public class SecurityTest {
         SecretKey otherKey = Keys.hmacShaKeyFor("a-different-secret-that-is-also-32-bytes-or-more!!".getBytes());
         String forged = token(String.valueOf(OWNER_ID), "client", "access", Instant.now().plusSeconds(600), otherKey);
 
-        mockMvc.perform(as(forged, get("/accounts/" + OWNER_ACCOUNT))).andExpect(status().isUnauthorized());
+        expect401(as(forged, get("/accounts/" + OWNER_ACCOUNT)), "token_invalid");
     }
 
     @Test
     void aTokenThatIsNotAnAccessTokenGets401() throws Exception {
         String notAccess = token(String.valueOf(OWNER_ID), "client", "refresh", Instant.now().plusSeconds(600), key);
 
-        mockMvc.perform(as(notAccess, get("/accounts/" + OWNER_ACCOUNT))).andExpect(status().isUnauthorized());
+        expect401(as(notAccess, get("/accounts/" + OWNER_ACCOUNT)), "token_invalid");
+    }
+
+    private void expect401(MockHttpServletRequestBuilder request, String code) throws Exception {
+        mockMvc.perform(request)
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.error").value(code))
+            .andExpect(jsonPath("$.message").isString());
+    }
+
+    @Test
+    void aMalformedAuthorizationHeaderIsUnauthenticated() throws Exception {
+        expect401(get("/accounts/" + OWNER_ACCOUNT).header("Authorization", "Basic dXNlcjpwYXNz"), "unauthenticated");
+        expect401(get("/accounts/" + OWNER_ACCOUNT).header("Authorization", "Bearer "), "unauthenticated");
+    }
+
+    @Test
+    void aTokenWithoutASidIsInvalid() throws Exception {
+        String noSid = token(String.valueOf(OWNER_ID), "client", "access", null, Instant.now().plusSeconds(600), key);
+
+        expect401(as(noSid, get("/accounts/" + OWNER_ACCOUNT)), "token_invalid");
+    }
+
+    @Test
+    void aLiveSessionOpensTheRouteAndRecordsActivityOnlyAfterSixtySeconds() throws Exception {
+        UUID recent = insertSession("client", OWNER_ID, now().minusSeconds(59), now().plus(Duration.ofHours(1)));
+        UUID stale = insertSession("client", OWNER_ID, now().minusSeconds(61), now().plus(Duration.ofHours(1)));
+
+        mockMvc.perform(as(clientToken(OWNER_ID, recent), get("/accounts/" + OWNER_ACCOUNT))).andExpect(status().isOk());
+        mockMvc.perform(as(clientToken(OWNER_ID, stale), get("/accounts/" + OWNER_ACCOUNT))).andExpect(status().isOk());
+
+        assertEquals(now().minusSeconds(59), lastActivity(recent), "activity was written within 60 s of the last write");
+        assertEquals(now(), lastActivity(stale));
+    }
+
+    @Test
+    void aRevokedSessionGets401SessionRevoked() throws Exception {
+        UUID sid = sessions.get("client:" + OWNER_ID);
+        jdbcTemplate.update("UPDATE user_sessions SET revoked_at = ?, revoked_reason = 'logout' WHERE session_id = ?",
+            Timestamp.from(now()), sid);
+
+        expect401(as(clientToken(OWNER_ID), get("/accounts/" + OWNER_ACCOUNT)), "session_revoked");
+    }
+
+    @Test
+    void aSessionPastItsCapGets401SessionExpired() throws Exception {
+        UUID sid = insertSession("client", OWNER_ID, now(), now());
+
+        expect401(as(clientToken(OWNER_ID, sid), get("/accounts/" + OWNER_ACCOUNT)), "session_expired");
+    }
+
+    @Test
+    void aSessionIdleFor31MinutesGets401SessionIdle() throws Exception {
+        UUID sid = insertSession("client", OWNER_ID, now().minus(Duration.ofMinutes(31)), now().plus(Duration.ofHours(1)));
+
+        expect401(as(clientToken(OWNER_ID, sid), get("/accounts/" + OWNER_ACCOUNT)), "session_idle");
+    }
+
+    @Test
+    void anUnknownSidGets401SessionInvalid() throws Exception {
+        expect401(as(clientToken(OWNER_ID, UUID.randomUUID()), get("/accounts/" + OWNER_ACCOUNT)), "session_invalid");
+    }
+
+    @Test
+    void anAdminTokenWithAClientsSidGets401SessionInvalid() throws Exception {
+        String adminWithClientSid = token(String.valueOf(OWNER_ID), "admin", "access", sessions.get("client:" + OWNER_ID),
+            Instant.now().plusSeconds(600), key);
+
+        expect401(as(adminWithClientSid, get("/admin/accounts")), "session_invalid");
+    }
+
+    @Test
+    void aClientTokenWithAnotherClientsSidGets401SessionInvalid() throws Exception {
+        expect401(as(clientToken(OWNER_ID, sessions.get("client:" + OTHER_ID)), get("/accounts/" + OWNER_ACCOUNT)), "session_invalid");
+    }
+
+    @Test
+    void aRevokedSessionCannotMoveMoney() throws Exception {
+        jdbcTemplate.update("UPDATE user_sessions SET revoked_at = ? WHERE session_id = ?",
+            Timestamp.from(now()), sessions.get("client:" + OWNER_ID));
+
+        expect401(as(clientToken(OWNER_ID), json(post("/transactions/account/" + OWNER_ACCOUNT + "/withdraw"), FUNDS)),
+            "session_revoked");
+
+        assertUntouched(OWNER_ACCOUNT);
+    }
+
+    @Test
+    void theProfileNeedsAToken() throws Exception {
+        expect401(get("/user"), "unauthenticated");
+        expect401(json(patch("/user"), "{\"name\":\"Changed\"}"), "unauthenticated");
+
+        assertEquals("Security Test", jdbcTemplate.queryForObject("SELECT name FROM user_info WHERE user_id = ?", String.class, OWNER_ID));
+    }
+
+    @Test
+    void theProfileOpensWithALiveSession() throws Exception {
+        mockMvc.perform(as(clientToken(OWNER_ID), get("/user")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.email").value(OWNER_ID + "@security.test"));
+    }
+
+    @Test
+    void theProfileIsRefusedOnceTheSessionIsRevoked() throws Exception {
+        jdbcTemplate.update("UPDATE user_sessions SET revoked_at = ? WHERE session_id = ?",
+            Timestamp.from(now()), sessions.get("client:" + OWNER_ID));
+
+        expect401(as(clientToken(OWNER_ID), get("/user")), "session_revoked");
+        expect401(as(clientToken(OWNER_ID), json(patch("/user"), "{\"name\":\"Changed\"}")), "session_revoked");
+
+        assertEquals("Security Test", jdbcTemplate.queryForObject("SELECT name FROM user_info WHERE user_id = ?", String.class, OWNER_ID));
+    }
+
+    @Test
+    void anAdminCannotReadAClientsProfile() throws Exception {
+        mockMvc.perform(as(adminToken(OWNER_ID), get("/user"))).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void aLoggedOutUserCanRequestAResetCode() throws Exception {
+        mockMvc.perform(json(post("/user/resetpassword"), "{\"email\":\"nobody@security.test\"}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().string("User not found"));
+    }
+
+    @Test
+    void aLoggedOutUserCanResetTheirPasswordAndEveryOldTokenStops() throws Exception {
+        jdbcTemplate.update("UPDATE user_info SET code = '654321' WHERE user_id = ?", OWNER_ID);
+        String oldToken = clientToken(OWNER_ID);
+        mockMvc.perform(as(oldToken, get("/accounts/" + OWNER_ACCOUNT))).andExpect(status().isOk());
+
+        mockMvc.perform(json(post("/user/resetpassword/reset"),
+                "{\"email\":\"" + OWNER_ID + "@security.test\",\"code\":\"654321\",\"password\":\"NewSecure@@Pass\"}"))
+            .andExpect(status().isOk());
+
+        assertNotEquals("pass", jdbcTemplate.queryForObject("SELECT pass_hash FROM user_info WHERE user_id = ?", String.class, OWNER_ID));
+        expect401(as(oldToken, get("/accounts/" + OWNER_ACCOUNT)), "session_revoked");
+        mockMvc.perform(as(clientToken(OTHER_ID), get("/accounts/" + OTHER_ACCOUNT))).andExpect(status().isOk());
+    }
+
+    @Test
+    void aResetWithAStaleTokenStillWorks() throws Exception {
+        jdbcTemplate.update("UPDATE user_info SET code = '654321' WHERE user_id = ?", OWNER_ID);
+        String expired = token(String.valueOf(OWNER_ID), "client", "access", Instant.now().minusSeconds(60), key);
+
+        mockMvc.perform(as(expired, json(post("/user/resetpassword/reset"),
+                "{\"email\":\"" + OWNER_ID + "@security.test\",\"code\":\"654321\",\"password\":\"NewSecure@@Pass\"}")))
+            .andExpect(status().isOk());
+    }
+
+    private boolean isRevoked(UUID sid) {
+        return jdbcTemplate.queryForObject("SELECT revoked_at FROM user_sessions WHERE session_id = ?", Timestamp.class, sid) != null;
+    }
+
+    @Test
+    void anAdminLogsAClientOutEverywhere() throws Exception {
+        UUID secondOwnerSession = insertSession("client", OWNER_ID);
+
+        mockMvc.perform(as(adminToken(ADMIN_ID), post("/admin/users/" + OWNER_ID + "/logout"))).andExpect(status().isNoContent());
+
+        assertTrue(isRevoked(sessions.get("client:" + OWNER_ID)));
+        assertTrue(isRevoked(secondOwnerSession));
+        assertEquals("admin_force_logout", jdbcTemplate.queryForObject(
+            "SELECT revoked_reason FROM user_sessions WHERE session_id = ?", String.class, secondOwnerSession));
+        assertFalse(isRevoked(sessions.get("client:" + OTHER_ID)));
+        assertFalse(isRevoked(sessions.get("admin:" + OWNER_ID)));
+        expect401(as(clientToken(OWNER_ID), get("/accounts/" + OWNER_ACCOUNT)), "session_revoked");
+    }
+
+    @Test
+    void aClientCannotForceALogout() throws Exception {
+        mockMvc.perform(as(clientToken(OWNER_ID), post("/admin/users/" + OTHER_ID + "/logout"))).andExpect(status().isForbidden());
+
+        assertFalse(isRevoked(sessions.get("client:" + OTHER_ID)));
+    }
+
+    @Test
+    void anAdminCanReadMoneyMovedAnalytics() throws Exception {
+        mockMvc.perform(as(adminToken(ADMIN_ID), get("/admin/analytics/money-moved"))).andExpect(status().isOk());
+    }
+
+    @Test
+    void aClientCannotReadMoneyMovedAnalytics() throws Exception {
+        mockMvc.perform(as(clientToken(OWNER_ID), get("/admin/analytics/money-moved"))).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void moneyMovedAnalyticsWithoutATokenIs401() throws Exception {
+        expect401(get("/admin/analytics/money-moved"), "unauthenticated");
+    }
+
+    // The admin search routes: GET /admin/users, /admin/users/{id} and /admin/accounts/account/{accountId}
+    private String[] adminSearchRoutes() {
+        return new String[] {"/admin/users", "/admin/users/" + OTHER_ID, "/admin/accounts/account/" + OTHER_ACCOUNT};
+    }
+
+    @Test
+    void anAdminCanUseTheSearchRoutes() throws Exception {
+        for (String path : adminSearchRoutes()) {
+            mockMvc.perform(as(adminToken(ADMIN_ID), get(path))).andExpect(status().isOk());
+        }
+    }
+
+    @Test
+    void aClientCannotUseTheSearchRoutes() throws Exception {
+        for (String path : adminSearchRoutes()) {
+            mockMvc.perform(as(clientToken(OWNER_ID), get(path))).andExpect(status().isForbidden());
+        }
+    }
+
+    @Test
+    void theSearchRoutesWithoutATokenAre401() throws Exception {
+        for (String path : adminSearchRoutes()) {
+            expect401(get(path), "unauthenticated");
+        }
+    }
+
+    @Test
+    void forceLogoutWithoutATokenIs401() throws Exception {
+        expect401(post("/admin/users/" + OTHER_ID + "/logout"), "unauthenticated");
+
+        assertFalse(isRevoked(sessions.get("client:" + OTHER_ID)));
+    }
+
+    @Test
+    void aBadTokenOnAPublicRouteIsIgnored() throws Exception {
+        jdbcTemplate.update("UPDATE user_sessions SET revoked_at = ? WHERE session_id = ?",
+            Timestamp.from(now()), sessions.get("client:" + OWNER_ID));
+        String expired = token(String.valueOf(OWNER_ID), "client", "access", Instant.now().minusSeconds(60), key);
+
+        for (String bad : new String[] {clientToken(OWNER_ID), expired, "not-a-jwt"}) {
+            mockMvc.perform(as(bad, get("/v3/api-docs"))).andExpect(status().isOk());
+        }
     }
 
     // The old fallback secret was too short for HS256, so every token failed and everyone looked logged out,
     // with nothing in the log. Starting must fail loudly instead.
     @Test
     void startupRefusesAMissingOrTooShortSecret() {
-        assertThrows(IllegalStateException.class, () -> new JwtAuthenticationFilter(""));
-        assertThrows(IllegalStateException.class, () -> new JwtAuthenticationFilter("your-secret-key"));
-        assertDoesNotThrow(() -> new JwtAuthenticationFilter(SECRET));
+        assertThrows(IllegalStateException.class, () -> new JwtAuthenticationFilter("", null));
+        assertThrows(IllegalStateException.class, () -> new JwtAuthenticationFilter("your-secret-key", null));
+        assertDoesNotThrow(() -> new JwtAuthenticationFilter(SECRET, null));
     }
 
     // ---- Login and registration need no JWT, so only the auth service, holding the internal key, may call them ----
@@ -257,7 +547,7 @@ public class SecurityTest {
 
     @Test
     void anAdminReachesAdminRoutes() throws Exception {
-        mockMvc.perform(as(adminToken(1), get("/admin/accounts"))).andExpect(status().isOk());
+        mockMvc.perform(as(adminToken(ADMIN_ID), get("/admin/accounts"))).andExpect(status().isOk());
     }
 
     @Test
@@ -267,7 +557,7 @@ public class SecurityTest {
 
     @Test
     void anAdminCanReadAnyClientsAccount() throws Exception {
-        mockMvc.perform(as(adminToken(1), get("/accounts/" + OTHER_ACCOUNT))).andExpect(status().isOk());
+        mockMvc.perform(as(adminToken(ADMIN_ID), get("/accounts/" + OTHER_ACCOUNT))).andExpect(status().isOk());
     }
 
     // ---- A client only reaches their own data. "Not yours" answers 404, as checkAccountAccess already does,
@@ -400,7 +690,7 @@ public class SecurityTest {
     // Admins can close any account, not just the one whose owner happens to share their id
     @Test
     void anAdminCanCloseAnyClientsAccount() throws Exception {
-        mockMvc.perform(as(adminToken(1), patch("/accounts/close/" + OTHER_EMPTY_ACCOUNT))).andExpect(status().isOk());
+        mockMvc.perform(as(adminToken(ADMIN_ID), patch("/accounts/close/" + OTHER_EMPTY_ACCOUNT))).andExpect(status().isOk());
 
         assertFalse(isActive(OTHER_EMPTY_ACCOUNT));
     }
@@ -408,9 +698,53 @@ public class SecurityTest {
     // Every other close rule still applies to admins
     @Test
     void anAdminCannotCloseAnAccountThatStillHasMoney() throws Exception {
-        mockMvc.perform(as(adminToken(1), patch("/accounts/close/" + OTHER_ACCOUNT))).andExpect(status().isBadRequest());
+        mockMvc.perform(as(adminToken(ADMIN_ID), patch("/accounts/close/" + OTHER_ACCOUNT))).andExpect(status().isBadRequest());
 
         assertTrue(isActive(OTHER_ACCOUNT));
+    }
+
+    // ---- Renaming is for the owner only. An admin is refused by role (403) before any account is looked up,
+    // because checkAccountAccess lets every admin through and an admin's id can match a client's ----
+
+    private static final String RENAME = "{\"name\":\"Savings\"}";
+
+    private String accountName(int accountId) {
+        return jdbcTemplate.queryForObject("SELECT account_name FROM accounts WHERE account_id = ?", String.class, accountId);
+    }
+
+    @Test
+    void aClientRenamesTheirOwnAccount() throws Exception {
+        mockMvc.perform(as(clientToken(OWNER_ID), json(patch("/accounts/rename/" + OWNER_ACCOUNT), RENAME)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.accountName").value("Savings"));
+
+        assertEquals("Savings", accountName(OWNER_ACCOUNT));
+    }
+
+    @Test
+    void aClientCannotRenameAnotherClientsAccount() throws Exception {
+        mockMvc.perform(as(clientToken(OWNER_ID), json(patch("/accounts/rename/" + OTHER_ACCOUNT), RENAME)))
+            .andExpect(status().isNotFound());
+
+        assertNull(accountName(OTHER_ACCOUNT), "a client renamed someone else's account");
+    }
+
+    @Test
+    void anAdminCannotRenameAnyAccountNotEvenTheClientWithTheSameId() throws Exception {
+        mockMvc.perform(as(adminToken(ADMIN_ID), json(patch("/accounts/rename/" + OTHER_ACCOUNT), RENAME)))
+            .andExpect(status().isForbidden());
+        mockMvc.perform(as(adminToken(OWNER_ID), json(patch("/accounts/rename/" + OWNER_ACCOUNT), RENAME)))
+            .andExpect(status().isForbidden());
+
+        assertNull(accountName(OTHER_ACCOUNT), "an admin renamed a client's account");
+        assertNull(accountName(OWNER_ACCOUNT), "an admin's token renamed the account of the client with the same id");
+    }
+
+    @Test
+    void renamingWithoutATokenIsUnauthenticated() throws Exception {
+        expect401(json(patch("/accounts/rename/" + OWNER_ACCOUNT), RENAME), "unauthenticated");
+
+        assertNull(accountName(OWNER_ACCOUNT));
     }
 
     // ---- Deposits and withdrawals: a client moves money in and out of their own account only ----
@@ -471,7 +805,7 @@ public class SecurityTest {
     @Test
     void theSecurityRuleRefusesAnAdminBeforeTheBodyIsValidated() throws Exception {
         for (String action : new String[] {"deposit", "withdraw"}) {
-            mockMvc.perform(as(adminToken(1), json(post("/transactions/account/" + OWNER_ACCOUNT + "/" + action), "{\"amount\":0}")))
+            mockMvc.perform(as(adminToken(ADMIN_ID), json(post("/transactions/account/" + OWNER_ACCOUNT + "/" + action), "{\"amount\":0}")))
                 .andExpect(status().isForbidden());
         }
     }

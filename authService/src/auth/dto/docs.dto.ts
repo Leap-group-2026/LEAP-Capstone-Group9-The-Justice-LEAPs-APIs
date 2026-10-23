@@ -3,11 +3,16 @@ import { ApiProperty } from '@nestjs/swagger';
 // Shapes used only to describe responses and the forwarded register body in Swagger; nothing validates against them
 
 export class SessionTokensDto {
-    @ApiProperty({ description: 'JWT to send to Spring as a Bearer token. Expires after JWT_EXPIRATION seconds.' })
+    @ApiProperty({ description: 'JWT to send to Spring as a Bearer token. Expires after JWT_EXPIRATION seconds, or when the session reaches its absolute end if that is sooner.' })
     accessToken!: string;
 
     @ApiProperty({ description: 'Opaque, single-use token for POST /auth/refresh. Not a JWT, so Spring rejects it.' })
     refreshToken!: string;
+}
+
+export class AdminSessionTokensDto extends SessionTokensDto {
+    @ApiProperty({ description: 'The role returned by Spring for the authenticated admin', example: 'admin' })
+    role!: string;
 }
 
 export class MessageDto {

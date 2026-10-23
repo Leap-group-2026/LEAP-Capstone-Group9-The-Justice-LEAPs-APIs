@@ -10,7 +10,7 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { SpringUsersClient } from './spring-users.client';
 import { AccessTokenClaims } from './token-claims';
-import { MessageDto, RegisterBodyDto, SessionTokensDto, VerifyResponseDto } from './dto/docs.dto';
+import { AdminSessionTokensDto, MessageDto, RegisterBodyDto, SessionTokensDto, VerifyResponseDto } from './dto/docs.dto';
 import { ACCESS_TOKEN_SCHEME } from '../swagger';
 
 @ApiTags('Auth')
@@ -25,7 +25,7 @@ export class AuthController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Admin login', description: 'Checks the password with Spring and starts a new session for an admin (role admin).' })
   @ApiBody({ type: LoginDto })
-  @ApiOkResponse({ type: SessionTokensDto, description: 'Admin login successful' })
+  @ApiOkResponse({ type: AdminSessionTokensDto, description: 'Admin login successful' })
   @ApiBadRequestResponse({ description: 'email or password missing or blank' })
   @ApiUnauthorizedResponse({ description: 'Invalid email or password (same message for both, on purpose)' })
   @ApiBadGatewayResponse({ description: 'Spring is unreachable' })
@@ -63,11 +63,13 @@ export class AuthController {
     summary: 'Refresh access token',
     description: 'Swaps a refresh token for a new pair. No Authorization header: works whether or not the access token ' +
       'has expired. The refresh token sent is used up; keep the new one. Sending an already-used token again ends the ' +
-      'whole session, since it means a copy exists somewhere. Two refreshes with the same token at once therefore log the user out.',
+      'whole session, since it means a copy exists somewhere. Two refreshes with the same token at once therefore log the user out. ' +
+      'Spring is asked first whether the session is still live (not logged out, idle or past its cap); that counts as activity.',
   })
-  @ApiOkResponse({ type: SessionTokensDto, description: 'New access token and refresh token; same session, same 8-hour limit' })
+  @ApiOkResponse({ type: SessionTokensDto, description: 'New access token and refresh token; same session, same absolute end' })
   @ApiBadRequestResponse({ description: 'refreshToken missing, blank or not a string' })
-  @ApiUnauthorizedResponse({ description: '"Invalid refresh token" (unknown, used or logged out) or "Session has expired, please log in again"' })
+  @ApiUnauthorizedResponse({ description: '"Invalid refresh token" (unknown, used or logged out), "Session has expired, please log in again" or "Session has ended, please log in again" (Spring says revoked or idle)' })
+  @ApiBadGatewayResponse({ description: 'Spring is unreachable; nothing was rotated, so the same refresh token can be tried again' })
   refresh(@Body() dto: RefreshDto) {
     return this.authService.refresh(dto.refreshToken);
   }
@@ -78,11 +80,12 @@ export class AuthController {
   @ApiBearerAuth(ACCESS_TOKEN_SCHEME)
   @ApiOperation({
     summary: 'User logout',
-    description: 'Revokes every refresh token from this login; other logins stay signed in. The access token itself ' +
-      'keeps working at Spring until it expires.',
+    description: 'Ends this login\'s session: its refresh token stops working here, and Spring refuses its access token on ' +
+      'the very next request (401 session_revoked). Other logins stay signed in.',
   })
   @ApiOkResponse({ type: MessageDto, description: 'Logout successful' })
   @ApiUnauthorizedResponse({ description: 'Missing, expired or invalid access token' })
+  @ApiBadGatewayResponse({ description: 'Spring is unreachable: the refresh token is revoked, but the access token may work until it expires' })
   async logout(@Request() req: { user: AccessTokenClaims }) {
     await this.authService.logout(req.user.sid);
     return { message: 'Logout successful' };
@@ -91,10 +94,16 @@ export class AuthController {
   @Get('verify')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth(ACCESS_TOKEN_SCHEME)
-  @ApiOperation({ summary: 'Verify JWT token validity', description: 'Returns the claims of a valid access token.' })
+  @ApiOperation({
+    summary: 'Verify JWT token validity',
+    description: 'Returns the claims of an access token whose session Spring still holds live (not logged out, idle or ' +
+      'past its cap). Asking Spring counts as activity.',
+  })
   @ApiOkResponse({ type: VerifyResponseDto, description: 'Token is valid' })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized - invalid or expired token' })
-  async verifyToken(@Request() req: any) {
+  @ApiUnauthorizedResponse({ description: 'Invalid or expired token, or its session has ended' })
+  @ApiBadGatewayResponse({ description: 'Spring is unreachable' })
+  async verifyToken(@Request() req: { user: AccessTokenClaims }) {
+    await this.authService.checkSession(req.user.sid);
     return { user: req.user };
   }
 }

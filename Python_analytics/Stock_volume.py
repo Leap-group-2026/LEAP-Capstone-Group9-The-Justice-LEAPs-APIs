@@ -1,4 +1,7 @@
 import os
+
+import matplotlib
+matplotlib.use('Agg')
 import pandas as pd
 import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
@@ -14,54 +17,75 @@ DB_USERNAME = os.getenv('DB_USERNAME')
 DB_PASSWORD = os.getenv('DB_PASSWORD')
 
 # Database connection setup
-engine = create_engine(f'postgresql+psycopg2://{DB_USERNAME}:{DB_PASSWORD}@localhost:15432/leap_projectdb')
+engine = create_engine(f'postgresql+psycopg2://{DB_USERNAME}:{DB_PASSWORD}@localhost:25432/ribbit-dw')
 
 try:
-    # Query the database to get top 5 most traded stocks
+    # Count completed trades from the warehouse and rank stocks by quantity.
     sql_query = """
-    SELECT 
-        i.ticker,                         
-        SUM(o.quantity) as total_volume    -- Sum all quantities traded for each stock
-    FROM orders o                          -- Get data from orders table
-    JOIN instruments i ON o.instrument_id = i.instrument_id  -- Join with instruments to get ticker
-    GROUP BY i.ticker                      -- Group results by stock ticker
-    ORDER BY total_volume DESC             -- Sort by volume, highest first
-    LIMIT 5;                               -- Get only top 5
+    SELECT
+        ticker,
+        SUM(quantity) AS total_volume
+    FROM dw.ribbit_trade_activity
+    WHERE status = 'FILLED'
+            AND side = 'BUY'
+    GROUP BY ticker
+    ORDER BY total_volume DESC
+    LIMIT 20;
     """
 
     # Fetch the data from database
     df = pd.read_sql(sql_query, engine)
 
     # Print the data to console
-    print("Top 5 Most Traded Stocks:")
-    print("-" * 50)
+    print("Top 20 Most Traded Stocks:")
+    print("-" * 60)
     print(df.to_string(index=False))
-    print("-" * 50)
+    print("-" * 60)
 
-    # Create a bar chart
-    plt.figure(figsize=(10, 6))
-    bars = plt.bar(df['ticker'], df['total_volume'], color='steelblue', edgecolor='navy', alpha=0.7)
+    # Create a readable dark-mode chart for twenty tickers.
+    df = df.sort_values('total_volume')
+    figure, axis = plt.subplots(figsize=(12, 10), facecolor='#111827')
+    axis.set_facecolor('#111827')
+    bars = axis.barh(
+        df['ticker'],
+        df['total_volume'],
+        color='#b7f000',
+        edgecolor='#d9ff66',
+        linewidth=0.8,
+        height=0.72,
+    )
 
     # Add volume numbers on top of each bar
     for bar in bars:
-        height = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2., height,
-                f'{int(height):,}',
-                ha='center', va='bottom', fontsize=10, fontweight='bold')
+        width = bar.get_width()
+        axis.text(
+            width,
+            bar.get_y() + bar.get_height() / 2,
+            f'  {int(width):,}',
+            ha='left',
+            va='center',
+            color='#f9fafb',
+            fontsize=9,
+            fontweight='bold',
+        )
 
-    # Label the chart
-    plt.title('Top 5 Most Traded Stocks by Volume', fontsize=14, fontweight='bold', pad=20)
-    plt.xlabel('Stock Ticker', fontsize=12, fontweight='bold')
-    plt.ylabel('Trading Volume', fontsize=12, fontweight='bold')
-    plt.grid(axis='y', alpha=0.3, linestyle='--')
-    plt.tight_layout()
+    axis.set_title('Top 20 Most Traded Stocks', fontsize=18, fontweight='bold', color='#f9fafb', pad=20)
+    axis.set_xlabel('Completed Shares Traded', fontsize=12, color='#d1d5db', labelpad=12)
+    axis.set_ylabel('Stock Ticker', fontsize=12, color='#d1d5db', labelpad=12)
+    axis.tick_params(colors='#d1d5db', labelsize=10)
+    axis.grid(axis='x', color='#374151', alpha=0.8, linestyle='--')
+    axis.set_axisbelow(True)
+    axis.spines[['top', 'right', 'left']].set_visible(False)
+    axis.spines['bottom'].set_color('#4b5563')
+    axis.set_xlim(0, df['total_volume'].max() * 1.12)
+    figure.tight_layout()
 
     # Save and display the chart
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_path = os.path.join(script_dir, 'top_5_traded_stocks.png')
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    output_path = os.path.join(script_dir, 'top_20_traded_stocks.png')
+    figure.savefig(output_path, dpi=300, bbox_inches='tight', facecolor=figure.get_facecolor())
     print(f"\nChart saved to {output_path}")
-    plt.show()
+    plt.close(figure)
 
 except Exception as e:
     print(f"Error: {e}")

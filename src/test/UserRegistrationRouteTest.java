@@ -21,6 +21,7 @@ import test.config.TestClockConfig;
 import test.config.TestSecurityConfig;
 
 import java.security.MessageDigest;
+import java.math.BigDecimal;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -114,6 +115,17 @@ public class UserRegistrationRouteTest {
         assertEquals("new.user@example.com", row.get("EMAIL"));
         assertEquals(sha256("123456789"), row.get("SSN_HASH"));
         assertEquals(java.sql.Date.valueOf("1990-01-01"), row.get("DATE_OF_BIRTH"));
+
+        Integer userId = jdbcTemplate.queryForObject(
+            "SELECT user_id FROM user_info WHERE email = 'new.user@example.com'", Integer.class);
+        Map<String, Object> account = jdbcTemplate.queryForMap(
+            "SELECT balance, portfolio_size, trade_type, account_active, account_frozen " +
+            "FROM accounts WHERE user_id = ?", userId);
+        assertEquals(0, ((BigDecimal) account.get("BALANCE")).compareTo(BigDecimal.ZERO));
+        assertEquals("BALANCED", account.get("PORTFOLIO_SIZE"));
+        assertEquals("Passive", account.get("TRADE_TYPE"));
+        assertEquals(true, account.get("ACCOUNT_ACTIVE"));
+        assertEquals(false, account.get("ACCOUNT_FROZEN"));
     }
 
     @Test

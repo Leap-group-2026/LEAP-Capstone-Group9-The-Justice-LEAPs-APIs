@@ -87,6 +87,8 @@ public class UserLoginRouteTest {
         assertEquals(expiresAt, jdbcTemplate.queryForObject(
             "SELECT expires_at FROM user_sessions WHERE session_id = ?", Timestamp.class, sid).toInstant());
         assertTrue(json.get("expiresAt").asText().endsWith("Z"), "expiresAt is not UTC: " + body);
+        assertEquals(1, jdbcTemplate.queryForObject(
+            "SELECT count(*) FROM accounts WHERE user_id = ? AND account_active = true", Integer.class, USER_ID));
     }
 
     @Test

@@ -79,6 +79,7 @@ public class UserService {
              positionsRepo, instrumentRepo, clock, sessionService, null);
     }
 
+    @Transactional
     public UserResponse registerUser(UserRegistrationRequest request){
         validateRequired(request);
         
@@ -112,6 +113,8 @@ public class UserService {
 
         repo.insert(user);
 
+        createDefaultAccount(user);
+
         if (emailService != null) {
             try {
                 String subject = "Welcome to Ribbit!";
@@ -136,13 +139,29 @@ public class UserService {
         );
     }
 
+    @Transactional
     public UserLoginResponse login(LoginRequest request){
         UserEntity user = repo.findByEmail(request.getEmail())
             .filter(u -> request.getPassword() != null
                 && passwordEncoder.matches(request.getPassword(), u.getPassHash()))
             .orElseThrow(InvalidCredentialsException::new);
+        if (!accountsRepo.existsForUser(user.getUserId())) {
+            createDefaultAccount(user);
+        }
         SessionService.Grant session = sessionService.create(SessionService.CLIENT_ROLE, user.getUserId());
         return new UserLoginResponse(user.getUserId(), session.sid(), session.expiresAt().toString());
+    }
+
+    private void createDefaultAccount(UserEntity user) {
+        AccountsEntity defaultAccount = new AccountsEntity();
+        defaultAccount.setUserId(user);
+        defaultAccount.setBalance(BigDecimal.ZERO);
+        defaultAccount.setPortfolioSize(entities.PortfolioSize.BALANCED);
+        defaultAccount.setTradeType("Passive");
+        defaultAccount.setCreatedAt(LocalDateTime.now(clock));
+        defaultAccount.setAccountActive(true);
+        defaultAccount.setAccountFrozen(false);
+        accountsRepo.insert(defaultAccount);
     }
 
     public ResponseEntity<UserInfoDisplayed> getUsersInfoForDisplay(String userId) {

@@ -85,6 +85,9 @@ public interface AccountsRepo {
     })
     List<AccountsEntity> findByUser(@Param("userId") Integer userId);
 
+    @Select("SELECT EXISTS(SELECT 1 FROM accounts WHERE user_id = #{userId})")
+    boolean existsForUser(@Param("userId") Integer userId);
+
     @Insert("INSERT INTO accounts (user_id, balance, portfolio_size, trade_type, created_at, account_active, account_frozen, account_name) " +
             "VALUES (#{user.userId}, #{balance}, #{portfolioSize}, #{trade_type}, #{createdAt}, #{accountActive}, COALESCE(#{accountFrozen}, false), #{accountName})")
     @Options(useGeneratedKeys = true, keyProperty = "accountId", keyColumn = "account_id")

@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.github.pagehelper.PageHelper;
@@ -114,6 +115,7 @@ public class InstrumentService {
     }
 
     public List<BigDecimal> getCryptoBarNumbers(String symbols, String timeframe, String start, String end) {
+        symbols = UriUtils.decode(symbols, java.nio.charset.StandardCharsets.UTF_8);
         String url = UriComponentsBuilder
             .fromHttpUrl("https://data.alpaca.markets/v1beta3/crypto/us/bars")
             .queryParam("symbols", symbols)

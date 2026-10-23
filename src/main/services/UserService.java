@@ -398,12 +398,13 @@ public class UserService {
             accountsRepo.update(account.getAccountId(), account.getOwnerUserId(), usd, account.getPortfolioSize().getValue(), account.getTradeType(), account.getAccountActive());
         }
 
-        transactionsRepo.insert(
+        transactionsRepo.insertExchange(
             transactionRequest.amount(),
             "EXCHANGE",
             account.getAccountId(),
             "CURRENCY EXCHANGE",
-            LocalDateTime.now(clock)
+            LocalDateTime.now(clock),
+            transactionRequest.baseAndExchange()
         );
         
         return ResponseEntity.ok("Transaction processed successfully");

@@ -84,7 +84,8 @@ CREATE TABLE IF NOT EXISTS transactions(
 	side				TEXT NOT NULL CHECK(side IN('OUT', 'IN', 'EXCHANGE')),
 	account_id			INTEGER NOT NULL REFERENCES accounts(account_id),
 	transaction_type	TEXT NOT NULL CHECK(transaction_type IN('WITHDRAWAL', 'DEPOSIT', 'CURRENCY EXCHANGE')),
-	happened_at			TIMESTAMP NOT NULL DEFAULT now()
+	happened_at			TIMESTAMP NOT NULL DEFAULT now(),
+	currency			TEXT
 );
 
 CREATE TABLE IF NOT EXISTS historical_orders(

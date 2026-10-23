@@ -55,6 +55,7 @@ public class ApiDocsTest {
         Map.entry("get", "/instruments/bars"),
         Map.entry("get", "/instruments/crypto-bars"),
         Map.entry("get", "/instruments/news"),
+        Map.entry("get", "/news/account/{accountId}"),
         Map.entry("post", "/instruments/forex/price"),
         Map.entry("get", "/positions/{id}"),
         Map.entry("post", "/positions"),

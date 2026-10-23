@@ -99,7 +99,7 @@ public class TransactionHistoryByAccountTest {
         mockMvc.perform(get("/transactions/account/" + ACCOUNT_ID)
             .with(user("" + USER_ID)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$[0].*", hasSize(6)));
+            .andExpect(jsonPath("$[0].*", hasSize(7)));
     }
 
     @Test

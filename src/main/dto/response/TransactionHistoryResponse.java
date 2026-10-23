@@ -30,4 +30,8 @@ public class TransactionHistoryResponse {
     @Schema(description = "Timestamp when the transaction occurred")
     @JsonProperty("happened_at")
     private LocalDateTime happenedAt;
+
+    @Schema(description = "Currency of the transaction, e.g. USD, or the pair USD/CAD for exchanges")
+    @JsonProperty("currency")
+    private String currency;
 }

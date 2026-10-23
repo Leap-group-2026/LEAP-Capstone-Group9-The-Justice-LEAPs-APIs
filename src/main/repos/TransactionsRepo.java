@@ -47,12 +47,12 @@ public interface TransactionsRepo {
                 @Param("transactionType") String transactionType,
                 @Param("happenedAt") LocalDateTime happenedAt);
         
-     @Select("SELECT t.transaction_id, t.transaction_type, t.amount, t.side, t.account_id, t.happened_at " +
+     @Select("SELECT t.transaction_id, t.transaction_type, t.amount, t.side, t.account_id, t.happened_at, t.currency " +
              "FROM transactions t WHERE t.account_id = #{accountId} " +
              "ORDER BY t.happened_at DESC, t.transaction_id DESC")
      List<TransactionHistoryResponse> getTransactionsByAccountId(@Param("accountId") Integer accountId);
 
-    @Select("SELECT t.transaction_id, t.transaction_type, t.amount, t.side, t.account_id, t.happened_at " +
+    @Select("SELECT t.transaction_id, t.transaction_type, t.amount, t.side, t.account_id, t.happened_at, t.currency " +
             "FROM transactions t ORDER BY t.happened_at DESC, t.transaction_id DESC")
     List<TransactionHistoryResponse> getAllTransactionHistory();
 
@@ -69,7 +69,7 @@ public interface TransactionsRepo {
                         @Param("transactionType") String transactionType,
                         @Param("happenedAt") LocalDateTime happenedAt);
 
-    @Select("SELECT t.transaction_id, t.transaction_type, t.amount, t.side, t.account_id, t.happened_at " +
+    @Select("SELECT t.transaction_id, t.transaction_type, t.amount, t.side, t.account_id, t.happened_at, t.currency " +
             "FROM transactions t WHERE t.transaction_id = #{transactionId}")
     Optional<TransactionHistoryResponse> findHistoryById(@Param("transactionId") Integer transactionId);
 }

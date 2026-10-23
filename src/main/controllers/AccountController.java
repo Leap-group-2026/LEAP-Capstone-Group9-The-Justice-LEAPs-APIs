@@ -7,6 +7,7 @@ import config.AuthorizationUtil;
 import entities.AccountsEntity;
 import entities.UserEntity;
 import dto.request.CreateAccountRequest;
+import dto.request.RenameAccountRequest;
 import dto.response.AccountResponse;
 import dto.response.OrderAdminResponse;
 import dto.response.OrderAccountResponse;
@@ -39,11 +40,12 @@ public class AccountController {
         this.authorizationUtil = authorizationUtil;
     }
     @Operation(summary = "Open an account",
-        description = "Creates an active account for the authenticated user and returns it with its generated accountId.")
+        description = "Creates an active account for the authenticated user and returns it with its generated accountId. "
+            + "accountName is optional and follows the same rules as PATCH /accounts/rename/{id}.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Account created; accountId is populated"),
         @ApiResponse(responseCode = "400", description = "A field is missing or invalid (\"Validation failed\", fieldName names it), "
-            + "or portfolioSize is not LOW, BALANCED or HIGH",
+            + "or portfolioSize is not LOW, BALANCED or HIGH; an accountName that is too long or has control characters gives fieldName \"accountName\"",
             content = @Content(schema = @Schema(implementation = ValidationError.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
     })
@@ -61,6 +63,7 @@ public class AccountController {
         account.setBalance(request.balance());
         account.setPortfolioSize(request.portfolioSize());
         account.setTradeType(request.tradeType());
+        account.setAccountName(request.accountName());
         return accountService.saveAccount(account);
     }
     
@@ -93,6 +96,29 @@ public class AccountController {
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
+    }
+
+    @Operation(summary = "Rename an account",
+        description = "For the account owner, sets the account's name or removes it. The name is trimmed and may be at most "
+            + "40 characters with no control characters; null or blank removes it. Names need not be unique. "
+            + "Frozen accounts can be renamed. Returns the account in the same shape as GET /accounts/{id}.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Account renamed; accountName is the stored name, or null"),
+        @ApiResponse(responseCode = "400", description = "The name is too long or contains control characters (\"Validation failed\", fieldName \"name\")",
+            content = @Content(schema = @Schema(implementation = ValidationError.class))),
+        @ApiResponse(responseCode = "403", description = "The caller is not a client; only the owner can rename an account"),
+        @ApiResponse(responseCode = "404", description = "No active account with this id that belongs to the caller (missing, closed or someone else's)",
+            content = @Content(schema = @Schema(implementation = ValidationError.class)))
+    })
+    @PatchMapping("/rename/{id}")
+    public AccountsEntity renameAccount(@PathVariable Integer id, @RequestBody @Valid RenameAccountRequest request) {
+        Integer clientId = authorizationUtil.getCurrentClientId();
+        if (clientId == null) {
+            throw new AccessDeniedException("Only the account owner can rename it");
+        }
+        var account = accountService.findById(id);
+        authorizationUtil.checkAccountAccess(id, account.getOwnerUserId());
+        return accountService.renameAccount(id, clientId, request.name());
     }
 
     @Operation(summary = "Freeze an account",

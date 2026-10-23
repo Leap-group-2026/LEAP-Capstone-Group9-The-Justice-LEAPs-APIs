@@ -2,6 +2,7 @@ package dto.response;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 public class AccountResponse {
     private Integer accountId;
@@ -12,8 +13,10 @@ public class AccountResponse {
     private LocalDateTime createdAt;
     private Boolean accountActive;
     private Boolean accountFrozen;
+    @Schema(description = "Name the client gave the account; null when it has none", nullable = true)
+    private String accountName;
 
-    public AccountResponse(Integer accountId, Integer userId, BigDecimal balance, String portfolioSize, String tradeType, LocalDateTime createdAt, Boolean accountActive, Boolean accountFrozen) {
+    public AccountResponse(Integer accountId, Integer userId, BigDecimal balance, String portfolioSize, String tradeType, LocalDateTime createdAt, Boolean accountActive, Boolean accountFrozen, String accountName) {
         this.accountId = accountId;
         this.userId = userId;
         this.balance = balance;
@@ -22,6 +25,7 @@ public class AccountResponse {
         this.createdAt = createdAt;
         this.accountActive = accountActive;
         this.accountFrozen = accountFrozen;
+        this.accountName = accountName;
     }
 
     public Integer getAccountId() {
@@ -82,5 +86,13 @@ public class AccountResponse {
 
     public void setAccountFrozen(Boolean accountFrozen) {
         this.accountFrozen = accountFrozen;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
     }
 }

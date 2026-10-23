@@ -19,5 +19,10 @@ public record CreateAccountRequest(
 
     @Schema(example = "Passive")
     @NotBlank
-    String tradeType
+    String tradeType,
+
+    @Schema(description = "Optional name, trimmed, at most 40 characters, no control characters. Omitted, null or blank means no name",
+        example = "Savings", nullable = true)
+    @AccountName
+    String accountName
 ) {}

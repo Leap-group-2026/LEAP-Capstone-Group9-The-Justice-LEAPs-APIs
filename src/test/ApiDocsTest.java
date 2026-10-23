@@ -38,6 +38,7 @@ public class ApiDocsTest {
         Map.entry("get", "/accounts/orders/{accountId}"),
         Map.entry("post", "/accounts"),
         Map.entry("patch", "/accounts/close/{id}"),
+        Map.entry("patch", "/accounts/rename/{id}"),
         Map.entry("patch", "/accounts/freeze/{id}"),
         Map.entry("patch", "/accounts/unfreeze/{id}"),
         Map.entry("post", "/orders"),

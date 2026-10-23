@@ -34,8 +34,6 @@ public class NewsController {
         this.newsService = newsService;
     }
 
-    @Operation(summary = "Get news for an account",
-        description = "Returns news for the instruments the account holds, filtered by sentiment and capped by limit.")
     @Operation(summary = "Get news for an account's holdings",
         description = "Returns recent Marketaux articles about the instruments the account holds open positions in. "
             + "sentiment: positive, neutral, negative or all (default). limit: 1-100, default 20.")

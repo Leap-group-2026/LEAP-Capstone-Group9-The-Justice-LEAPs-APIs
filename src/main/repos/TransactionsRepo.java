@@ -29,6 +29,15 @@ public interface TransactionsRepo {
                 @Param("transactionType") String transactionType,
                 @Param("happenedAt") LocalDateTime happenedAt);
 
+    @Insert("INSERT INTO transactions (amount, side, account_id, transaction_type, happened_at, currency) " +
+            "VALUES (#{amount}, #{side}, #{accountId}, #{transactionType}, #{happenedAt}, #{currency})")
+    void insertExchange(@Param("amount") BigDecimal amount,
+                        @Param("side") String side,
+                        @Param("accountId") Integer accountId,
+                        @Param("transactionType") String transactionType,
+                        @Param("happenedAt") LocalDateTime happenedAt,
+                        @Param("currency") String currency);
+
     @Update("UPDATE transactions SET amount=#{amount}, side=#{side}, account_id=#{accountId}, " +
             "transaction_type=#{transactionType}, happened_at=#{happenedAt} WHERE transaction_id=#{transactionId}")
     void update(@Param("transactionId") Integer transactionId,

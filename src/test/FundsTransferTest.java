@@ -114,7 +114,7 @@ public class FundsTransferTest {
         send("deposit", ACCOUNT_ID, "{\"amount\": 250.00, \"fundingMethod\": \"bank\"}")
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.*", hasSize(2)))
-            .andExpect(jsonPath("$.transaction.*", hasSize(6)))
+            .andExpect(jsonPath("$.transaction.*", hasSize(7)))
             .andExpect(jsonPath("$.transaction.transaction_id").isNumber())
             .andExpect(jsonPath("$.transaction.transaction_type").value("DEPOSIT"))
             .andExpect(jsonPath("$.transaction.amount").value(250.0))

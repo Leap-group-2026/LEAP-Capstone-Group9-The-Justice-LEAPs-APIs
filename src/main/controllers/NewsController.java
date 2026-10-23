@@ -5,6 +5,8 @@ import dto.response.AccountNewsResponse;
 import dto.response.ValidationError;
 import exception.ResourceNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import services.AccountService;
 import services.MarketauxNewsService;
 
+@Tag(name = "Accounts")
 @RestController
 @RequestMapping("/news")
 public class NewsController {
@@ -31,6 +34,8 @@ public class NewsController {
         this.newsService = newsService;
     }
 
+    @Operation(summary = "Get news for an account",
+        description = "Returns news for the instruments the account holds, filtered by sentiment and capped by limit.")
     @Operation(summary = "Get news for an account's holdings",
         description = "Returns recent Marketaux articles about the instruments the account holds open positions in. "
             + "sentiment: positive, neutral, negative or all (default). limit: 1-100, default 20.")
